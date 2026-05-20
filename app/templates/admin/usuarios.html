@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Usuarios — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-people text-primary me-2"></i>Gestión de Usuarios</h2>
+  <button class="btn btn-primary mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario"><i class="bi bi-person-plus"></i> Crear Nuevo Estudiante/Instructor</button>
+</div>
+
+<!-- Barra de búsqueda -->
+<div class="biblioteca-shell mb-4">
+  <div class="biblioteca-shell-body p-3">
+    <form method="GET" action="{{ url_for('admin.usuarios') }}" class="d-flex m-0">
+      <div class="search-bar-wrap flex-grow-1 me-2">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Buscar por nombres, apellidos o correo..." value="{{ q or '' }}">
+      </div>
+      <button type="submit" class="btn btn-secondary">Buscar</button>
+      {% if q %}
+        <a href="{{ url_for('admin.usuarios') }}" class="btn btn-ghost fw-bold ms-2">Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Filtro por Roles (Pills) -->
+<ul class="nav nav-pills mb-3 gap-2" id="pills-tab-roles" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" style="border-radius: var(--radius-md); font-weight: 600;" id="tab-todos" data-filter="all" type="button" role="tab">Todos</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" style="border-radius: var(--radius-md); font-weight: 600;" id="tab-aprendiz" data-filter="aprendiz" type="button" role="tab">Aprendices</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" style="border-radius: var(--radius-md); font-weight: 600;" id="tab-instructor" data-filter="instructor" type="button" role="tab">Instructores</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" style="border-radius: var(--radius-md); font-weight: 600;" id="tab-superusuario" data-filter="superusuario" type="button" role="tab">Superusuarios</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" style="border-radius: var(--radius-md); font-weight: 600;" id="tab-sin-rol" data-filter="none" type="button" role="tab">Sin Rol</button>
+  </li>
+</ul>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-body p-0">
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombres y Apellidos</th>
+            <th>Documento</th>
+            <th>Correo / Teléfono</th>
+            <th>Rol(es) Actuales</th>
+            <th>Estado</th>
+            <th class="text-end">Bloquear/Desbloquear</th>
+          </tr>
+        </thead>
+        <tbody>
+           {% for u in usuarios %}
+            <tr class="user-row" data-roles="{% for ur in u.roles %}{{ ur.rol.nombre }} {% endfor %}">
+              <td>#{{ u.id_usuario }}</td>
+              <td class="fw-bold text-primary">{{ u.nombres }} {{ u.apellidos }}</td>
+              <td class="text-muted"><span class="small border px-1 rounded border-secondary text-uppercase">{{ u.tipo_documento }}</span> {{ u.numero_documento }}</td>
+              <td>
+                <div class="text-truncate">{{ u.correo }}</div>
+                <div class="small text-muted"><i class="bi bi-telephone"></i> {{ u.telefono or '--' }}</div>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  {% for ur in u.roles %}
+                    {% if ur.rol.nombre == 'superusuario' %}
+                      <span class="badge-lib" style="background: rgba(188,140,255,0.15); color: var(--accent-purple); border: 1px solid rgba(188,140,255,0.3);">Superusuario</span>
+                    {% elif ur.rol.nombre == 'instructor' %}
+                      <span class="badge-lib badge-green">Instructor</span>
+                    {% elif ur.rol.nombre == 'aprendiz' %}
+                      <span class="badge-lib badge-cyan">Aprendiz</span>
+                    {% else %}
+                      <span class="badge-lib badge-gray">{{ ur.rol.nombre }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted small fst-italic">Sin rol</span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td>
+                {% if u.estado %}
+                  <span class="badge-lib badge-green"><i class="bi bi-check me-1"></i> Activo</span>
+                {% else %}
+                  <span class="badge-lib badge-red"><i class="bi bi-x me-1"></i> Inactivo</span>
+                {% endif %}
+              </td>
+              <td>
+                 <div class="d-flex justify-content-end gap-2">
+                   <button type="button" class="btn btn-sm btn-ghost text-primary border-primary" data-bs-toggle="modal" data-bs-target="#modalEditarUsuario{{ u.id_usuario }}" title="Editar usuario">
+                     <i class="bi bi-pencil-square"></i> Editar
+                   </button>
+                   <form method="POST" action="{{ url_for('admin.toggle_usuario', id_usuario=u.id_usuario) }}" class="m-0">
+                     {% if current_user.id_usuario != u.id_usuario %}
+                       {% if u.estado %}
+                        <button type="submit" class="btn btn-sm btn-ghost text-danger border-danger" title="Desactivar acceso" onclick="return confirm('¿Desactivar al usuario {{ u.correo }}?');">
+                           <i class="bi bi-lock-fill"></i> Bloquear
+                        </button>
+                       {% else %}
+                        <button type="submit" class="btn btn-sm btn-ghost text-success border-success" title="Reactivar acceso">
+                           <i class="bi bi-unlock-fill"></i> Desbloquear
+                        </button>
+                       {% endif %}
+                     {% else %}
+                        <button type="button" class="btn btn-sm btn-secondary" disabled title="No puedes bloquearte a ti mismo">Tú</button>
+                     {% endif %}
+                   </form>
+                 </div>
+              </td>
+            </tr>
+           {% else %}
+            <tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-search fs-1 opacity-50 d-block mb-3"></i>No se encontraron usuarios.</td></tr>
+           {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear Usuario (Creation Form) -->
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form action="{{ url_for('admin.crear_usuario') }}" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-plus text-primary me-2"></i> Crear Nuevo Usuario Activo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+           <div class="row gx-3">
+             <div class="col-md-6 mb-3">
+               <label class="form-label" for="nombres">Nombres <span class="text-danger">*</span></label>
+               <input class="form-control" type="text" id="nombres" name="nombres" required>
+             </div>
+             <div class="col-md-6 mb-3">
+               <label class="form-label" for="apellidos">Apellidos <span class="text-danger">*</span></label>
+               <input class="form-control" type="text" id="apellidos" name="apellidos" required>
+             </div>
+           </div>
+           
+           <div class="row gx-3">
+             <div class="col-md-6 mb-3">
+               <label class="form-label" for="correo">Correo Electrónico <span class="text-danger">*</span></label>
+               <div class="input-icon-wrap">
+                 <i class="bi bi-envelope"></i>
+                 <input type="email" class="form-control" id="correo" name="correo" required>
+               </div>
+             </div>
+             <div class="col-md-6 mb-3">
+               <label class="form-label" for="password">Contraseña Base <span class="text-danger">*</span></label>
+               <div class="input-icon-wrap">
+                 <i class="bi bi-lock"></i>
+                 <input type="password" class="form-control" id="password" name="password" minlength="6" required>
+               </div>
+               <small class="text-muted">Proporciona esta clave provisoria al usuario.</small>
+             </div>
+           </div>
+
+           <div class="lib-divider"></div>
+
+           <div class="mb-3">
+             <label class="form-label" for="id_rol">Asignar Rol Inicial</label>
+             <select class="form-select" id="id_rol" name="id_rol">
+               <option value="" selected>Crear sin rol (se asignará después)</option>
+               {% for r in roles %}
+                  <option value="{{ r.id_rol }}">{{ r.nombre | capitalize }}</option>
+               {% endfor %}
+             </select>
+             <small class="text-info mt-1 d-block"><i class="bi bi-info-circle"></i> Si seleccionas Aprendiz o Instructor, se creará el perfil interno automáticamente para ese rol.</small>
+           </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Crear y Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% for u in usuarios %}
+<!-- Modal Editar Usuario {{ u.id_usuario }} -->
+<div class="modal fade" id="modalEditarUsuario{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form action="{{ url_for('admin.editar_usuario', id_usuario=u.id_usuario) }}" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil-square text-primary me-2"></i> Editar Usuario: {{ u.nombres }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+           <div class="row gx-3">
+             <div class="col-md-6 mb-3">
+               <label class="form-label">Nombres <span class="text-danger">*</span></label>
+               <input class="form-control" type="text" name="nombres" value="{{ u.nombres }}" required>
+             </div>
+             <div class="col-md-6 mb-3">
+               <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+               <input class="form-control" type="text" name="apellidos" value="{{ u.apellidos }}" required>
+             </div>
+           </div>
+           
+           <div class="row gx-3">
+             <div class="col-md-6 mb-3">
+               <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+               <div class="input-icon-wrap">
+                 <i class="bi bi-envelope"></i>
+                 <input type="email" class="form-control" name="correo" value="{{ u.correo }}" required>
+               </div>
+             </div>
+             <div class="col-md-6 mb-3">
+               <label class="form-label">Teléfono</label>
+               <div class="input-icon-wrap">
+                 <i class="bi bi-telephone"></i>
+                 <input type="text" class="form-control" name="telefono" value="{{ u.telefono or '' }}">
+               </div>
+             </div>
+           </div>
+
+           <div class="lib-divider"></div>
+
+           <div class="mb-3">
+             <label class="form-label">Nueva Contraseña (Opcional)</label>
+             <div class="input-icon-wrap">
+               <i class="bi bi-lock"></i>
+               <input type="password" class="form-control" name="password" minlength="6" placeholder="Dejar en blanco para no cambiarla">
+             </div>
+             <small class="text-muted">Si ingresas una contraseña aquí, sobrescribirá la actual.</small>
+           </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('#pills-tab-roles .nav-link');
+    const rows = document.querySelectorAll('.user-row');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Remove active from all tabs
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.style.background = '';
+                t.style.color = '';
+            });
+            // Add active to current
+            this.classList.add('active');
+
+            const filter = this.getAttribute('data-filter');
+
+            rows.forEach(row => {
+                const rolesData = row.getAttribute('data-roles').trim();
+                const roles = rolesData ? rolesData.split(' ') : [];
+                
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else if (filter === 'none') {
+                    if (roles.length === 0) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                } else {
+                    if (roles.includes(filter)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+
+{% endblock %}

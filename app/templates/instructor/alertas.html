@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Enviar Alertas — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-send text-warning me-2"></i>Envío de Alertas y Notificaciones</h2>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="biblioteca-shell">
+      <div class="biblioteca-shell-header">
+         <div class="shell-header-icon" style="background: rgba(210,153,34,0.15); color: var(--accent-amber);"><i class="bi bi-chat-text"></i></div>
+         <h4>Redactar Mensaje</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+        
+        <form method="POST" action="{{ url_for('instructor.alertas') }}">
+          <div class="mb-4">
+             <label class="form-label text-muted fw-bold">Destinatario <span class="text-danger">*</span></label>
+             <select name="destino" id="destino" class="form-select bg-dark text-white" required>
+               <option value="" disabled selected>Selecciona el destinatario...</option>
+               <option value="todos" class="fw-bold text-warning">¡Transmitir a TODOS mis aprendices!</option>
+               <hr>
+               {% for ap in aprendices %}
+                  <option value="{{ ap.usuario.id_usuario }}">{{ ap.usuario.nombres }} {{ ap.usuario.apellidos }} (Ficha: {{ ap.ficha or 'N/A' }})</option>
+               {% endfor %}
+             </select>
+          </div>
+
+          <div class="mb-4">
+             <label class="form-label text-muted fw-bold">Cuerpo de la Alerta <span class="text-danger">*</span></label>
+             <textarea name="mensaje" id="mensaje" rows="6" class="form-control bg-dark text-white" placeholder="Escribe el mensaje o recordatorio para el/los aprendices..." required></textarea>
+             <div class="form-text text-muted small mt-2">
+              <i class="bi bi-info-circle me-1"></i> La alerta aparecerá en la sección "Notificaciones" del aprendiz seleccionado.
+             </div>
+          </div>
+
+          <div class="d-flex justify-content-end">
+             <button type="submit" class="btn btn-warning text-dark px-4 fw-bold">
+               <i class="bi bi-send-fill me-2"></i> Enviar Alerta
+             </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+    
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Mi Información — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-person-lines-fill text-primary me-2"></i>Mi Información Personal</h2>
+</div>
+
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="biblioteca-shell">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon"><i class="bi bi-person"></i></div>
+        <h4>Actualizar Perfil</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+        
+        <form method="POST" action="{{ url_for('aprendiz.informacion') }}">
+          <!-- Static fields -->
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <label class="form-label text-muted">Nombre Completo</label>
+              <input type="text" class="form-control bg-dark text-muted" value="{{ usuario.nombres }} {{ usuario.apellidos }}" disabled>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Documento</label>
+              <input type="text" class="form-control bg-dark text-muted" value="{{ usuario.tipo_documento }} {{ usuario.numero_documento }}" disabled>
+            </div>
+          </div>
+          <div class="mb-3">
+             <label class="form-label text-muted">Correo Electrónico (SENA)</label>
+             <input type="email" class="form-control bg-dark text-muted" value="{{ usuario.correo }}" disabled>
+          </div>
+
+          <div class="lib-divider"></div>
+          <h5 class="fs-6 fw-bold mb-3">Datos Actualizables</h5>
+
+          <!-- Editable fields -->
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <label class="form-label" for="telefono">Teléfono <i class="bi bi-pencil-fill text-muted ms-1" style="font-size: 0.75rem;"></i></label>
+              <input type="text" class="form-control" id="telefono" name="telefono" value="{{ usuario.telefono or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="ficha">Número de Ficha <i class="bi bi-pencil-fill text-muted ms-1" style="font-size: 0.75rem;"></i></label>
+              <input type="text" class="form-control" id="ficha" name="ficha" value="{{ aprendiz.ficha if aprendiz and aprendiz.ficha else '' }}">
+            </div>
+          </div>
+
+          <div class="lib-divider"></div>
+          <h5 class="fs-6 fw-bold mb-3">Información de Empresa Asignada</h5>
+          
+          <div class="p-3 mb-4 rounded" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-muted);">
+            {% if aprendiz and aprendiz.empresa %}
+              <div class="row">
+                <div class="col-sm-6 mb-2">
+                  <span class="d-block text-muted small">Nombre de Empresa</span>
+                  <span class="fw-medium text-primary">{{ aprendiz.empresa.nombre }}</span>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <span class="d-block text-muted small">NIT</span>
+                  <span class="fw-medium">{{ aprendiz.empresa.nit or 'No registrado' }}</span>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <span class="d-block text-muted small">Persona Contacto</span>
+                  <span class="fw-medium">{{ aprendiz.empresa.persona_contacto or 'No registrado' }}</span>
+                </div>
+                <div class="col-sm-6 mb-2">
+                  <span class="d-block text-muted small">Teléfono / Correo</span>
+                  <span class="fw-medium">{{ aprendiz.empresa.telefono or '--' }} / {{ aprendiz.empresa.contacto or '--' }}</span>
+                </div>
+              </div>
+            {% else %}
+              <p class="text-muted small m-0 fst-italic"><i class="bi bi-info-circle me-1"></i> Aún no se te ha asignado una empresa para tus prácticas. Contacta a tu instructor.</p>
+            {% endif %}
+          </div>
+          
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-success px-4" type="submit">
+              <i class="bi bi-save"></i> Guardar Cambios
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

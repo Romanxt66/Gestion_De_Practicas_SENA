@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Backup y Exportación — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-cloud-download text-primary me-2"></i>Exportación de Datos / Copias de Seguridad</h2>
+</div>
+
+<div class="row mb-5">
+   <div class="col-12">
+     <div class="alert alert-info border border-info d-flex align-items-center mb-0 px-4 py-3 pb-3" style="background: rgba(88,166,255,0.05);">
+        <i class="bi bi-info-circle-fill fs-3 me-3 text-info"></i>
+        <div class="text-secondary" style="font-size: 0.9rem;">
+           <strong>Aviso del Sistema:</strong> 
+           Generar exportaciones pesadas puede tardar unos segundos. Estos reportes en Excel sirven como respaldo offline y pueden ser procesados externamente en las coordinaciones para evaluación de las métricas. Se requiere el paquete <code>openpyxl</code> en el entorno de Python.
+        </div>
+     </div>
+   </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Export Aprendices -->
+  <div class="col-md-3 mt-0">
+    <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-cyan); transition: transform 0.2s;">
+      <div class="lib-card-body pb-0">
+        <i class="bi bi-person-lines-fill text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
+        <h5 class="fw-bold mb-1 text-primary">Aprendices</h5>
+        <p class="text-muted small mb-4">Exporta el consolidado de aprendices, horas requeridas, cumplidas, y la empresa vinculada.</p>
+        <div class="fw-bold fs-3 text-white mb-2">{{ aprendices|length }} <span class="fs-6 fw-normal text-muted">registros</span></div>
+      </div>
+      <a href="{{ url_for('admin.exportar_excel', tipo='aprendices') }}" class="btn btn-outline-info w-75 mx-auto d-block">
+        <i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel
+      </a>
+    </div>
+  </div>
+
+  <!-- Export Instructores -->
+  <div class="col-md-3 mt-0">
+    <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-green); transition: transform 0.2s;">
+      <div class="lib-card-body pb-0">
+        <i class="bi bi-person-badge text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
+        <h5 class="fw-bold mb-1 text-primary">Instructores</h5>
+        <p class="text-muted small mb-4">Descarga el padrón oficial de instructores y las áreas de capacitación correspondientes.</p>
+        <div class="fw-bold fs-3 text-white mb-2">{{ instructores|length }} <span class="fs-6 fw-normal text-muted">registros</span></div>
+      </div>
+      <a href="{{ url_for('admin.exportar_excel', tipo='instructores') }}" class="btn btn-outline-success w-75 mx-auto d-block">
+        <i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel
+      </a>
+    </div>
+  </div>
+
+  <!-- Export Empresas -->
+  <div class="col-md-3 mt-0">
+    <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-amber); transition: transform 0.2s;">
+      <div class="lib-card-body pb-0">
+        <i class="bi bi-buildings text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
+        <h5 class="fw-bold mb-1 text-primary">Empresas</h5>
+        <p class="text-muted small mb-4">Obtén la base de datos centralizada de empresas e información de contacto vinculada.</p>
+        <div class="fw-bold fs-3 text-white mb-2">{{ empresas|length }} <span class="fs-6 fw-normal text-muted">registros</span></div>
+      </div>
+      <a href="{{ url_for('admin.exportar_excel', tipo='empresas') }}" class="btn btn-outline-warning w-75 mx-auto d-block">
+        <i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel
+      </a>
+    </div>
+  </div>
+
+  <!-- Export Historial/Auditoría -->
+  <div class="col-md-3 mt-0">
+    <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-purple); transition: transform 0.2s;">
+      <div class="lib-card-body pb-0">
+        <i class="bi bi-clock-history text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
+        <h5 class="fw-bold mb-1 text-primary">Auditoría Total</h5>
+        <p class="text-muted small mb-4">Exporta en un archivo maestro toda la trazabilidad de operaciones del sistema (Logs).</p>
+        <div class="fs-6 text-white mb-2 py-1"><i class="bi bi-infinity text-muted"></i> Dinámico</div>
+      </div>
+      <a href="{{ url_for('admin.exportar_excel', tipo='historial') }}" class="btn btn-outline-primary w-75 mx-auto d-block" style="color: var(--accent-purple); border-color: rgba(188,140,255,0.4);">
+        <i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

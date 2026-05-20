@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Instructor — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">Panel Central — Instructor</h2>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Tarjeta Mis Aprendices -->
+  <div class="col-md-4">
+    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-cyan);">
+      <div class="lib-card-body d-flex flex-column justify-content-between">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0">Total Aprendices</div>
+          <div class="shell-header-icon" style="background: var(--accent-cyan-glow); color: var(--accent-cyan);"><i class="bi bi-people-fill"></i></div>
+        </div>
+        <h3 style="font-size: 2.5rem; font-weight: 700; margin: 0;">{{ total_aprendices }}</h3>
+        <p class="text-secondary small mt-1">Matriculados en tus cursos</p>
+        <a href="{{ url_for('instructor.aprendices') }}" class="btn btn-ghost btn-sm mt-3 border-secondary">Administrar Aprendices <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjeta Evidencias Pendientes -->
+  <div class="col-md-4">
+    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-amber);">
+      <div class="lib-card-body d-flex flex-column justify-content-between">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0">Evidencias Pendientes</div>
+          <div class="shell-header-icon" style="color: var(--accent-amber); background: rgba(210,153,34,0.15); border-color: rgba(210,153,34,0.3);"><i class="bi bi-journal-check"></i></div>
+        </div>
+        <h3 id="ev-count" style="font-size: 2.5rem; font-weight: 700; margin: 0;">{{ evidencias_pendientes }}</h3>
+        <script>document.getElementById('ev-count').style.color = "{{ 'var(--accent-amber)' if evidencias_pendientes > 0 else 'var(--text-primary)' }}";</script>
+        <p class="text-secondary small mt-1">Pendientes de tu revisión</p>
+        <a href="{{ url_for('instructor.revisar_evidencias') }}" class="btn btn-ghost btn-sm mt-3 border-secondary">Revisar Evidencias <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjeta Progreso General -->
+  <div class="col-md-4">
+    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-green);">
+      <div class="lib-card-body d-flex flex-column justify-content-between">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0">Progreso General</div>
+          <div class="shell-header-icon" style="color: var(--accent-green); background: var(--accent-green-glow); border-color: rgba(63,185,80,0.3);"><i class="bi bi-graph-up"></i></div>
+        </div>
+        <h3 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: var(--accent-green);">{{ progreso_general }}%</h3>
+        <div class="progress mt-2" style="height: 8px;">
+          <div class="progress-bar bg-success" id="progreso-bar" role="progressbar"></div>
+        </div>
+        <script>document.getElementById('progreso-bar').style.width = "{{ progreso_general }}%";</script>
+        <p class="text-secondary small mt-2">Promedio de tus aprendices</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla de Fichas/Cursos -->
+{% if fichas_data %}
+<div class="biblioteca-shell mb-4">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-book"></i></div>
+    <h4>Mis Fichas / Cursos Asignados</h4>
+  </div>
+  <div class="biblioteca-shell-body">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 40%;">Nombre de Ficha</th>
+            <th style="width: 15%;" class="text-center">Aprendices</th>
+            <th style="width: 20%;" class="text-center">Evidencias Pendientes</th>
+            <th style="width: 25%;" class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ficha in fichas_data %}
+          <tr>
+            <td>
+              <strong style="color: var(--accent-cyan);">{{ ficha.curso.nombre }}</strong>
+              {% if ficha.curso.ficha %}
+              <br><small class="text-muted">Código: {{ ficha.curso.ficha }}</small>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <span class="badge badge-lib badge-cyan" style="font-size: 0.9rem; padding: 0.4rem 0.6rem;">
+                {{ ficha.aprendices_count }}
+              </span>
+            </td>
+            <td class="text-center">
+              {% if ficha.evidencias_pendientes > 0 %}
+              <span class="badge badge-lib badge-amber" style="font-size: 0.9rem; padding: 0.4rem 0.6rem;">
+                <i class="bi bi-exclamation-circle-fill me-1"></i>{{ ficha.evidencias_pendientes }}
+              </span>
+              {% else %}
+              <span class="text-success"><i class="bi bi-check-circle-fill"></i> Al día</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{{ url_for('instructor.ficha_detalle', id_curso=ficha.curso.id_curso) }}" 
+                 class="btn btn-ghost btn-sm border-secondary">
+                <i class="bi bi-eye"></i> Ver Detalle
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-md-6">
+     <div class="biblioteca-shell h-100">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon"><i class="bi bi-person-badge"></i></div>
+        <h4>Mi Perfil de Instructor</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+         <ul class="list-group list-group-flush" style="border-radius: var(--radius-sm); border: 1px solid var(--border-default);">
+           <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
+             <span class="text-muted small">Nombre</span>
+             <span class="fw-medium">{{ instructor.usuario.nombres }} {{ instructor.usuario.apellidos }}</span>
+           </li>
+           <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
+             <span class="text-muted small">Correo Electrónico</span>
+             <span class="fw-medium">{{ instructor.usuario.correo }}</span>
+           </li>
+           <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
+             <span class="text-muted small">Área de Formación</span>
+             <span class="fw-medium">{{ instructor.area_formacion if instructor and instructor.area_formacion else 'No especificada' }}</span>
+           </li>
+           <li class="list-group-item bg-dark d-flex justify-content-between align-items-center">
+             <span class="text-muted small">Estado Sistema</span>
+             {% if instructor and instructor.activo %}
+                <span class="badge-lib badge-green"><i class="bi bi-check-circle-fill me-1"></i> Activo</span>
+             {% else %}
+                <span class="badge-lib badge-red"><i class="bi bi-x-circle-fill me-1"></i> Inactivo</span>
+             {% endif %}
+           </li>
+         </ul>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="biblioteca-shell h-100">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon" style="background: rgba(188,140,255,0.15); color: var(--accent-purple); border-color: rgba(188,140,255,0.3);"><i class="bi bi-lightning-charge"></i></div>
+        <h4>Acciones Rápidas</h4>
+      </div>
+      <div class="biblioteca-shell-body d-flex flex-column gap-3">
+        <a href="{{ url_for('instructor.fichas') }}" class="btn btn-outline-success text-start p-3 d-flex align-items-center" style="border-color: rgba(63,185,80,0.4); color: var(--accent-green) !important;">
+          <i class="bi bi-book-fill fs-4 me-3"></i>
+          <div>
+            <strong class="d-block mb-1">Gestionar Fichas</strong>
+            <small class="text-muted" style="color: rgba(255,255,255,0.5) !important;">Ver detalle de tus fichas</small>
+          </div>
+        </a>
+        <a href="{{ url_for('instructor.alertas') }}" class="btn btn-outline-warning text-start p-3 d-flex align-items-center" style="border-color: rgba(210,153,34,0.4); color: #F0C040 !important;">
+          <i class="bi bi-send fs-4 me-3"></i>
+          <div>
+            <strong class="d-block mb-1">Enviar Alerta</strong>
+            <small class="text-muted" style="color: rgba(255,255,255,0.5) !important;">Notificar a tus aprendices</small>
+          </div>
+        </a>
+        <a href="{{ url_for('instructor.reportes') }}" class="btn btn-outline-info text-start p-3 d-flex align-items-center" style="border-color: rgba(88,166,255,0.4); color: var(--accent-cyan) !important;">
+          <i class="bi bi-file-earmark-bar-graph fs-4 me-3"></i>
+          <div>
+            <strong class="d-block mb-1">Ver Reportes</strong>
+            <small class="text-muted" style="color: rgba(255,255,255,0.5) !important;">Resumen de horas y bitácoras</small>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

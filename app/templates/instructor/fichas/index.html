@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Mis Fichas — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar d-flex justify-content-between align-items-center">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">Gestión de Fichas / Cursos</h2>
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
+    <i class="bi bi-plus-circle"></i> Nueva Ficha
+  </button>
+</div>
+
+<!-- Búsqueda -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <form method="get" class="d-flex gap-2">
+      <input type="text" name="q" class="form-control" placeholder="Buscar ficha por nombre..." value="{{ q }}">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-search"></i> Buscar
+      </button>
+      {% if q %}
+      <a href="{{ url_for('instructor.fichas') }}" class="btn btn-outline-secondary">Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Tabla de Fichas -->
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-book"></i></div>
+    <h4>Fichas Asignadas</h4>
+  </div>
+  <div class="biblioteca-shell-body">
+    {% if fichas_data %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 40%;">Nombre de Ficha</th>
+            <th style="width: 15%;" class="text-center">Aprendices</th>
+            <th style="width: 20%;" class="text-center">Evidencias Pendientes</th>
+            <th style="width: 25%;" class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ficha in fichas_data %}
+          <tr>
+            <td>
+              <strong style="color: var(--accent-cyan);">{{ ficha.curso.nombre }}</strong>
+              {% if ficha.curso.ficha %}
+              <br><small class="text-muted">Código: {{ ficha.curso.ficha }}</small>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <span class="badge badge-lib badge-cyan" style="font-size: 1rem; padding: 0.5rem 0.75rem;">
+                {{ ficha.aprendices_count }}
+              </span>
+            </td>
+            <td class="text-center">
+              {% if ficha.evidencias_pendientes > 0 %}
+              <span class="badge badge-lib badge-amber" style="font-size: 1rem; padding: 0.5rem 0.75rem;">
+                <i class="bi bi-exclamation-circle-fill me-1"></i>{{ ficha.evidencias_pendientes }}
+              </span>
+              {% else %}
+              <span class="text-success"><i class="bi bi-check-circle-fill"></i> Al día</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{{ url_for('instructor.ficha_detalle', id_curso=ficha.curso.id_curso) }}" 
+                 class="btn btn-ghost btn-sm border-secondary">
+                <i class="bi bi-eye"></i> Ver Detalle
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+      <p class="text-muted mb-0">
+        <i class="bi bi-inbox" style="font-size: 2rem; color: var(--text-muted);"></i><br>
+        No tienes fichas asignadas
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal Crear Ficha -->
+<div class="modal fade" id="modalCrearFicha" tabindex="-1" aria-labelledby="modalCrearFichaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: var(--surface-light); border-color: var(--border-color);">
+      <form action="{{ url_for('instructor.crear_ficha') }}" method="POST">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title" id="modalCrearFichaLabel"><i class="bi bi-journal-plus text-success me-2"></i> Crear Nueva Ficha</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="nombre_ficha_nueva">Nombre de la Ficha <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="nombre_ficha_nueva" name="nombre" placeholder="Ej: Desarrollo de Software" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="codigo_ficha_nueva">Código de Ficha (Course ID) <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="codigo_ficha_nueva" name="ficha" placeholder="Ej: 2456789" required>
+            <small class="text-muted">Los aprendices usarán este código para matricularse automáticamente en el registro.</small>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="fecha_inicio_nueva">Fecha de Inicio</label>
+              <input type="date" class="form-control" id="fecha_inicio_nueva" name="fecha_inicio">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="fecha_fin_nueva">Fecha de Fin</label>
+              <input type="date" class="form-control" id="fecha_fin_nueva" name="fecha_fin">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Guardar Ficha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

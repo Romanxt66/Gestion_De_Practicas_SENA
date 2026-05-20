@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Mi Progreso — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-graph-up text-primary me-2"></i>Mi Progreso</h2>
+</div>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="biblioteca-shell">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon" style="background: var(--accent-cyan-glow); color: var(--accent-cyan);"><i class="bi bi-clock"></i></div>
+        <h4>Progreso de Horas de Práctica</h4>
+      </div>
+      <div class="biblioteca-shell-body text-center p-5">
+        <h2 style="font-size: 4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0;">{{ pct }}%</h2>
+        <p class="text-secondary mb-4">Completado</p>
+        
+        <div class="progress" style="height: 16px; max-width: 600px; margin: 0 auto; background: var(--bg-hover);">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+               style="width: {{ pct }}%; background: linear-gradient(90deg, #1a73e8, var(--accent-cyan));" 
+               aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-5 mt-4">
+          <div>
+            <span class="d-block text-muted small text-uppercase">Horas Completadas</span>
+            <span class="fs-4 fw-bold text-success">{{ aprendiz.horas_cumplidas if aprendiz else 0 }} h</span>
+          </div>
+          <div>
+            <span class="d-block text-muted small text-uppercase">Horas Requeridas</span>
+            <span class="fs-4 fw-bold text-primary">{{ aprendiz.horas_requeridas if aprendiz else 0 }} h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600;">Progreso por Módulo/Curso</h3>
+<div class="row g-4">
+  {% if progreso_cursos %}
+    {% for prog in progreso_cursos %}
+    <div class="col-md-6">
+      <div class="lib-card">
+        <div class="lib-card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <strong class="text-primary">{{ prog.curso.nombre }}</strong>
+            <span>{{ prog.porcentaje }}%</span>
+          </div>
+          <div class="progress mb-2" style="height: 6px; background: var(--bg-hover);">
+            <div class="progress-bar" role="progressbar" style="width: {{ prog.porcentaje }}%; background: var(--accent-cyan);"></div>
+          </div>
+          <div class="text-muted small text-end">
+            Última actualización: {{ prog.ultima_actualizacion.strftime('%Y-%m-%d') if prog.ultima_actualizacion else 'N/A' }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="col-12">
+      <div class="empty-state p-4 lib-card w-100">
+        <i class="bi bi-journal-x"></i>
+        <p>No estás inscrito en ningún curso o programa en este momento.</p>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

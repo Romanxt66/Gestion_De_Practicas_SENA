@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}{{ curso.nombre }} — Detalle Ficha — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">{{ curso.nombre }}</h2>
+      <small class="text-muted">
+        <a href="{{ url_for('admin.fichas') }}" class="text-decoration-none">← Volver a Fichas</a>
+      </small>
+    </div>
+  </div>
+</div>
+
+<!-- Información de la Ficha -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="lib-card">
+      <div class="lib-card-body">
+        <div class="text-muted small text-uppercase mb-2">Total Aprendices</div>
+        <h3 style="font-size: 2rem; margin: 0;">{{ aprendices_data | length }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="lib-card">
+      <div class="lib-card-body">
+        <div class="text-muted small text-uppercase mb-2">Evidencias Pendientes</div>
+        <h3 style="font-size: 2rem; margin: 0; color: var(--accent-amber);">
+          {% set total_ev = namespace(count=0) %}
+          {% for item in aprendices_data %}
+            {% set total_ev.count = total_ev.count + item.evidencias|length %}
+          {% endfor %}
+          {{ total_ev.count }}
+        </h3>
+      </div>
+    </div>
+  </div>
+  {% if curso.fecha_inicio %}
+  <div class="col-md-3">
+    <div class="lib-card">
+      <div class="lib-card-body">
+        <div class="text-muted small text-uppercase mb-2">Inicio</div>
+        <p class="mb-0">{{ curso.fecha_inicio.strftime('%d/%m/%Y') }}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if curso.fecha_fin %}
+  <div class="col-md-3">
+    <div class="lib-card">
+      <div class="lib-card-body">
+        <div class="text-muted small text-uppercase mb-2">Fin</div>
+        <p class="mb-0">{{ curso.fecha_fin.strftime('%d/%m/%Y') }}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Sección de Aprendices -->
+<div class="biblioteca-shell mb-4">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-people-fill"></i></div>
+    <h4>Aprendices en esta Ficha</h4>
+  </div>
+  <div class="biblioteca-shell-body">
+    {% if aprendices_data %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nombre</th>
+            <th>Empresa</th>
+            <th>Horas</th>
+            <th class="text-center">Progreso</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in aprendices_data %}
+          <tr>
+            <td>
+              <strong>{{ item.aprendiz.usuario.nombres }} {{ item.aprendiz.usuario.apellidos }}</strong>
+              <br><small class="text-muted">{{ item.aprendiz.usuario.correo }}</small>
+            </td>
+            <td>
+              {% if item.aprendiz.empresa %}
+                {{ item.aprendiz.empresa.nombre }}
+              {% else %}
+                <span class="text-muted">Sin asignar</span>
+              {% endif %}
+            </td>
+            <td>
+              <small>{{ item.horas_cumplidas or 0 }}/{{ item.horas_requeridas or 0 }} h</small>
+            </td>
+            <td class="text-center">
+              <div style="width: 150px; margin: 0 auto;">
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar bg-success" id="pb-{{ loop.index }}" role="progressbar">
+                    <small style="font-size: 0.75rem;">{{ item.progreso }}%</small>
+                  </div>
+                </div>
+              </div>
+              <script>document.getElementById("pb-{{ loop.index }}").style.width = "{{ item.progreso }}%";</script>
+            </td>
+            <td>
+              {% if item.aprendiz.estado_practica == 'En proceso' %}
+                <span class="badge-lib badge-green"><i class="bi bi-play-circle"></i> En proceso</span>
+              {% elif item.aprendiz.estado_practica == 'Completado' %}
+                <span class="badge-lib badge-blue"><i class="bi bi-check-circle"></i> Completado</span>
+              {% else %}
+                <span class="badge-lib badge-amber"><i class="bi bi-question-circle"></i> {{ item.aprendiz.estado_practica }}</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <form action="{{ url_for('admin.remover_aprendiz_ficha', id_curso=curso.id_curso, id_aprendiz=item.aprendiz.id_aprendiz) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas remover a este aprendiz de la ficha?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remover de la Ficha">
+                  <i class="bi bi-person-x"></i> Remover
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+      <p class="text-muted mb-0">No hay aprendices en esta ficha</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Sección de Evidencias -->
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon" style="color: var(--accent-amber); background: rgba(210,153,34,0.15);"><i class="bi bi-journal-check"></i></div>
+    <h4>Evidencias de la Ficha</h4>
+  </div>
+  <div class="biblioteca-shell-body">
+    {% set todas_evidencias = [] %}
+    {% for item in aprendices_data %}
+      {% for ev in item.evidencias %}
+        {% set _ = todas_evidencias.append((ev, item.aprendiz)) %}
+      {% endfor %}
+    {% endfor %}
+    
+    {% if todas_evidencias %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Aprendiz</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev, aprendiz in todas_evidencias | sort(attribute='0.fecha_entrega', reverse=True) %}
+          <tr>
+            <td>
+              <strong>{{ aprendiz.usuario.nombres }}</strong>
+            </td>
+            <td>
+              {% if 'uploads/' in ev.contenido %}
+                <span class="badge bg-secondary"><i class="bi bi-file"></i> Archivo</span>
+              {% elif ev.contenido.startswith('http') %}
+                <span class="badge bg-info"><i class="bi bi-link-45deg"></i> Enlace</span>
+              {% else %}
+                <span class="badge bg-warning"><i class="bi bi-file-text"></i> Texto</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if ev.estado == 'Entregada' %}
+                <span class="badge-lib badge-amber"><i class="bi bi-inbox"></i> Entregada</span>
+              {% elif ev.estado == 'Aprobada' %}
+                <span class="badge-lib badge-green"><i class="bi bi-check-circle"></i> Aprobada</span>
+              {% elif ev.estado == 'No Aprobada' %}
+                <span class="badge-lib badge-red"><i class="bi bi-x-circle"></i> No Aprobada</span>
+              {% else %}
+                <span class="badge-lib badge-blue"><i class="bi bi-eye"></i> Revisada</span>
+              {% endif %}
+            </td>
+            <td>
+              <small>{{ ev.fecha_entrega.strftime('%d/%m/%Y %H:%M') }}</small>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+      <p class="text-muted mb-0">No hay evidencias en esta ficha todavía.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

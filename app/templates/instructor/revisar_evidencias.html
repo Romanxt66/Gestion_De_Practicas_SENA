@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Revisar Evidencias — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-journal-check text-primary me-2"></i>Revisión de Evidencias</h2>
+</div>
+
+<div class="biblioteca-shell mb-4">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon bg-dark text-white border-secondary"><i class="bi bi-funnel"></i></div>
+    <h4>Filtros</h4>
+  </div>
+  <div class="biblioteca-shell-body py-3">
+    <form method="GET" action="{{ url_for('instructor.revisar_evidencias') }}" class="d-flex align-items-center gap-3 flex-wrap">
+      <div class="d-flex align-items-center gap-2">
+        <label for="estado" class="form-label m-0 text-muted fw-bold">Estado:</label>
+        <select name="estado" id="estado" class="form-select form-select-sm" style="width: 200px;" onchange="this.form.submit()">
+          <option value="Entregada" {% if estado_filtro == 'Entregada' %}selected{% endif %}>Entregadas (Pendientes)</option>
+          <option value="Aprobada" {% if estado_filtro == 'Aprobada' %}selected{% endif %}>Aprobadas</option>
+          <option value="No Aprobada" {% if estado_filtro == 'No Aprobada' %}selected{% endif %}>No Aprobadas (Rechazadas)</option>
+        </select>
+      </div>
+      <div class="ms-auto text-muted small">
+        Mostrando {{ evidencias|length }} evidencias.
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-folder2-open"></i></div>
+    <h4>Evidencias de Aprendices</h4>
+  </div>
+  <div class="biblioteca-shell-body p-0">
+    {% if evidencias %}
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Aprendiz / Ficha</th>
+            <th>Tipo / Fecha</th>
+            <th>Contenido Evidencia</th>
+            <th>Estado</th>
+            {% if estado_filtro == 'Entregada' %}
+            <th class="text-end">Evaluar</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in evidencias %}
+          <tr>
+            <td>#{{ ev.id_evidencia }}</td>
+            <td>
+              <div class="fw-medium text-primary">{{ ev.aprendiz.usuario.nombres }} {{ ev.aprendiz.usuario.apellidos }}</div>
+              <div class="small text-muted">Ficha: {{ ev.aprendiz.ficha or 'N/A' }}</div>
+            </td>
+            <td>
+              <div>
+                {% if ev.tipo == 'archivo' %}<span class="badge-lib badge-gray mb-1"><i class="bi bi-file-earmark-arrow-down me-1"></i> Archivo</span>
+                {% elif ev.tipo == 'enlace' %}<span class="badge-lib badge-gray mb-1"><i class="bi bi-link-45deg me-1"></i> Enlace</span>
+                {% else %}<span class="badge-lib badge-gray mb-1"><i class="bi bi-text-left me-1"></i> Texto</span>{% endif %}
+              </div>
+              <span class="ts-label">{{ ev.fecha_entrega.strftime('%Y-%m-%d %H:%M') if ev.fecha_entrega else 'N/A' }}</span>
+            </td>
+            <td style="max-width: 250px;">
+              {% if ev.tipo == 'enlace' %}
+                <a href="{{ ev.contenido }}" target="_blank" class="text-info text-decoration-none text-truncate d-block" title="{{ ev.contenido }}">Abrir enlace <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>
+              {% elif ev.tipo == 'archivo' %}
+                <!-- Asume que el servidor sirve los estaticos dentro de uploads -->
+                <a href="{{ url_for('static', filename=ev.contenido) }}" target="_blank" class="text-success text-decoration-none"><i class="bi bi-download me-1"></i> Descargar archivo</a>
+              {% else %}
+                <div class="text-truncate" title="{{ ev.contenido }}">{{ ev.contenido }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if ev.estado == 'Entregada' %}<span class="badge-lib badge-cyan">Pendiente Rev.</span>
+              {% elif ev.estado == 'Aprobada' %}<span class="badge-lib badge-green">Aprobada</span>
+              {% elif ev.estado == 'No Aprobada' %}<span class="badge-lib badge-red">Rechazada</span>
+              {% endif %}
+            </td>
+            {% if estado_filtro == 'Entregada' %}
+            <td>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalEvaluar{{ ev.id_evidencia }}" title="Calificar Evidencia">
+                  <i class="bi bi-ui-checks"></i> Evaluar
+                </button>
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-check2-circle text-success" style="opacity: 0.8 !important;"></i>
+      <h5 class="text-white mt-3">¡Todo al día!</h5>
+      <p>No hay evidencias en estado '{{ estado_filtro }}' en este momento.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+  {% for ev in evidencias %}
+  <!-- Modal Evaluar Evidencia -->
+  <div class="modal fade" id="modalEvaluar{{ ev.id_evidencia }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form action="{{ url_for('instructor.evaluar_evidencia', id_evidencia=ev.id_evidencia) }}" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title">Calificar Evidencia #{{ ev.id_evidencia }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted small mb-3">Aprendiz: <strong>{{ ev.aprendiz.usuario.nombres }} {{ ev.aprendiz.usuario.apellidos }}</strong></p>
+            <div class="mb-3">
+              <label class="form-label">Calificación</label>
+              <select class="form-select" name="estado" required>
+                <option value="" disabled selected>Seleccione la calificación...</option>
+                <option value="Aprobada" class="text-success fw-bold">✓ Aprobar Evidencia</option>
+                <option value="No Aprobada" class="text-danger fw-bold">✗ Rechazar Evidencia</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Comentarios / Observaciones (Opcional)</label>
+              <textarea class="form-control bg-dark text-white border-secondary" name="observaciones" rows="3" placeholder="Escribe aquí las correcciones u observaciones de la evidencia..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Evaluación</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% endblock %}

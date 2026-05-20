@@ -1,0 +1,915 @@
+/* ============================================================
+   BIBLIOTECA FLASK22 — SISTEMA DE DISEÑO SENA DARK GLASS
+   Dark Premium & Glassmorphism | v4.0 | 2026
+   ============================================================ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ── Design Tokens ── */
+:root {
+  /* Paleta adaptada al nuevo diseño Dark Glassmorphism */
+  --sena-green:       #22c55e; /* Neon Green */
+  --sena-green-dark:  #16a34a; 
+  --sena-orange:      #f59e0b; 
+  
+  /* Dark Theme Defaults */
+  --bg-base:       #0a0a0a; /* Almost Black */
+  --bg-surface:    #161616; /* Cards background */
+  --bg-elevated:   #1f1f1f; 
+  --bg-hover:      rgba(255, 255, 255, 0.05);
+
+  /* Mapping legacy variables */
+  --accent-cyan:   #38BDF8; 
+  --accent-cyan-glow: rgba(56, 189, 248, 0.15);
+  --accent-green:  #22c55e;
+  --accent-green-glow: rgba(34, 197, 94, 0.15);
+  --accent-amber:  #F59E0B;
+  --accent-red:    #ef4444;
+  --accent-red-glow:  rgba(239, 68, 68, 0.15);
+  --accent-purple: #a855f7;
+
+  /* Textos contrastantes para Dark Mode */
+  --text-primary:  #ffffff;
+  --text-secondary:#a1a1aa;
+  --text-muted:    #71717a;
+  --text-disabled: #52525b;
+
+  /* Borders / Glass Strokes */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-muted:  rgba(255, 255, 255, 0.15);
+  --border-glow:   rgba(34, 197, 94, 0.5);
+
+  /* Shadows */
+  --shadow-sm:  0 1px 2px 0 rgba(0,0,0,0.2);
+  --shadow-md:  0 4px 6px -1px rgba(0,0,0,0.3);
+  --shadow-lg:  0 10px 15px -3px rgba(0,0,0,0.4);
+  --shadow-glass: none;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+
+  /* Transitions */
+  --trans-fast: 150ms ease-in-out;
+  --trans-base: 250ms ease-in-out;
+  --trans-slow: 350ms ease;
+
+  /* Typography */
+  --font-sans:  'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ── Base Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body.biblioteca-body {
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sena-green); }
+
+/* ── Selection ── */
+::selection { background: var(--sena-green); color: #FFF; }
+
+/* ============================================================
+   NAVBAR — Dark Glassmorphism SENA
+   ============================================================ */
+.biblioteca-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background: rgba(20, 20, 20, 0.5) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 1rem 1.5rem;
+}
+
+.biblioteca-nav .nav-link {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem !important;
+  border-radius: var(--radius-md);
+  transition: all var(--trans-fast);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.biblioteca-nav .nav-link i {
+  font-size: 1.1rem;
+  margin-right: 0.8rem;
+  opacity: 0.8;
+}
+
+.biblioteca-nav .nav-link:hover,
+.biblioteca-nav .nav-link.active {
+  color: #FFF !important;
+  background: var(--bg-hover);
+}
+
+.biblioteca-nav .nav-link.active i {
+  color: #FFF;
+  opacity: 1;
+}
+
+.biblioteca-nav .nav-link.active::after {
+  display: none;
+}
+
+/* Dropdown */
+.biblioteca-nav .dropdown-menu {
+  background: rgba(22, 27, 34, 0.85) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-glass) !important;
+  padding: 0.5rem !important;
+  min-width: 180px;
+  animation: dropIn 0.2s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.biblioteca-nav .dropdown-item {
+  color: var(--text-primary) !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.5rem 0.8rem !important;
+  transition: background var(--trans-fast), color var(--trans-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.biblioteca-nav .dropdown-item:hover {
+  background: var(--bg-hover) !important;
+  color: var(--sena-green) !important;
+}
+
+.biblioteca-nav .navbar-toggler {
+  border-color: var(--border-default) !important;
+  padding: 4px 8px;
+}
+.biblioteca-nav .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* Nav badge / avatar pill */
+.nav-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 99px;
+  padding: 4px 16px 4px 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--trans-fast);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.nav-user-pill:hover {
+  border-color: var(--sena-green);
+  background: var(--bg-hover);
+  color: #FFF;
+}
+.nav-user-pill .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--sena-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111;
+}
+
+/* ============================================================
+   GLOBAL BACKGROUND FOR APP (Subtle abstract grid)
+   ============================================================ */
+body.biblioteca-body {
+  background: #0a0a0a !important;
+  position: relative;
+  z-index: 0;
+}
+
+body.biblioteca-body::before {
+  content: "";
+  position: fixed;
+  top: -5%; left: -5%; width: 110%; height: 110%;
+  background-image: url('img/fondo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(15px);
+  -webkit-filter: blur(15px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Formularios y Modales Glassmorphism */
+.modal-content {
+  background: rgba(22, 22, 22, 0.7) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+.modal-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+
+/* ============================================================
+   PAGE WRAPPER & CARD SHELL & WATERMARK (Glassmorphism)
+   ============================================================ */
+.biblioteca-shell {
+  background: rgba(22, 22, 22, 0.5) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--trans-base);
+}
+
+.biblioteca-shell:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.biblioteca-shell-header {
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--border-default);
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.biblioteca-shell-header h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FFF;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.shell-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sena-green);
+  font-size: 1.1rem;
+}
+
+.biblioteca-shell-body {
+  padding: 1.75rem;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: var(--radius-md);
+  transition: all var(--trans-fast);
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--sena-green) 0%, #0D9488 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #34D399 0%, var(--sena-green-dark) 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--sena-green) 0%, #0D9488 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.btn-success:hover {
+  background: linear-gradient(135deg, #34D399 0%, var(--sena-green-dark) 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.btn-danger {
+  background: rgba(217, 48, 37, 0.2) !important;
+  border: 1px solid rgba(217, 48, 37, 0.5) !important;
+  color: #FF7B72 !important;
+}
+.btn-danger:hover {
+  background: rgba(217, 48, 37, 0.4) !important;
+  color: #FFF !important;
+}
+
+.btn-secondary {
+  background: var(--bg-hover) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+.btn-secondary:hover {
+  background: var(--border-muted) !important;
+  color: #FFF !important;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, var(--sena-orange) 0%, #C4510D 100%) !important;
+  border: 1px solid var(--sena-orange) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 15px rgba(252,115,35,0.3);
+}
+.btn-info:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* Outline ghost variant (Legacy Support) */
+.btn-ghost {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--sena-green) !important;
+  backdrop-filter: blur(4px);
+}
+.btn-ghost:hover {
+  border-color: var(--sena-green) !important;
+  color: #111 !important;
+  background: var(--sena-green) !important;
+  box-shadow: 0 0 10px rgba(57,169,0,0.4);
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary) !important;
+  border-color: var(--border-default) !important;
+}
+.btn-outline-secondary:hover {
+  background: var(--border-default) !important;
+  color: #FFF !important;
+}
+
+
+/* ============================================================
+   FORMS (Dark Glass)
+   ============================================================ */
+.form-control, .form-select {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid var(--border-default) !important;
+  color: #FFF !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.9rem !important;
+  padding: 0.6rem 0.9rem !important;
+  transition: border-color var(--trans-base), box-shadow var(--trans-base), background var(--trans-base) !important;
+}
+
+/* Fix dropdown options readability in dark mode */
+.form-select option {
+  background-color: var(--bg-base);
+  color: #FFF;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--sena-green) !important;
+  box-shadow: 0 0 0 3px rgba(57,169,0,0.2) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  outline: none !important;
+}
+
+.form-control::placeholder { color: var(--text-disabled) !important; }
+
+.form-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+/* Input with icon wrapper */
+.input-icon-wrap {
+  position: relative;
+}
+.input-icon-wrap .bi {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  font-size: 1rem;
+  z-index: 5;
+}
+.input-icon-wrap .form-control {
+  padding-left: 2.5rem !important;
+}
+
+/* ============================================================
+   TABLE — Dark Clean
+   ============================================================ */
+.biblioteca-table, .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+  color: var(--text-primary) !important;
+  background-color: transparent !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-color: var(--text-primary) !important;
+  --bs-table-striped-bg: transparent !important;
+}
+
+.table > :not(caption) > * > * {
+  background-color: transparent !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+.table-hover tbody tr:hover > * {
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: #FFF !important;
+}
+
+.biblioteca-table thead tr, .table-light, .table-light > th, .table-light > td {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  --bs-table-bg: rgba(0, 0, 0, 0.2) !important;
+  color: var(--text-secondary) !important;
+}
+
+.biblioteca-table thead th, .table-light th {
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1rem 1.25rem;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--border-default) !important;
+  border-top: none !important;
+}
+
+.biblioteca-table tbody tr, .table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--trans-fast);
+}
+
+.biblioteca-table tbody td, .table tbody td {
+  color: var(--text-secondary);
+  padding: 1rem 1.25rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  background-color: transparent !important;
+}
+
+.biblioteca-table tbody td:first-child, .table tbody td:first-child {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tabla-acciones {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   BADGES (Neon Glass Style)
+   ============================================================ */
+.badge-lib {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.badge-cyan   { background: rgba(57,169,0,0.1); color: #75D822; border: 1px solid rgba(57,169,0,0.3); text-shadow: 0 0 5px rgba(117,216,34,0.3);} 
+.badge-green  { background: rgba(57,169,0,0.15); color: #9BFF4D; border: 1px solid rgba(57,169,0,0.4); text-shadow: 0 0 5px rgba(155,255,77,0.3);}
+.badge-red    { background: rgba(248,81,73,0.1); color: #FF7B72; border: 1px solid rgba(248,81,73,0.3); }
+.badge-amber  { background: rgba(252,115,35,0.1); color: #FFA657; border: 1px solid rgba(252,115,35,0.3); }
+.badge-gray   { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-default); }
+.badge-blue   { background: rgba(88,166,255,0.1); color: #79C0FF; border: 1px solid rgba(88,166,255,0.3); }
+
+/* ============================================================
+   MODALS — Dark Glass
+   ============================================================ */
+.modal-content {
+  background: rgba(22, 27, 34, 0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+  color: var(--text-primary) !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-default) !important;
+  background: transparent !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.modal-title {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #FFF !important;
+}
+
+.modal-body {
+  padding: 1.5rem !important;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-default) !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+.btn-close {
+  filter: invert(1) opacity(0.5); /* Make close button white */
+}
+.btn-close:hover { filter: invert(1) opacity(1); }
+
+.modal-backdrop { backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.6); }
+
+/* ============================================================
+   ALERTS / FLASH MESSAGES
+   ============================================================ */
+.flash-message {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  animation: slideInAlert 0.3s ease;
+  box-shadow: var(--shadow-glass);
+}
+
+@keyframes slideInAlert {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.alert-success {
+  background: rgba(57,169,0,0.1) !important;
+  border-color: rgba(57,169,0,0.3) !important;
+  color: #9BFF4D !important;
+}
+.alert-danger {
+  background: rgba(248,81,73,0.1) !important;
+  border-color: rgba(248,81,73,0.3) !important;
+  color: #FF7B72 !important;
+}
+.alert-warning {
+  background: rgba(252,115,35,0.1) !important;
+  border-color: rgba(252,115,35,0.3) !important;
+  color: #FFA657 !important;
+}
+.alert-info {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.biblioteca-footer {
+  background: rgba(13, 17, 23, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border-top: 2px solid var(--sena-green);
+  padding: 1.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted) !important;
+}
+
+.biblioteca-footer a {
+  color: var(--sena-green) !important;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity var(--trans-fast);
+}
+.biblioteca-footer a:hover { opacity: 0.75; text-decoration: underline; text-shadow: 0 0 5px var(--sena-green); }
+
+/* ============================================================
+   LOGIN PAGE — DARK GLASSMORPHISM SENA
+   ============================================================ */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+  z-index: 1;
+  /* EPIC BACKGROUND: SENA style tech facilities via unsplash with dark green overlay */
+  background: 
+    linear-gradient(135deg, rgba(8, 12, 18, 0.95) 0%, rgba(0, 80, 20, 0.75) 100%),
+    url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1920') center/cover no-repeat fixed;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(20, 25, 30, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  animation: loginEntrance 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes loginEntrance {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-card-header {
+  padding: 2rem 2rem 1.5rem;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.login-logo {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid var(--sena-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 1.8rem;
+  color: var(--sena-orange);
+  box-shadow: 0 0 20px rgba(57, 169, 0, 0.6);
+  padding: 6px;
+}
+
+/* Custom image inject for logo if wanted instead of icon:
+   .login-logo { background-image: url('svg...'); background-size: cover; } */
+.login-logo-img { width: 100%; height: 100%; object-fit: contain; }
+
+.login-card-header h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #FFF;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.login-card-header p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0;
+}
+
+.login-card-body {
+  padding: 2rem;
+}
+
+/* ============================================================
+   SEARCH BAR
+   ============================================================ */
+.search-bar-wrap {
+  position: relative;
+  flex: 1;
+}
+.search-bar-wrap .search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 1rem;
+  pointer-events: none;
+}
+.search-bar-wrap input {
+  padding-left: 2.6rem !important;
+}
+
+/* ============================================================
+   PAGE HEADER TOOLBAR
+   ============================================================ */
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: var(--bg-surface);
+  backdrop-filter: blur(10px);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+.page-toolbar h2 {
+  color: #FFF;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   CARD — Generic Clean Card
+   ============================================================ */
+.lib-card {
+  background: rgba(22, 22, 22, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transition: box-shadow var(--trans-base), transform var(--trans-fast), border-color var(--trans-base);
+}
+.lib-card:hover {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  transform: translateY(-2px);
+  border-color: var(--border-muted);
+}
+.lib-card-body { padding: 1.5rem; }
+.lib-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+.lib-divider {
+  height: 1px;
+  background: var(--border-default);
+  margin: 1.25rem 0;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--text-muted);
+}
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+  display: block;
+}
+.empty-state p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+.empty-state h5 {
+  color: var(--sena-green);
+  font-weight: 700;
+}
+
+/* ============================================================
+   UTILITY OVERRIDES
+   ============================================================ */
+.text-muted   { color: var(--text-muted) !important; }
+.text-primary { color: var(--sena-green) !important; }
+.text-success { color: #9BFF4D !important; }
+.text-danger  { color: #FF7B72 !important; }
+.bg-dark      { background: rgba(0,0,0,0.3) !important; }
+.bg-light     { background: rgba(255,255,255,0.02) !important; border: 1px solid var(--border-default); }
+.border       { border-color: var(--border-default) !important; }
+
+/* Password dots using monospace */
+.pw-mask {
+  font-family: var(--font-mono);
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: bolder;
+}
+
+/* Fecha / timestamp label */
+.ts-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Utilidad especial de Sena Text */
+.text-sena-green {
+  color: var(--sena-green) !important;
+  text-shadow: 0 0 8px rgba(94, 179, 25, 0.4);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .biblioteca-shell-body { padding: 1rem; }
+  .login-card-header, .login-card-body { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .page-toolbar { flex-direction: column; align-items: stretch; text-align: center;}
+  .toolbar-actions { justify-content: center; }
+  .biblioteca-table thead { display: none; }
+  .table thead { display: none; } /* override for bootstrap generic table */
+  
+  .biblioteca-table tbody tr, .table tbody tr {
+    display: block;
+    padding: 1rem;
+    border-bottom: 2px solid var(--border-default);
+  }
+  .biblioteca-table tbody td, .table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border: none !important;
+  }
+  .biblioteca-table tbody td::before, .table tbody td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+}

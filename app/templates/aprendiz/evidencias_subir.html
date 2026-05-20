@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Subir Evidencias — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-cloud-arrow-up text-primary me-2"></i>Subir Evidencia</h2>
+  <div class="toolbar-actions">
+    <a href="{{ url_for('aprendiz.mis_evidencias') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a mis evidencias
+    </a>
+  </div>
+</div>
+
+<!-- Barra de Progreso Personal -->
+<div class="row mb-4">
+  <div class="col-lg-8 mx-auto">
+    <div class="lib-card" style="border-left: 4px solid var(--accent-green);">
+      <div class="lib-card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="m-0">Tu Progreso de Práctica</h5>
+          <span class="badge-lib badge-green" style="font-size: 1rem;">{{ progreso_pct }}%</span>
+        </div>
+        <div class="progress" style="height: 28px;">
+          <div class="progress-bar bg-success" 
+               id="progreso-personal-bar"
+               style="font-size: 0.9rem; line-height: 28px;"
+               role="progressbar">
+            {% if progreso_pct > 0 %}
+              <span style="color: white; font-weight: bold;">{{ aprendiz.horas_cumplidas or 0 }}/{{ aprendiz.horas_requeridas }} horas</span>
+            {% else %}
+              <span style="color: white; font-weight: bold;">0 horas cumplidas</span>
+            {% endif %}
+          </div>
+        </div>
+        <script>document.getElementById('progreso-personal-bar').style.width = "{{ progreso_pct }}%";</script>
+        <small class="text-muted d-block mt-2">
+          <i class="bi bi-info-circle"></i> Completa tus horas de práctica enviando evidencias de calidad
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="biblioteca-shell">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon"><i class="bi bi-upload"></i></div>
+        <h4>Detalles de la Evidencia</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+        <form method="POST" action="{{ url_for('aprendiz.evidencias_subir') }}" enctype="multipart/form-data">
+
+          <div class="mb-4">
+            <label class="form-label" for="tipo">Tipo de evidencia <span class="text-danger">*</span></label>
+            <select class="form-select" id="tipo" name="tipo" required onchange="cambiarTipo()">
+              <option value="" disabled selected>Selecciona una opción...</option>
+              <option value="archivo">Archivo adjunto (.pdf, .doc, .zip, etc)</option>
+              <option value="enlace">Enlace web (Google Drive, GitHub, etc)</option>
+              <option value="texto">Texto plano</option>
+            </select>
+          </div>
+
+          <!-- Campos dinámicos -->
+          <div id="campo_archivo" class="mb-4 d-none">
+            <label class="form-label" for="archivo">Seleccionar Archivo <span class="text-danger">*</span></label>
+            <input class="form-control" type="file" id="archivo" name="archivo" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.txt">
+            <div class="form-text mt-2 text-muted small"><i class="bi bi-info-circle"></i> Tamaños limitados según la configuración del servidor.</div>
+          </div>
+
+          <div id="campo_enlace" class="mb-4 d-none">
+            <label class="form-label" for="contenido_enlace">URL del enlace <span class="text-danger">*</span></label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-link-45deg"></i>
+              <input class="form-control" type="url" id="contenido_enlace" name="contenido_enlace" placeholder="https://...">
+            </div>
+          </div>
+
+          <div id="campo_texto" class="mb-4 d-none">
+            <label class="form-label" for="contenido_texto">Contenido del texto <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="contenido_texto" name="contenido_texto" rows="6" placeholder="Escribe aquí tu evidencia..."></textarea>
+          </div>
+
+          <!-- Input oculto para recolectar el contenido en el servidor de enlace/texto -->
+          <input type="hidden" id="contenido_final" name="contenido">
+
+          <div class="lib-divider"></div>
+          
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary px-4" onclick="prepararEnvio()">
+              <i class="bi bi-send"></i> Enviar Evidencia
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function cambiarTipo() {
+    const tipo = document.getElementById('tipo').value;
+    document.getElementById('campo_archivo').classList.add('d-none');
+    document.getElementById('campo_enlace').classList.add('d-none');
+    document.getElementById('campo_texto').classList.add('d-none');
+    
+    if (tipo === 'archivo') {
+      document.getElementById('campo_archivo').classList.remove('d-none');
+    } else if (tipo === 'enlace') {
+      document.getElementById('campo_enlace').classList.remove('d-none');
+    } else if (tipo === 'texto') {
+      document.getElementById('campo_texto').classList.remove('d-none');
+    }
+  }
+
+  function prepararEnvio() {
+    const tipo = document.getElementById('tipo').value;
+    const finalInput = document.getElementById('contenido_final');
+    
+    if (tipo === 'enlace') {
+      finalInput.value = document.getElementById('contenido_enlace').value;
+    } else if (tipo === 'texto') {
+      finalInput.value = document.getElementById('contenido_texto').value;
+    } else {
+      finalInput.value = ''; // Archivo viaja en request.files
+    }
+  }
+</script>
+{% endblock %}

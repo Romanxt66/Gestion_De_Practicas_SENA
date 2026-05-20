@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Auditoría e Historial — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-clock-history text-primary me-2"></i>Auditoría e Historial de Cambios</h2>
+</div>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-ui-checks"></i></div>
+    <h4>Registro de Eventos del Sistema</h4>
+  </div>
+  <div class="biblioteca-shell-body p-0">
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+        <thead>
+          <tr>
+            <th>ID / Fecha</th>
+            <th>Usuario Operador</th>
+            <th>Módulo Modificado</th>
+            <th>Acción Registrada</th>
+            <th>Descripción del Evento</th>
+          </tr>
+        </thead>
+        <tbody>
+           {% for h in registros.items %}
+            <tr>
+              <td>
+                <span class="d-block text-muted small">#{{ h.id_historial }}</span>
+                <span class="ts-label fw-bold" style="color: var(--text-primary);">{{ h.fecha.strftime('%Y-%m-%d %H:%M:%S') if h.fecha else '--' }}</span>
+              </td>
+              <td>
+                <span class="text-primary fw-medium">{{ h.usuario.nombres }} {{ h.usuario.apellidos }}</span>
+                <br><small class="text-muted">{{ h.usuario.correo }}</small>
+              </td>
+              <td><span class="badge-lib badge-gray fw-bold font-monospace"><i class="bi bi-hdd-network me-1"></i> {{ h.modulo }}</span></td>
+              <td>
+                 {% if h.accion == 'CREAR' %}<span class="badge-lib badge-green px-3"><i class="bi bi-plus-circle me-1"></i> CREAR</span>
+                 {% elif h.accion == 'MODIFICAR' %}<span class="badge-lib badge-cyan px-3"><i class="bi bi-pencil-square me-1"></i> MODIFICAR</span>
+                 {% elif h.accion == 'ELIMINAR' %}<span class="badge-lib badge-red px-3"><i class="bi bi-trash-fill me-1"></i> ELIMINAR</span>
+                 {% else %}{{ h.accion }}{% endif %}
+              </td>
+              <td class="text-muted">{{ h.descripcion }}</td>
+            </tr>
+           {% else %}
+            <tr><td colspan="5" class="text-center py-5 text-muted fst-italic">No hay registros de historial por mostrar.</td></tr>
+           {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  {% if registros.pages > 1 %}
+    <!-- Paginación de Flask-SQLAlchemy -->
+    <div class="biblioteca-shell-body border-top border-secondary py-3 d-flex justify-content-center" style="background: var(--bg-elevated);">
+      <nav>
+        <ul class="pagination pagination-sm m-0">
+          <li class="page-item {% if not registros.has_prev %}disabled{% endif %}">
+            <a class="page-link bg-dark text-white border-secondary" href="{% if registros.has_prev %}{{ url_for('admin.historial', page=registros.prev_num) }}{% else %}#{% endif %}">Anterior</a>
+          </li>
+          
+          {% set start = 1 %}
+          {% set end = registros.pages %}
+          {% if registros.pages > 10 %}
+             {% set start = registros.page - 4 if registros.page - 4 > 0 else 1 %}
+             {% set end = registros.page + 5 if registros.page + 5 < registros.pages else registros.pages %}
+          {% endif %}
+          
+          {% for p in range(start, end + 1) %}
+            <li class="page-item {% if p == registros.page %}active{% endif %}">
+              <a class="page-link {% if p == registros.page %}bg-primary border-primary text-white{% else %}bg-dark text-white border-secondary{% endif %}" href="{{ url_for('admin.historial', page=p) }}">{{ p }}</a>
+            </li>
+          {% endfor %}
+
+          <li class="page-item {% if not registros.has_next %}disabled{% endif %}">
+            <a class="page-link bg-dark text-white border-secondary" href="{% if registros.has_next %}{{ url_for('admin.historial', page=registros.next_num) }}{% else %}#{% endif %}">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Mis Evidencias — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-folder2-open text-primary me-2"></i>Historial de Evidencias</h2>
+  <div class="toolbar-actions">
+    <a href="{{ url_for('aprendiz.evidencias_subir') }}" class="btn btn-primary">
+      <i class="bi bi-cloud-arrow-up"></i> Subir Nueva Evidencia
+    </a>
+  </div>
+</div>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-list-check"></i></div>
+    <h4>Todas mis evidencias entregadas</h4>
+  </div>
+  <div class="biblioteca-shell-body p-0">
+    {% if evidencias %}
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Contenido</th>
+            <th>Fecha Entrega</th>
+            <th>Estado</th>
+            <th>Anotaciones del Instructor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in evidencias %}
+          <tr>
+            <td>#{{ ev.id_evidencia }}</td>
+            <td>
+              {% if ev.tipo == 'archivo' %}<span class="badge-lib badge-gray"><i class="bi bi-file-earmark-arrow-down me-1"></i> Archivo</span>
+              {% elif ev.tipo == 'enlace' %}<span class="badge-lib badge-gray"><i class="bi bi-link-45deg me-1"></i> Enlace</span>
+              {% else %}<span class="badge-lib badge-gray"><i class="bi bi-text-left me-1"></i> Texto</span>{% endif %}
+            </td>
+            <td style="max-width: 200px;" class="text-truncate">
+              {% if ev.tipo == 'enlace' %}
+                <a href="{{ ev.contenido }}" target="_blank" class="text-info text-decoration-none" title="{{ ev.contenido }}">Abrir enlace <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>
+              {% elif ev.tipo == 'archivo' %}
+                <!-- Asume que el servidor sirve los estaticos dentro de uploads -->
+                <a href="{{ url_for('static', filename=ev.contenido) }}" target="_blank" class="text-success text-decoration-none">Descargar archivo <i class="bi bi-download ms-1" style="font-size: 0.7rem;"></i></a>
+              {% else %}
+                <span title="{{ ev.contenido }}">{{ ev.contenido }}</span>
+              {% endif %}
+            </td>
+            <td><span class="ts-label">{{ ev.fecha_entrega.strftime('%Y-%m-%d %H:%M:%S') if ev.fecha_entrega else 'N/A' }}</span></td>
+            <td>
+              {% if ev.estado == 'Entregada' %}<span class="badge-lib badge-cyan">Entregada</span>
+              {% elif ev.estado == 'Aprobada' %}<span class="badge-lib badge-green">Aprobada</span>
+              {% elif ev.estado == 'No Aprobada' %}<span class="badge-lib badge-red">Rechazada</span>
+              {% else %}<span class="badge-lib badge-gray">{{ ev.estado }}</span>{% endif %}
+            </td>
+            <td class="text-muted small">
+              <!-- Mock annotation since models don't have feedback fields natively, maybe use bitacora? -->
+              {% if ev.bitacora %}
+                <i>"{{ ev.bitacora }}"</i>
+              {% else %}
+                --
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-folder-x"></i>
+      <p>Aún no has subido ninguna evidencia. ¡Sube tu primera evidencia ahora!</p>
+      <a href="{{ url_for('aprendiz.evidencias_subir') }}" class="btn btn-outline-primary mt-3">Subir Evidencia</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

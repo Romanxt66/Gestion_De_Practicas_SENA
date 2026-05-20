@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Notificaciones — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-bell text-warning me-2"></i>Mis Notificaciones</h2>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="biblioteca-shell">
+      <div class="biblioteca-shell-body p-0">
+        
+        {% if notificaciones %}
+          <div class="list-group list-group-flush rounded-0">
+            {% for n in notificaciones %}
+              <div class="list-group-item d-flex gap-3 py-3" style="background: var(--bg-surface); border-color: var(--border-subtle);">
+                <div class="mt-1">
+                  {% if not n.leida %}
+                    <i class="bi bi-envelope-exclamation-fill text-warning fs-4"></i>
+                  {% else %}
+                    <i class="bi bi-envelope-open text-muted fs-4"></i>
+                  {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex w-100 justify-content-between mb-1">
+                    <h6 class="mb-0 text-primary">Alerta del Instructor</h6>
+                    <small class="ts-label">{{ n.fecha.strftime('%Y-%m-%d %H:%M') if n.fecha else '' }}</small>
+                  </div>
+                  <p class="mb-1 text-secondary" style="font-size: 0.9rem;">{{ n.mensaje }}</p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-bell-slash"></i>
+            <p>No tienes notificaciones en este momento.</p>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

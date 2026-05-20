@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Asignar Roles — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-shield-check text-primary me-2"></i>Asignación y Revocación de Roles</h2>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="biblioteca-shell">
+      <div class="biblioteca-shell-header">
+         <div class="shell-header-icon" style="background: rgba(188,140,255,0.15); color: var(--accent-purple); border-color: rgba(188,140,255,0.3);"><i class="bi bi-gear-wide-connected"></i></div>
+         <h4>Panel de Permisos</h4>
+      </div>
+      <div class="biblioteca-shell-body p-4">
+        
+        <form method="POST" action="{{ url_for('admin.asignar_rol') }}" class="mb-5 p-4 rounded" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-default);">
+          <h5 class="fs-6 fw-bold mb-3"><i class="bi bi-plus-circle text-success me-2"></i> Asignar nuevo rol a usuario existente</h5>
+          
+          <div class="row gx-3 align-items-end">
+            <div class="col-md-5 mb-3 mb-md-0">
+               <label class="form-label text-muted">Seleccionar Usuario</label>
+               <select name="id_usuario" class="form-select bg-dark text-white" required>
+                 <option value="" disabled selected>Busque por nombre o correo...</option>
+                 {% for u in usuarios %}
+                   <option value="{{ u.id_usuario }}">{{ u.nombres }} {{ u.apellidos }} ({{ u.correo }})</option>
+                 {% endfor %}
+               </select>
+            </div>
+            <div class="col-md-4 mb-3 mb-md-0">
+               <label class="form-label text-muted">Seleccionar Rol a Añadir</label>
+               <select name="id_rol" class="form-select bg-dark text-white" required>
+                 <option value="" disabled selected>Escoja el rol...</option>
+                 {% for r in roles %}
+                   <option value="{{ r.id_rol }}">{{ r.nombre | capitalize }}</option>
+                 {% endfor %}
+               </select>
+            </div>
+            <div class="col-md-3">
+               <button type="submit" class="btn btn-success w-100"><i class="bi bi-shield-plus"></i> Asignar</button>
+            </div>
+          </div>
+        </form>
+
+        <hr class="border-secondary my-5" style="opacity: 0.3;">
+
+        <h5 class="fs-6 fw-bold mb-4"><i class="bi bi-x-circle text-danger me-2"></i> Revocación Rápida de Roles</h5>
+        <div class="table-responsive">
+          <table class="biblioteca-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in usuarios %}
+                {% for ur in u.roles %}
+                <tr>
+                  <td><span class="fw-medium text-primary">{{ u.nombres }} {{ u.apellidos }}</span> <br><small class="text-muted">{{ u.correo }}</small></td>
+                  <td><span class="badge-lib badge-gray text-uppercase px-2">{{ ur.rol.nombre }}</span></td>
+                  <td>
+                    <form method="POST" action="{{ url_for('admin.quitar_rol') }}" class="d-flex justify-content-end" onsubmit="return confirm('¿Seguro que desea revocar el rol {{ ur.rol.nombre }} de {{ u.nombres }}?');">
+                      <input type="hidden" name="id_usuario" value="{{ u.id_usuario }}">
+                      <input type="hidden" name="id_rol" value="{{ ur.rol.id_rol }}">
+                      {% if current_user.id_usuario != u.id_usuario or ur.rol.nombre != 'superusuario' %}
+                        <button type="submit" class="btn btn-sm btn-ghost text-danger border-danger" title="Revocar Permiso"><i class="bi bi-trash"></i> Revocar</button>
+                      {% else %}
+                        <button type="button" class="btn btn-sm btn-secondary" disabled title="No puedes quitarte el rol de superusuario a ti mismo">Tú</button>
+                      {% endif %}
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

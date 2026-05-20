@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Reportes — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-file-earmark-bar-graph text-info me-2"></i>Reportes de Área y Aprendices</h2>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="biblioteca-shell h-100">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon"><i class="bi bi-bar-chart-steps"></i></div>
+        <h4>Resumen General</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+        <ul class="list-group list-group-flush list-group-dark">
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+            <span class="text-muted">Total Aprendices a Cargo</span>
+            <span class="fw-bold fs-5 text-white">{{ aprendices|length }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-default">
+            {% set total_aprobados = namespace(count=0) %}
+            {% for ap in aprendices %}{% if ap.estado_practica == 'Aprobado' %}{% set total_aprobados.count = total_aprobados.count + 1 %}{% endif %}{% endfor %}
+            <span class="text-muted">Aprendices con Práctica Aprobada</span>
+            <span class="badge-lib badge-green px-3">{{ total_aprobados.count }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-default">
+            <span class="text-muted">Total Evidencias Registradas</span>
+            <span class="fw-bold fs-5 text-info">{{ evidencias|length }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+     <div class="biblioteca-shell h-100" style="border-color: rgba(88,166,255,0.4);">
+      <div class="biblioteca-shell-header" style="background: rgba(88,166,255,0.05);">
+        <div class="shell-header-icon" style="background: rgba(88,166,255,0.15); color: var(--accent-cyan); border: none;"><i class="bi bi-download"></i></div>
+        <h4>Exportación</h4>
+      </div>
+      <div class="biblioteca-shell-body p-4 text-center">
+         <p class="text-muted mb-4">Los instructores pueden solicitar la gestión de reportes masivos a su coordinador o superusuario en la plataforma.</p>
+         <i class="bi bi-info-circle text-info fs-1 d-block mb-3 opacity-50"></i>
+         <p class="small text-secondary m-0">Para descargar Excel y listado completo, por favor solicita permisos de escalafonamiento (Admin).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+     <div class="shell-header-icon"><i class="bi bi-journal-text"></i></div>
+     <h4>Listado General de Evidencias (Consolidado)</h4>
+  </div>
+  <div class="biblioteca-shell-body p-0">
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+         <thead>
+           <tr>
+             <th>ID</th>
+             <th>Fecha</th>
+             <th>Aprendiz</th>
+             <th>Tipo</th>
+             <th>Estado</th>
+           </tr>
+         </thead>
+         <tbody>
+           {% for ev in evidencias %}
+            <tr>
+              <td>#{{ ev.id_evidencia }}</td>
+              <td><span class="ts-label">{{ ev.fecha_entrega.strftime('%Y-%m-%d') if ev.fecha_entrega else '--' }}</span></td>
+              <td class="text-primary fw-medium">{{ ev.aprendiz.usuario.nombres }} {{ ev.aprendiz.usuario.apellidos }}</td>
+              <td>{{ ev.tipo | capitalize }}</td>
+              <td>
+                {% if ev.estado == 'Entregada' %}<span class="badge-lib badge-cyan">Pendiente</span>
+                {% elif ev.estado == 'Aprobada' %}<span class="badge-lib badge-green">Aprobada</span>
+                {% elif ev.estado == 'No Aprobada' %}<span class="badge-lib badge-red">Rechazada</span>
+                {% endif %}
+              </td>
+            </tr>
+           {% else %}
+            <tr><td colspan="5" class="text-center text-muted fst-italic py-4">No se han registrado evidencias aún.</td></tr>
+           {% endfor %}
+         </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

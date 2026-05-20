@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Panel de Administración — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-shield-lock text-primary me-2"></i>Panel de Administración Global</h2>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-4 mb-4">
+  <div class="col">
+    <div class="lib-card h-100">
+      <div class="lib-card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Total Usuarios</div>
+          <div class="shell-header-icon" style="color: var(--accent-purple); background: rgba(188,140,255,0.15); border-color: rgba(188,140,255,0.3); border-radius: 12px;"><i class="bi bi-people"></i></div>
+        </div>
+        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_usuarios }}</h3>
+        <a href="{{ url_for('admin.usuarios') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Usuarios</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col">
+    <div class="lib-card h-100">
+      <div class="lib-card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Aprendices</div>
+          <div class="shell-header-icon" style="color: var(--accent-cyan); background: var(--accent-cyan-glow); border-color: var(--accent-cyan); border-radius: 12px;"><i class="bi bi-person-video2"></i></div>
+        </div>
+        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_aprendices }}</h3>
+        <a href="{{ url_for('admin.usuarios') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Usuarios</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="lib-card h-100">
+      <div class="lib-card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Instructores</div>
+          <div class="shell-header-icon" style="color: var(--accent-green); background: var(--accent-green-glow); border-color: var(--accent-green); border-radius: 12px;"><i class="bi bi-person-badge"></i></div>
+        </div>
+        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_instructores }}</h3>
+        <a href="{{ url_for('admin.instructores') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Instructores</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="lib-card h-100">
+      <div class="lib-card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Empresas</div>
+          <div class="shell-header-icon" style="color: var(--sena-orange); background: rgba(252,115,35,0.15); border-color: rgba(252,115,35,0.3); border-radius: 12px;"><i class="bi bi-building"></i></div>
+        </div>
+        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_empresas }}</h3>
+        <a href="{{ url_for('admin.empresas') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Empresas</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="lib-card h-100">
+      <div class="lib-card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Fichas</div>
+          <div class="shell-header-icon" style="color: var(--sena-green); background: rgba(57,169,0,0.15); border-color: rgba(57,169,0,0.3); border-radius: 12px;"><i class="bi bi-journal-code"></i></div>
+        </div>
+        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_fichas }}</h3>
+        <a href="{{ url_for('admin.fichas') }}" class="btn btn-ghost btn-sm mt-3 w-100">Gestionar Fichas</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <div class="shell-header-icon"><i class="bi bi-clock-history"></i></div>
+      <h4 class="m-0">Actividad Reciente del Sistema (Auditoría)</h4>
+    </div>
+    <a href="{{ url_for('admin.historial') }}" class="btn btn-sm btn-outline-secondary">Ver historial completo</a>
+  </div>
+  <div class="biblioteca-shell-body p-0">
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario Responsable</th>
+            <th>Módulo</th>
+            <th>Acción</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in cambios_recientes %}
+           <tr>
+             <td><span class="ts-label">{{ r.fecha.strftime('%Y-%m-%d %H:%M:%S') if r.fecha else '--' }}</span></td>
+             <td class="text-primary fw-medium">{{ r.usuario.nombres }} {{ r.usuario.apellidos }}</td>
+             <td><span class="badge-lib badge-gray"><i class="bi bi-puzzle me-1"></i> {{ r.modulo }}</span></td>
+             <td>
+               {% if r.accion == 'CREAR' %}<span class="badge-lib badge-green"><i class="bi bi-plus-lg me-1"></i> CREAR</span>
+               {% elif r.accion == 'MODIFICAR' %}<span class="badge-lib badge-cyan"><i class="bi bi-pencil me-1"></i> MODIFICAR</span>
+               {% elif r.accion == 'ELIMINAR' %}<span class="badge-lib badge-red"><i class="bi bi-trash me-1"></i> ELIMINAR</span>
+               {% else %}{{ r.accion }}{% endif %}
+             </td>
+             <td class="text-muted small text-truncate" style="max-width: 300px;" title="{{ r.descripcion }}">{{ r.descripcion }}</td>
+           </tr>
+          {% else %}
+           <tr><td colspan="5" class="text-center py-4 text-muted fst-italic">No se registran eventos recientes.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

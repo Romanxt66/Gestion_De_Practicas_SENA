@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% block title %}SENA Prácticas — Inicio{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Reset and base styles for the landing page specifically */
+  body.biblioteca-body {
+    background-color: #141414 !important;
+    color: #ffffff !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    overflow: hidden;
+  }
+  
+  .landing-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  /* Background element to simulate the angled shape in the theme */
+  .bg-shape {
+    position: fixed;
+    top: 45%;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    z-index: 11;
+    clip-path: polygon(0 15%, 100% 0%, 100% 100%, 0 100%);
+  }
+
+  .landing-content {
+    position: relative;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 2rem;
+  }
+
+  .brand-logo-container {
+    width: 64px;
+    height: 64px;
+    background-color: #222222;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333333;
+  }
+
+  .brand-logo-container i {
+    font-size: 2rem;
+    color: #ffffff;
+  }
+
+  .brand-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .brand-subtitle {
+    color: #9ca3af;
+    font-size: 1rem;
+    max-width: 450px;
+    text-align: center;
+    margin-bottom: 3rem;
+    line-height: 1.6;
+  }
+
+  .minimal-card {
+    background-color: #222222;
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    text-align: center;
+  }
+
+  .minimal-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: #2c2c2c;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 1.5rem;
+  }
+
+  .minimal-card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+  }
+
+  .minimal-card p {
+    color: #888888;
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+  }
+
+  .minimal-btn {
+    width: 100%;
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .minimal-btn:hover {
+    background-color: #e5e5e5;
+    color: #000000;
+  }
+
+  .roles-container {
+    margin-top: 4rem;
+    text-align: center;
+  }
+
+  .roles-badges {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .minimal-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid #333333;
+    background-color: #1a1a1a;
+    color: #a3a3a3;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .dot-red { background-color: #ff5e5e; }
+  .dot-green { background-color: #4ade80; }
+  .dot-purple { background-color: #c084fc; }
+
+  .roles-info-text {
+    color: #6b7280;
+    font-size: 0.7rem;
+  }
+
+  /* Flash messages override to float */
+  main > .mb-3:first-child {
+    position: fixed !important;
+    top: 2rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    z-index: 9999 !important;
+  }
+
+  .alert {
+    background-color: #222222;
+    color: white;
+    border: 1px solid #333333;
+    border-radius: 12px;
+  }
+
+  .biblioteca-nav {
+    display: none !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="landing-viewport">
+  <div class="bg-shape"></div>
+  
+  <div class="landing-content">
+    
+    <div class="brand-logo-container">
+      <i class="bi bi-mortarboard-fill"></i>
+    </div>
+    
+    <h1 class="brand-title">SENA Prácticas</h1>
+    <p class="brand-subtitle">
+      Sistema de gestión de prácticas laborales. Conecta aprendices, instructores y empresas de manera eficiente.
+    </p>
+    
+    <div class="minimal-card">
+      <div class="minimal-card-icon">
+        <i class="bi bi-box-arrow-in-right"></i>
+      </div>
+      <h3>Acceso al Sistema</h3>
+      <p>Accede con tu correo y contraseña asignada para continuar al portal.</p>
+      
+      <a href="{{ url_for('auth.login') }}" class="minimal-btn">
+        INICIAR SESIÓN
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </div>
+
+    <div class="roles-container">
+      <div class="roles-badges">
+        <div class="minimal-badge">
+          <span class="badge-dot dot-red"></span> APRENDIZ
+        </div>
+        <div class="minimal-badge">
+          <span class="badge-dot dot-green"></span> INSTRUCTOR
+        </div>
+        <div class="minimal-badge">
+          <span class="badge-dot dot-purple"></span> SUPERUSUARIO
+        </div>
+      </div>
+      <p class="roles-info-text">Instructores y superusuarios son creados por el administrador.</p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

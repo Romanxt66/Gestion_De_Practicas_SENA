@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Registro — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="login-page" style="padding-top: 3rem; padding-bottom: 3rem; display: block;">
+  <div class="login-card mx-auto" style="max-width: 550px;">
+    <div class="login-card-header">
+      <div class="login-logo" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));">
+        <i class="bi bi-person-plus-fill"></i>
+      </div>
+      <h1>Crear Cuenta de Aprendiz</h1>
+      <p>Completa el formulario para registrarte en el sistema</p>
+    </div>
+    <div class="login-card-body">
+      <form method="POST" action="{{ url_for('auth.registro') }}">
+        <div class="row gx-3">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="nombres">Nombres <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" id="nombres" name="nombres" required autofocus>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="apellidos">Apellidos <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" id="apellidos" name="apellidos" required>
+          </div>
+        </div>
+
+        <div class="row gx-3">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="tipo_documento">Tipo Documento</label>
+            <select class="form-select" id="tipo_documento" name="tipo_documento">
+              <option value="CC">Cédula de Ciudadanía</option>
+              <option value="TI">Tarjeta de Identidad</option>
+              <option value="CE">Cédula de Extranjería</option>
+              <option value="PEP">PEP</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="numero_documento">Nº Documento</label>
+            <input class="form-control" type="text" id="numero_documento" name="numero_documento">
+          </div>
+        </div>
+
+        <div class="row gx-3">
+           <div class="col-md-6 mb-3">
+            <label class="form-label" for="correo">Correo Electrónico <span class="text-danger">*</span></label>
+            <input class="form-control" type="email" id="correo" name="correo" placeholder="ejemplo@soy.sena.edu.co" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="telefono">Teléfono</label>
+            <input class="form-control" type="text" id="telefono" name="telefono">
+          </div>
+        </div>
+
+        <div class="row gx-3">
+          <div class="col-md-12 mb-3">
+            <label class="form-label" for="codigo_ficha">Código de Curso (Ficha) <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" id="codigo_ficha" name="codigo_ficha" placeholder="Ej. 123456" required>
+            <small class="text-muted" style="font-size: 0.8rem;">Serás matriculado automáticamente a este curso al registrarte.</small>
+          </div>
+        </div>
+
+        <div class="row gx-3">
+          <div class="col-md-6 mb-4">
+            <label class="form-label" for="password">Contraseña <span class="text-danger">*</span></label>
+            <input class="form-control" type="password" id="password" name="password" minlength="6" required>
+          </div>
+          <div class="col-md-6 mb-4">
+            <label class="form-label" for="confirm_password">Confirmar Contraseña <span class="text-danger">*</span></label>
+            <input class="form-control" type="password" id="confirm_password" name="confirm_password" minlength="6" required>
+          </div>
+        </div>
+
+        <button class="btn btn-success w-100 py-2 mb-3" type="submit">
+          Crear Cuenta
+        </button>
+        <div class="text-center">
+          <a href="{{ url_for('auth.login') }}" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none;">
+            ¿Ya tienes cuenta? <span style="color:var(--accent-cyan);">Inicia sesión aquí</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

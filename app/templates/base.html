@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SENA Prácticas{% endblock %}</title>
+  <meta name="description" content="{% block meta_desc %}Sistema de Gestión de Prácticas SENA{% endblock %}">
+
+  <!-- Bootstrap CSS (local) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
+  <!-- Bootstrap Icons (CDN) para garantizar carga de fuentes -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Sistema de diseño personalizado -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='biblioteca.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="biblioteca-body">
+<div class="d-flex" style="min-height: 100vh;">
+
+<!-- ══ SIDEBAR ══════════════════════════════ -->
+{% if current_user.is_authenticated %}
+<nav class="biblioteca-nav d-flex flex-column p-4" style="width: 260px; height: 100vh; position: sticky; top: 0; overflow-y: auto; border-right: 1px solid var(--border-default); border-bottom: none;">
+  <div class="sidebar-brand mb-5">
+    <h3 class="fw-bold text-white mb-0" style="font-size: 1.3rem;">AdminConsole</h3>
+    <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Global Practice Mgmt</span>
+  </div>
+
+  {% set rol = namespace(nombre='') %}
+  {% for ur in current_user.roles %}
+    {% if ur.rol.nombre == 'superusuario' %}{% set rol.nombre = 'superusuario' %}
+    {% elif ur.rol.nombre == 'instructor' and rol.nombre != 'superusuario' %}{% set rol.nombre = 'instructor' %}
+    {% elif ur.rol.nombre == 'aprendiz' and rol.nombre == '' %}{% set rol.nombre = 'aprendiz' %}
+    {% endif %}
+  {% endfor %}
+
+  <ul class="nav flex-column mb-auto gap-2">
+    {% if rol.nombre == 'aprendiz' %}
+      <li class="nav-item"><a class="nav-link {% if request.endpoint == 'aprendiz.dashboard' %}active{% endif %}"
+        href="{{ url_for('aprendiz.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'evidencias_subir' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('aprendiz.evidencias_subir') }}"><i class="bi bi-upload"></i> Subir evidencias</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'progreso' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('aprendiz.progreso') }}"><i class="bi bi-graph-up"></i> Mi progreso</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'informacion' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('aprendiz.informacion') }}"><i class="bi bi-person"></i> Mi información</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'notificaciones' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('aprendiz.notificaciones') }}"><i class="bi bi-bell"></i> Notificaciones</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'mis_evidencias' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('aprendiz.mis_evidencias') }}"><i class="bi bi-folder2-open"></i> Mis evidencias</a></li>
+
+    {% elif rol.nombre == 'instructor' %}
+      <li class="nav-item"><a class="nav-link {% if request.endpoint == 'instructor.dashboard' %}active{% endif %}"
+        href="{{ url_for('instructor.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'aprendices' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('instructor.aprendices') }}"><i class="bi bi-people"></i> Mis aprendices</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'revisar' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('instructor.revisar_evidencias') }}"><i class="bi bi-journal-check"></i> Evidencias</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'progreso_aprendices' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('instructor.progreso_aprendices') }}"><i class="bi bi-bar-chart"></i> Progreso</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'mis_cursos' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('instructor.mis_cursos') }}"><i class="bi bi-book"></i> Mis cursos</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'alertas' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('instructor.alertas') }}"><i class="bi bi-send"></i> Alertas</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'reportes' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('instructor.reportes') }}"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a></li>
+
+    {% elif rol.nombre == 'superusuario' %}
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.dashboard') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a></li>
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.fichas') %}active{% endif %}" href="{{ url_for('admin.fichas') }}"><i class="bi bi-mortarboard"></i> Fichas/Cursos</a></li>
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.usuarios') %}active{% endif %}" href="{{ url_for('admin.usuarios') }}"><i class="bi bi-people"></i> Usuarios</a></li>
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.roles') %}active{% endif %}" href="{{ url_for('admin.roles') }}"><i class="bi bi-shield-check"></i> Roles</a></li>
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.instructores') %}active{% endif %}" href="{{ url_for('admin.instructores') }}"><i class="bi bi-person-badge"></i> Instructores</a></li>
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.empresas') %}active{% endif %}" href="{{ url_for('admin.empresas') }}"><i class="bi bi-building"></i> Empresas</a></li>
+      <li class="nav-item"><a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.historial') %}active{% endif %}" href="{{ url_for('admin.historial') }}"><i class="bi bi-clock-history"></i> Historial</a></li>
+      <li class="nav-item"><a class="nav-link {% if 'backup' in request.endpoint %}active{% endif %}"
+        href="{{ url_for('admin.backup') }}"><i class="bi bi-cloud-download"></i> Backup</a></li>
+    {% endif %}
+  </ul>
+
+  <!-- User Pill -->
+  <div class="dropdown mt-4">
+    <a class="nav-user-pill dropdown-toggle d-flex align-items-center justify-content-between text-decoration-none" data-bs-toggle="dropdown" href="#" id="userDropdown">
+      <div class="d-flex align-items-center gap-3">
+        <div class="avatar"><i class="bi bi-person"></i></div>
+        <div class="d-flex flex-column text-start">
+          <span class="text-truncate text-white" style="font-size: 0.9rem; font-weight: 600; max-width: 130px;">{{ current_user.nombres }}</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted);">System Practices</span>
+        </div>
+      </div>
+    </a>
+    <ul class="dropdown-menu shadow-lg w-100 dark-dropdown">
+      <li><span class="dropdown-item text-muted" style="font-size:0.75rem;">
+        {{ rol.nombre | capitalize }}
+      </span></li>
+      <li><hr class="dropdown-divider" style="border-color:var(--border-default);margin:0.25rem 0;"></li>
+      <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+        <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+      </a></li>
+    </ul>
+  </div>
+</nav>
+{% endif %}
+
+<!-- ══ MAIN WRAPPER ════════════════════════ -->
+<!-- ══ MAIN CONTENT ════════════════════════ -->
+<div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
+
+
+
+  <main class="flex-grow-1 {% if current_user.is_authenticated %}p-4{% endif %} position-relative" style="overflow-y: auto;">
+
+    <!-- Flash Messages (Toasts) -->
+    <div class="toast-container position-absolute top-0 start-50 translate-middle-x p-3 mt-2" style="z-index: 1060; width: 100%; max-width: 600px;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="minimal-toast toast align-items-center show w-100 {% if cat == 'success' %}toast-success{% elif cat == 'danger' %}toast-danger{% else %}toast-info{% endif %}" role="alert" aria-live="assertive" aria-atomic="true" style="background: #1a1a1a; border: 1px solid {% if cat == 'success' %}#22c55e{% elif cat == 'danger' %}#ef4444{% else %}#3b82f6{% endif %}; border-radius: 8px;">
+            <div class="d-flex px-2 py-1">
+              <div class="toast-body d-flex align-items-center gap-3 text-white w-100">
+                <i class="bi {% if cat == 'success' %}bi-check-circle text-success{% elif cat == 'danger' %}bi-exclamation-triangle text-danger{% else %}bi-info-circle text-info{% endif %} fs-5"></i>
+                <span style="font-size: 0.95rem;">{{ msg }}</span>
+              </div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+
+<!-- ══ FOOTER ══════════════════════════════ -->
+{% if current_user.is_authenticated %}
+<footer class="biblioteca-footer text-center mt-auto">
+  <div class="container-fluid">
+    <span><i class="bi bi-mortarboard-fill me-1"></i>SENA Prácticas &copy; {{ moment().year if moment else 2026 }}</span>
+  </div>
+</footer>
+{% endif %}
+
+</div> <!-- / MAIN WRAPPER -->
+</div> <!-- / d-flex page wrapper -->
+
+<!-- Modals -->
+{% block modals %}{% endblock %}
+
+<!-- Bootstrap JS (local) -->
+<script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+{% block extra_js %}{% endblock %}
+
+<script>
+    // Validar sesión por pestaña (sessionStorage)
+    {% if current_user.is_authenticated %}
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (!sessionStorage.getItem('tabSessionActive')) {
+            if (urlParams.get('login_success') === '1') {
+                // Acabamos de iniciar sesión, inicializamos la sesión de la pestaña
+                sessionStorage.setItem('tabSessionActive', 'true');
+                
+                // Limpiamos la URL para que no quede el parámetro login_success visible
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                // Nueva pestaña o sesión de pestaña cerrada, forzar cierre de sesión
+                window.location.href = "{{ url_for('auth.logout') }}";
+            }
+        } else if (urlParams.get('login_success') === '1') {
+            // Si ya hay sesión activa y venimos de un login exitoso, igual limpiamos la URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    {% else %}
+        // Si no está autenticado, asegurarse de limpiar la sesión de la pestaña
+        sessionStorage.removeItem('tabSessionActive');
+    {% endif %}
+</script>
+</body>
+</html>

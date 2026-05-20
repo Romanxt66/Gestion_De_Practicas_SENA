@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Instructores — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-person-badge text-primary me-2"></i>Gestión de Instructores</h2>
+</div>
+
+<div class="biblioteca-shell">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon bg-dark text-white border-secondary"><i class="bi bi-briefcase"></i></div>
+    <h4>Listado Oficial de Instructores</h4>
+  </div>
+  <div class="biblioteca-shell-body p-0">
+    <div class="table-responsive">
+      <table class="biblioteca-table mb-0">
+        <thead>
+          <tr>
+            <th>ID Inst.</th>
+            <th>Nombre y Correo</th>
+            <th>Área de Formación</th>
+            <th>Estado Sistema</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+           {% for inst in instructores %}
+            <tr>
+              <td>#{{ inst.id_instructor }}</td>
+              <td>
+                <div class="fw-bold text-primary">{{ inst.usuario.nombres }} {{ inst.usuario.apellidos }}</div>
+                <div class="small text-muted">{{ inst.usuario.correo }}</div>
+              </td>
+              <td>
+                <form action="{{ url_for('admin.editar_area_instructor', id_instructor=inst.id_instructor) }}" method="POST" class="d-flex align-items-center gap-2 m-0">
+                  <input type="text" name="area_formacion" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ inst.area_formacion or '' }}" placeholder="Sin definir" style="max-width: 200px;">
+                  <button type="submit" class="btn btn-sm btn-ghost" title="Guardar Área"><i class="bi bi-check2"></i></button>
+                </form>
+              </td>
+              <td>
+                {% if inst.activo %}
+                  <span class="badge-lib badge-green"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Activo</span>
+                {% else %}
+                  <span class="badge-lib badge-red"><i class="bi bi-slash-circle me-1"></i> Inactivo</span>
+                {% endif %}
+              </td>
+              <td>
+                <form action="{{ url_for('admin.toggle_instructor', id_instructor=inst.id_instructor) }}" method="POST" class="d-flex justify-content-end" onsubmit="return confirm('¿Cambiar estado del instructor?');">
+                  {% if inst.activo %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Marcar Inactivo">Inactivar</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar Activo">Activar</button>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+           {% else %}
+            <tr><td colspan="5" class="text-center py-4 text-muted fst-italic">No hay instructores asignados.</td></tr>
+           {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
