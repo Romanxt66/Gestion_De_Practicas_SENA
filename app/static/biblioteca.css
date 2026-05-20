@@ -224,7 +224,7 @@ body.biblioteca-body::before {
   content: "";
   position: fixed;
   top: -5%; left: -5%; width: 110%; height: 110%;
-  background-image: url('img/fondo.png');
+  background-image: url('img/fondo.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

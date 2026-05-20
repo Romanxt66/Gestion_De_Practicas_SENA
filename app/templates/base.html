@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
   <!-- Bootstrap Icons (CDN) para garantizar carga de fuentes -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Preload del fondo principal para optimizar carga (LCP) -->
+  <link rel="preload" as="image" href="{{ url_for('static', filename='img/fondo.webp') }}">
+  
   <!-- Sistema de diseño personalizado -->
   <link rel="stylesheet" href="{{ url_for('static', filename='biblioteca.css') }}">
   {% block extra_css %}{% endblock %}
