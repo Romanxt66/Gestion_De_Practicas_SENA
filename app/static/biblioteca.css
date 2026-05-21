@@ -91,14 +91,19 @@ body.biblioteca-body {
    NAVBAR — Dark Glassmorphism SENA
    ============================================================ */
 .biblioteca-nav {
-  position: sticky;
-  top: 0;
-  z-index: 1030;
-  background: rgba(20, 20, 20, 0.5) !important;
+  z-index: 1050;
+  background: rgba(20, 20, 20, 0.85) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
   padding: 1rem 1.5rem;
+}
+@media (min-width: 768px) {
+  .biblioteca-nav {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1030;
+  }
 }
 
 .biblioteca-nav .nav-link {

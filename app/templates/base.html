@@ -22,8 +22,14 @@
 
 <!-- ══ SIDEBAR ══════════════════════════════ -->
 {% if current_user.is_authenticated %}
-<nav class="biblioteca-nav d-flex flex-column p-4" style="width: 260px; height: 100vh; position: sticky; top: 0; overflow-y: auto; border-right: 1px solid var(--border-default); border-bottom: none;">
-  <div class="sidebar-brand mb-5">
+<nav class="biblioteca-nav offcanvas-md offcanvas-start d-flex flex-column p-4" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel" style="width: 260px; height: 100vh; overflow-y: auto; border-right: 1px solid var(--border-default); border-bottom: none;">
+  <!-- Offcanvas Header for Mobile -->
+  <div class="offcanvas-header d-md-none px-0 pb-3 mb-2 border-bottom" style="border-color: var(--border-default)!important;">
+    <h5 class="offcanvas-title text-white fw-bold" id="sidebarOffcanvasLabel">Menú Principal</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Close"></button>
+  </div>
+
+  <div class="sidebar-brand mb-5 d-none d-md-block">
     <h3 class="fw-bold text-white mb-0" style="font-size: 1.3rem;">AdminConsole</h3>
     <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Global Practice Mgmt</span>
   </div>
@@ -108,9 +114,25 @@
 <!-- ══ MAIN CONTENT ════════════════════════ -->
 <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
 
+  <!-- Mobile Topbar -->
+  {% if current_user.is_authenticated %}
+  <div class="d-md-none d-flex justify-content-between align-items-center p-3 border-bottom shadow-sm" style="background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(20px); border-color: var(--border-default)!important; position: sticky; top: 0; z-index: 1020;">
+    <div class="d-flex align-items-center gap-2">
+      <div class="avatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--sena-green); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #111;"><i class="bi bi-shield-lock"></i></div>
+      <h5 class="mb-0 text-white fw-bold" style="font-size: 1.1rem;">AdminConsole</h5>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost p-1 text-danger border-0 d-flex align-items-center justify-content-center" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right" style="font-size: 1.5rem; line-height: 1;"></i>
+      </a>
+      <button class="btn btn-ghost p-1 border-0 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+        <i class="bi bi-list" style="font-size: 1.8rem; line-height: 1; color: #fff;"></i>
+      </button>
+    </div>
+  </div>
+  {% endif %}
 
-
-  <main class="flex-grow-1 {% if current_user.is_authenticated %}p-4{% endif %} position-relative" style="overflow-y: auto;">
+  <main class="flex-grow-1 {% if current_user.is_authenticated %}p-3 p-md-4{% endif %} position-relative" style="overflow-y: auto;">
 
     <!-- Flash Messages (Toasts) -->
     <div class="toast-container position-absolute top-0 start-50 translate-middle-x p-3 mt-2" style="z-index: 1060; width: 100%; max-width: 600px;">
