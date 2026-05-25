@@ -12,52 +12,73 @@
 </div>
 
 <div class="row g-4 mb-4">
-  <!-- Tarjeta Progreso -->
-  <div class="col-md-4">
+  <!-- Tarjeta Progreso Semestre -->
+  <div class="col-md-3">
     <div class="lib-card h-100" style="border-left: 4px solid var(--accent-cyan);">
       <div class="lib-card-body d-flex flex-column justify-content-between">
         <div>
           <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="lib-card-title text-muted text-uppercase mb-0">Progreso Horas</div>
-            <div class="shell-header-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="lib-card-title text-muted text-uppercase mb-0">Progreso Tiempo</div>
+            <div class="shell-header-icon" style="color: var(--accent-cyan); background: var(--accent-cyan-glow); border-color: rgba(56, 189, 248, 0.3);"><i class="bi bi-calendar-check"></i></div>
           </div>
-          <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">{{ pct }}%</h3>
-          <p class="text-secondary small mt-1">De {{ aprendiz.horas_requeridas if aprendiz else 0 }} horas requeridas</p>
+          <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">{{ pct_tiempo }}%</h3>
+          <p class="text-secondary small mt-1">De 6 meses proyectados</p>
         </div>
         <div class="progress mt-3" style="height: 8px; background: var(--bg-hover);">
-          <div class="progress-bar" id="progreso-bar" role="progressbar" style="background: linear-gradient(90deg, #1a73e8, var(--accent-cyan));" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar" id="progreso-tiempo-bar" role="progressbar" style="background: linear-gradient(90deg, #1a73e8, var(--accent-cyan)); width: {{ pct_tiempo }}%;" aria-valuenow="{{ pct_tiempo }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-        <script>document.getElementById('progreso-bar').style.width = "{{ pct }}%";</script>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjeta Progreso Evidencias -->
+  <div class="col-md-3">
+    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-purple);">
+      <div class="lib-card-body d-flex flex-column justify-content-between">
+        <div>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="lib-card-title text-muted text-uppercase mb-0">Evidencias</div>
+            <div class="shell-header-icon" style="color: var(--accent-purple); background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3);"><i class="bi bi-file-earmark-check"></i></div>
+          </div>
+          <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">{{ evidencias_count }} / 12</h3>
+          <p class="text-secondary small mt-1">Avance: {{ pct_evidencias }}%</p>
+        </div>
+        <div class="progress mt-3" style="height: 8px; background: var(--bg-hover);">
+          <div class="progress-bar" id="progreso-evi-bar" role="progressbar" style="background: linear-gradient(90deg, #7c3aed, var(--accent-purple)); width: {{ pct_evidencias }}%;" aria-valuenow="{{ pct_evidencias }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Tarjeta Notificaciones -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="lib-card h-100" style="border-left: 4px solid var(--accent-amber);">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0">Alertas</div>
-          <div class="shell-header-icon" style="color: var(--accent-amber); background: rgba(210,153,34,0.15); border-color: rgba(210,153,34,0.3);"><i class="bi bi-bell"></i></div>
+      <div class="lib-card-body d-flex flex-column justify-content-between">
+        <div>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="lib-card-title text-muted text-uppercase mb-0">Alertas</div>
+            <div class="shell-header-icon" style="color: var(--accent-amber); background: rgba(210,153,34,0.15); border-color: rgba(210,153,34,0.3);"><i class="bi bi-bell"></i></div>
+          </div>
+          <h3 style="font-size: 2rem; font-weight: 700; margin: 0; color: {{ 'var(--accent-amber)' if notifs_sin_leer > 0 else 'var(--text-primary)' }};">{{ notifs_sin_leer }}</h3>
+          <p class="text-secondary small mt-1">Mensajes sin leer</p>
         </div>
-        <h3 id="notifs-count" style="font-size: 2rem; font-weight: 700; margin: 0;">{{ notifs_sin_leer }}</h3>
-        <script>document.getElementById('notifs-count').style.color = "{{ 'var(--accent-amber)' if notifs_sin_leer > 0 else 'var(--text-primary)' }}";</script>
-        <p class="text-secondary small mt-1">Sin leer</p>
-        <a href="{{ url_for('aprendiz.notificaciones') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver todas</a>
+        <a href="{{ url_for('aprendiz.notificaciones') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver alertas</a>
       </div>
     </div>
   </div>
 
   <!-- Tarjeta Estado -->
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="lib-card h-100" style="border-left: 4px solid var(--accent-green);">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0">Estado de Práctica</div>
-          <div class="shell-header-icon" style="color: var(--accent-green); background: var(--accent-green-glow); border-color: rgba(63,185,80,0.3);"><i class="bi bi-check2-circle"></i></div>
+      <div class="lib-card-body d-flex flex-column justify-content-between">
+        <div>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="lib-card-title text-muted text-uppercase mb-0">Estado</div>
+            <div class="shell-header-icon" style="color: var(--accent-green); background: var(--accent-green-glow); border-color: rgba(63,185,80,0.3);"><i class="bi bi-check2-circle"></i></div>
+          </div>
+          <h4 style="font-size: 1.25rem; font-weight: 600; margin-top: 1rem;" class="text-success">{{ aprendiz.estado_practica if aprendiz else 'Sin Registro' }}</h4>
+          <p class="text-secondary small mt-1">Ficha: {{ aprendiz.ficha if aprendiz and aprendiz.ficha else 'N/A' }}</p>
         </div>
-        <h4 style="font-size: 1.25rem; font-weight: 600; margin-top: 1rem;" class="text-success">{{ aprendiz.estado_practica if aprendiz else 'Sin Registro' }}</h4>
-        <p class="text-secondary small mt-1">Ficha: {{ aprendiz.ficha if aprendiz and aprendiz.ficha else 'No asignada' }}</p>
       </div>
     </div>
   </div>

@@ -15,7 +15,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request)
 from flask_login import current_user, login_required
 from app import db
-from app.utils import role_required, log_historial
+from app.utils import role_required, log_historial, make_aware
 from app.models.aprendiz import Aprendiz
 from app.models.usuario import Usuario
 from app.models.evidencia import Evidencia
@@ -64,8 +64,6 @@ def dashboard():
     # Preparar datos de fichas/cursos
     fichas_data = []
     progreso_general = 0
-    total_horas_cumplidas = 0
-    total_horas_requeridas = 0
     
     if inst:
         cursos = [ci.curso for ci in inst.cursos]
@@ -88,16 +86,23 @@ def dashboard():
                 'aprendices_count': len(aprendices_curso),
                 'evidencias_pendientes': evidencias_pendientes_curso
             })
-            
-            # Acumular horas para progreso general
-            for ac in aprendices_curso:
-                ap = ac.aprendiz
-                total_horas_cumplidas += ap.horas_cumplidas or 0
-                total_horas_requeridas += ap.horas_requeridas or 0
     
-    # Calcular progreso general
-    if total_horas_requeridas > 0:
-        progreso_general = round((total_horas_cumplidas / total_horas_requeridas) * 100, 1)
+    # Calcular progreso general (promedio de los aprendices basados en tiempo y evidencias)
+    if aprendices:
+        total_pct_tiempo = 0
+        total_pct_evidencias = 0
+        from datetime import datetime, timezone
+        for ap in aprendices:
+            dias = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days if ap.usuario and ap.usuario.fecha_creacion else 0
+            pct_t = min(100, max(0, (dias / 180) * 100))
+            evs = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+            pct_e = min(100, (evs / 12) * 100)
+            total_pct_tiempo += pct_t
+            total_pct_evidencias += pct_e
+        
+        progreso_general = round((total_pct_tiempo + total_pct_evidencias) / (2 * len(aprendices)), 1)
+    else:
+        progreso_general = 0
 
     return render_template('instructor/dashboard.html',
                            instructor=inst,
@@ -210,11 +215,15 @@ def ficha_detalle(id_curso):
         id_curso=id_curso).all()
     
     aprendices_data = []
+    from datetime import datetime, timezone
     for ca in aprendices_curso:
         ap = ca.aprendiz
-        pct = 0
-        if ap.horas_requeridas:
-            pct = round((ap.horas_cumplidas or 0) / ap.horas_requeridas * 100, 1)
+        
+        dias = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days if ap.usuario and ap.usuario.fecha_creacion else 0
+        pct_tiempo = min(100, max(0, round((dias / 180) * 100, 1)))
+        
+        evs = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evs / 12) * 100, 1))
         
         # Evidencias del aprendiz
         evidencias = Evidencia.query.filter_by(
@@ -223,9 +232,9 @@ def ficha_detalle(id_curso):
         
         aprendices_data.append({
             'aprendiz': ap,
-            'progreso': pct,
-            'horas_cumplidas': ap.horas_cumplidas,
-            'horas_requeridas': ap.horas_requeridas,
+            'pct_tiempo': pct_tiempo,
+            'pct_evidencias': pct_evidencias,
+            'evidencias_count': evs,
             'evidencias': evidencias
         })
     
@@ -243,8 +252,21 @@ def ficha_detalle(id_curso):
 def aprendices():
     lista = _aprendices_del_instructor()
     empresas = Empresa.query.filter_by(activa=True).all()
+    aprendices_data = []
+    from datetime import datetime, timezone
+    for ap in lista:
+        dias = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days if ap.usuario and ap.usuario.fecha_creacion else 0
+        pct_tiempo = min(100, max(0, round((dias / 180) * 100, 1)))
+        evs = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evs / 12) * 100, 1))
+        aprendices_data.append({
+            'aprendiz': ap,
+            'pct_tiempo': pct_tiempo,
+            'pct_evidencias': pct_evidencias,
+            'evidencias_count': evs
+        })
     return render_template('instructor/aprendices.html',
-                           aprendices=lista, empresas=empresas)
+                           aprendices_data=aprendices_data, empresas=empresas)
 
 
 # ─── Asignar empresa al aprendiz ──────────────
@@ -263,18 +285,17 @@ def asignar_empresa(id_aprendiz):
     return redirect(next_url)
 
 
-# ─── Actualizar horas aprendiz ────────────────
+# ─── Actualizar estado aprendiz ───────────────
 @bp.route('/aprendices/<int:id_aprendiz>/horas', methods=['POST'])
 @login_required
 @role_required('instructor')
 def actualizar_horas(id_aprendiz):
     ap = Aprendiz.query.get_or_404(id_aprendiz)
-    ap.horas_cumplidas = request.form.get('horas_cumplidas', type=int, default=ap.horas_cumplidas)
     ap.estado_practica = request.form.get('estado_practica', ap.estado_practica)
     log_historial(current_user, 'Aprendiz', 'MODIFICAR',
-                  f'Horas actualizadas aprendiz {id_aprendiz}: {ap.horas_cumplidas}h')
+                  f'Estado actualizado aprendiz {id_aprendiz}: {ap.estado_practica}')
     db.session.commit()
-    flash('Horas actualizadas.', 'success')
+    flash('Estado actualizado correctamente.', 'success')
     return redirect(url_for('instructor.aprendices'))
 
 
@@ -327,11 +348,15 @@ def evaluar_evidencia(id_evidencia):
 def progreso_aprendices():
     aprendices = _aprendices_del_instructor()
     datos = []
+    from datetime import datetime, timezone
     for ap in aprendices:
-        pct = 0
-        if ap.horas_requeridas:
-            pct = round((ap.horas_cumplidas or 0) / ap.horas_requeridas * 100, 1)
-        datos.append({'aprendiz': ap, 'pct': pct})
+        dias = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days if ap.usuario and ap.usuario.fecha_creacion else 0
+        pct_tiempo = min(100, max(0, round((dias / 180) * 100, 1)))
+        
+        evs = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evs / 12) * 100, 1))
+        
+        datos.append({'aprendiz': ap, 'pct_tiempo': pct_tiempo, 'pct_evidencias': pct_evidencias, 'evs': evs})
     return render_template('instructor/progreso_aprendices.html', datos=datos)
 
 

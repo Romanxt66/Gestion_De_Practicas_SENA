@@ -73,8 +73,8 @@
           <tr>
             <th>Nombre</th>
             <th>Empresa</th>
-            <th>Horas</th>
-            <th class="text-center">Progreso</th>
+            <th>Semestre</th>
+            <th class="text-center">Evidencias</th>
             <th>Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
@@ -94,17 +94,22 @@
               {% endif %}
             </td>
             <td>
-              <small>{{ item.horas_cumplidas or 0 }}/{{ item.horas_requeridas or 0 }} h</small>
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold {% if item.pct_tiempo >= 100 %}text-success{% else %}text-primary{% endif %}">{{ item.pct_tiempo }}%</span>
+              </div>
+              <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
+                <div class="progress-bar {% if item.pct_tiempo >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ item.pct_tiempo }}%;"></div>
+              </div>
             </td>
             <td class="text-center">
-              <div style="width: 150px; margin: 0 auto;">
-                <div class="progress" style="height: 20px;">
-                  <div class="progress-bar bg-success" id="pb-{{ loop.index }}" role="progressbar">
-                    <small style="font-size: 0.75rem;">{{ item.progreso }}%</small>
-                  </div>
+              <div style="width: 100px; margin: 0 auto;">
+                <span class="small fw-bold" style="color: {% if item.evidencias_count >= 12 %}var(--accent-green){% else %}var(--accent-purple){% endif %};">
+                  {{ item.evidencias_count }} / 12
+                </span>
+                <div class="progress mt-1" style="height: 6px; background: var(--bg-hover);">
+                  <div class="progress-bar {% if item.evidencias_count >= 12 %}bg-success{% endif %}" role="progressbar" style="width: {{ item.pct_evidencias }}%; {% if item.evidencias_count < 12 %}background: var(--accent-purple);{% endif %}"></div>
                 </div>
               </div>
-              <script>document.getElementById("pb-{{ loop.index }}").style.width = "{{ item.progreso }}%";</script>
             </td>
             <td>
               {% if item.aprendiz.estado_practica == 'En proceso' %}

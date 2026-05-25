@@ -14,7 +14,7 @@
     </div>
   </div>
   <div class="biblioteca-shell-body p-0">
-    {% if aprendices %}
+    {% if aprendices_data %}
     <div class="table-responsive">
       <table class="biblioteca-table mb-0">
         <thead>
@@ -23,13 +23,15 @@
             <th>Aprendiz</th>
             <th>Ficha</th>
             <th>Estado Práctica</th>
-            <th>Horas (Cumplidas / Requeridas)</th>
+            <th>Progreso de Tiempo</th>
+            <th>Evidencias</th>
             <th>Empresa</th>
             <th class="text-end">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {% for ap in aprendices %}
+          {% for item in aprendices_data %}
+          {% set ap = item.aprendiz %}
           <tr>
             <td>#{{ ap.id_aprendiz }}</td>
             <td>
@@ -50,16 +52,19 @@
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold {% if ap.horas_cumplidas >= ap.horas_requeridas %}text-success{% else %}text-warning{% endif %}">{{ ap.horas_cumplidas or 0 }}</span>
-                <span class="text-muted">/ {{ ap.horas_requeridas or 0 }}</span>
+                <span class="fw-bold {% if item.pct_tiempo >= 100 %}text-success{% else %}text-primary{% endif %}">{{ item.pct_tiempo }}%</span>
+                <span class="text-muted small">6 meses</span>
               </div>
               <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
-                {% set pct = 0 %}
-                {% if ap.horas_requeridas %}
-                  {% set pct = (ap.horas_cumplidas or 0) / ap.horas_requeridas * 100 %}
-                {% endif %}
-                {% set style_attr = 'style="width: ' ~ pct ~ '%;"' %}
-                <div class="progress-bar {% if pct >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" {{ style_attr|safe }}></div>
+                <div class="progress-bar {% if item.pct_tiempo >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ item.pct_tiempo }}%;"></div>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold {% if item.evidencias_count >= 12 %}text-success{% else %}text-purple{% endif %}">{{ item.evidencias_count }} / 12</span>
+              </div>
+              <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
+                <div class="progress-bar {% if item.evidencias_count >= 12 %}bg-success{% else %}bg-purple{% endif %}" role="progressbar" style="background: var(--accent-purple); width: {{ item.pct_evidencias }}%;"></div>
               </div>
             </td>
             <td>
@@ -98,8 +103,9 @@
 {% endblock %}
 
 {% block modals %}
-  {% for ap in aprendices %}
-  <!-- Modal Actualizar Horas / Estado -->
+  {% for item in aprendices_data %}
+  {% set ap = item.aprendiz %}
+  <!-- Modal Actualizar Estado -->
   <div class="modal fade" id="modalHoras{{ ap.id_aprendiz }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -109,11 +115,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label" for="horas_cumplidas_{{ ap.id_aprendiz }}">Horas Cumplidas</label>
-              <input type="number" class="form-control" id="horas_cumplidas_{{ ap.id_aprendiz }}" name="horas_cumplidas" value="{{ ap.horas_cumplidas or 0 }}" min="0" max="{{ ap.horas_requeridas or 880 }}" required>
-              <small class="text-muted">Horas requeridas totales: {{ ap.horas_requeridas or 0 }}</small>
-            </div>
             <div class="mb-3">
               <label class="form-label" for="estado_{{ ap.id_aprendiz }}">Estado de Práctica</label>
               <select class="form-select" id="estado_{{ ap.id_aprendiz }}" name="estado_practica" required>

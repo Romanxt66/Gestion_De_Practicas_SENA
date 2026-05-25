@@ -16,7 +16,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
 from app import db
-from app.utils import role_required, log_historial
+from app.utils import role_required, log_historial, make_aware
 from app.models.usuario import Usuario
 from app.models.rol import Rol
 from app.models.usuario_rol import UsuarioRol
@@ -599,22 +599,23 @@ def ficha_detalle(id_curso):
         id_curso=id_curso).all()
     
     aprendices_data = []
+    from datetime import datetime, timezone
     for ca in aprendices_curso:
         ap = ca.aprendiz
-        pct = 0
-        if ap.horas_requeridas:
-            pct = round((ap.horas_cumplidas or 0) / ap.horas_requeridas * 100, 1)
+        dias = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days if ap.usuario and ap.usuario.fecha_creacion else 0
+        pct_tiempo = min(100, max(0, round((dias / 180) * 100, 1)))
+        evs = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evs / 12) * 100, 1))
         
-        # Evidencias del aprendiz
         evidencias = Evidencia.query.filter_by(
             id_aprendiz=ap.id_aprendiz).order_by(
             Evidencia.fecha_entrega.desc()).all()
         
         aprendices_data.append({
             'aprendiz': ap,
-            'progreso': pct,
-            'horas_cumplidas': ap.horas_cumplidas,
-            'horas_requeridas': ap.horas_requeridas,
+            'pct_tiempo': pct_tiempo,
+            'pct_evidencias': pct_evidencias,
+            'evidencias_count': evs,
             'evidencias': evidencias
         })
     

@@ -9,6 +9,18 @@ from datetime import datetime, timezone
 
 
 # ─────────────────────────────────────────────
+# Helper: asegurar compatibilidad de datetime
+# ─────────────────────────────────────────────
+def make_aware(dt):
+    """Convierte un datetime naive a aware con UTC si es necesario."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+# ─────────────────────────────────────────────
 # Decorador de rol
 # ─────────────────────────────────────────────
 def role_required(*roles):

@@ -13,7 +13,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from app import db
-from app.utils import role_required, enviar_correo_evidencia
+from app.utils import role_required, enviar_correo_evidencia, make_aware
 from app.models.evidencia import Evidencia
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
@@ -35,9 +35,16 @@ def _get_aprendiz():
 @role_required('aprendiz')
 def dashboard():
     ap = _get_aprendiz()
-    pct = 0
-    if ap and ap.horas_requeridas:
-        pct = round((ap.horas_cumplidas or 0) / ap.horas_requeridas * 100, 1)
+    pct_tiempo = 0
+    pct_evidencias = 0
+    evidencias_count = 0
+    if ap and ap.usuario and ap.usuario.fecha_creacion:
+        from datetime import datetime, timezone
+        dias_transcurridos = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days
+        pct_tiempo = min(100, max(0, round((dias_transcurridos / 180) * 100, 1)))
+        
+        evidencias_count = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evidencias_count / 12) * 100, 1))
 
     notifs_sin_leer = 0
     if ap:
@@ -53,7 +60,9 @@ def dashboard():
 
     return render_template('aprendiz/dashboard.html',
                            aprendiz=ap,
-                           pct=pct,
+                           pct_tiempo=pct_tiempo,
+                           pct_evidencias=pct_evidencias,
+                           evidencias_count=evidencias_count,
                            notifs_sin_leer=notifs_sin_leer,
                            evidencias_recientes=evidencias_recientes)
 
@@ -69,9 +78,16 @@ def evidencias_subir():
         return redirect(url_for('aprendiz.dashboard'))
 
     # Calcular progreso
-    pct = 0
-    if ap and ap.horas_requeridas:
-        pct = round((ap.horas_cumplidas or 0) / ap.horas_requeridas * 100, 1)
+    pct_tiempo = 0
+    pct_evidencias = 0
+    evidencias_count = 0
+    if ap and ap.usuario and ap.usuario.fecha_creacion:
+        from datetime import datetime, timezone
+        dias_transcurridos = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days
+        pct_tiempo = min(100, max(0, round((dias_transcurridos / 180) * 100, 1)))
+        
+        evidencias_count = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evidencias_count / 12) * 100, 1))
 
     if request.method == 'POST':
         tipo = request.form.get('tipo', '')
@@ -81,10 +97,10 @@ def evidencias_subir():
             archivo = request.files.get('archivo')
             if not archivo or archivo.filename == '':
                 flash('Selecciona un archivo.', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, progreso_pct=pct)
+                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
             if not _allowed(archivo.filename):
                 flash('Tipo de archivo no permitido.', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, progreso_pct=pct)
+                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
             fname = secure_filename(archivo.filename)
             upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'evidencias')
             os.makedirs(upload_dir, exist_ok=True)
@@ -94,14 +110,14 @@ def evidencias_subir():
         elif tipo == 'enlace':
             if not contenido.startswith('http'):
                 flash('El enlace debe comenzar con http:// o https://', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, progreso_pct=pct)
+                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
         elif tipo == 'texto':
             if not contenido:
                 flash('Escribe el contenido de la evidencia.', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, progreso_pct=pct)
+                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
         else:
             flash('Selecciona un tipo de evidencia.', 'danger')
-            return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, progreso_pct=pct)
+            return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
 
         evidencia = Evidencia(
             id_aprendiz=ap.id_aprendiz,
@@ -123,7 +139,7 @@ def evidencias_subir():
         flash('Evidencia enviada correctamente.', 'success')
         return redirect(url_for('aprendiz.mis_evidencias'))
 
-    return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, progreso_pct=pct)
+    return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
 
 
 # ─── Mi Progreso ──────────────────────────────
@@ -132,15 +148,28 @@ def evidencias_subir():
 @role_required('aprendiz')
 def progreso():
     ap = _get_aprendiz()
-    pct = 0
-    if ap and ap.horas_requeridas:
-        pct = round((ap.horas_cumplidas or 0) / ap.horas_requeridas * 100, 1)
+    pct_tiempo = 0
+    pct_evidencias = 0
+    evidencias_count = 0
+    dias_transcurridos = 0
+    if ap and ap.usuario and ap.usuario.fecha_creacion:
+        from datetime import datetime, timezone
+        dias_transcurridos = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days
+        pct_tiempo = min(100, max(0, round((dias_transcurridos / 180) * 100, 1)))
+        
+        evidencias_count = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
+        pct_evidencias = min(100, round((evidencias_count / 12) * 100, 1))
+
     progreso_cursos = []
     if ap:
         progreso_cursos = (ProgresoAprendiz.query
                            .filter_by(id_aprendiz=ap.id_aprendiz).all())
     return render_template('aprendiz/progreso.html',
-                           aprendiz=ap, pct=pct,
+                           aprendiz=ap, 
+                           pct_tiempo=pct_tiempo,
+                           pct_evidencias=pct_evidencias,
+                           evidencias_count=evidencias_count,
+                           dias_transcurridos=dias_transcurridos,
                            progreso_cursos=progreso_cursos)
 
 

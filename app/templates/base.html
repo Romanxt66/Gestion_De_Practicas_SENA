@@ -22,7 +22,7 @@
 
 <!-- ══ SIDEBAR ══════════════════════════════ -->
 {% if current_user.is_authenticated %}
-<nav class="biblioteca-nav offcanvas-md offcanvas-start d-flex flex-column p-4" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel" style="width: 260px; height: 100vh; overflow-y: auto; border-right: 1px solid var(--border-default); border-bottom: none;">
+<nav class="biblioteca-nav offcanvas-md offcanvas-start d-flex flex-column p-4 flex-shrink-0" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel" style="width: 280px; height: 100vh; overflow-y: auto; overflow-x: hidden; border-right: 1px solid var(--border-default); border-bottom: none;">
   <!-- Offcanvas Header for Mobile -->
   <div class="offcanvas-header d-md-none px-0 pb-3 mb-2 border-bottom" style="border-color: var(--border-default)!important;">
     <h5 class="offcanvas-title text-white fw-bold" id="sidebarOffcanvasLabel">Menú Principal</h5>

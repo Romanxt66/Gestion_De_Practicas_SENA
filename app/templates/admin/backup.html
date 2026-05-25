@@ -2,26 +2,22 @@
 {% block title %}Backup y Exportación — SENA Prácticas{% endblock %}
 
 {% block content %}
-<div class="page-toolbar">
+<div class="page-toolbar mb-4">
   <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-cloud-download text-primary me-2"></i>Exportación de Datos / Copias de Seguridad</h2>
 </div>
 
-<div class="row mb-5">
-   <div class="col-12">
-     <div class="alert alert-info border border-info d-flex align-items-center mb-0 px-4 py-3 pb-3" style="background: rgba(88,166,255,0.05);">
-        <i class="bi bi-info-circle-fill fs-3 me-3 text-info"></i>
-        <div class="text-secondary" style="font-size: 0.9rem;">
-           <strong>Aviso del Sistema:</strong> 
-           Generar exportaciones pesadas puede tardar unos segundos. Estos reportes en Excel sirven como respaldo offline y pueden ser procesados externamente en las coordinaciones para evaluación de las métricas. Se requiere el paquete <code>openpyxl</code> en el entorno de Python.
-        </div>
-     </div>
-   </div>
+<div class="alert alert-info border border-info d-flex align-items-center mb-4 px-4 py-3 pb-3" style="background: rgba(88,166,255,0.05); border-radius: var(--radius-md);">
+  <i class="bi bi-info-circle-fill fs-3 me-3 text-info"></i>
+  <div class="text-secondary" style="font-size: 0.9rem;">
+     <strong>Aviso del Sistema:</strong> 
+     Generar exportaciones pesadas puede tardar unos segundos. Estos reportes en Excel sirven como respaldo offline y pueden ser procesados externamente en las coordinaciones para evaluación de las métricas. Se requiere el paquete <code>openpyxl</code> en el entorno de Python.
+  </div>
 </div>
 
-<div class="row g-4">
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 m-0">
 
   <!-- Export Aprendices -->
-  <div class="col-md-3 mt-0">
+  <div class="col px-2 mt-0">
     <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-cyan); transition: transform 0.2s;">
       <div class="lib-card-body pb-0">
         <i class="bi bi-person-lines-fill text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
@@ -36,7 +32,7 @@
   </div>
 
   <!-- Export Instructores -->
-  <div class="col-md-3 mt-0">
+  <div class="col px-2 mt-0">
     <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-green); transition: transform 0.2s;">
       <div class="lib-card-body pb-0">
         <i class="bi bi-person-badge text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
@@ -51,7 +47,7 @@
   </div>
 
   <!-- Export Empresas -->
-  <div class="col-md-3 mt-0">
+  <div class="col px-2 mt-0">
     <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-amber); transition: transform 0.2s;">
       <div class="lib-card-body pb-0">
         <i class="bi bi-buildings text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>
@@ -66,7 +62,7 @@
   </div>
 
   <!-- Export Historial/Auditoría -->
-  <div class="col-md-3 mt-0">
+  <div class="col px-2 mt-0">
     <div class="lib-card text-center h-100 pb-3" style="border-top: 4px solid var(--accent-purple); transition: transform 0.2s;">
       <div class="lib-card-body pb-0">
         <i class="bi bi-clock-history text-muted opacity-50 d-block mt-3 mb-4" style="font-size: 3.5rem;"></i>

@@ -10,15 +10,17 @@
   {% if datos %}
     {% for item in datos %}
       {% set ap = item.aprendiz %}
-      {% set pct = item.pct %}
+      {% set pct_tiempo = item.pct_tiempo %}
+      {% set pct_evidencias = item.pct_evidencias %}
+      {% set evs = item.evs %}
       <div class="col-md-6 col-lg-4">
-        <div class="lib-card h-100 position-relative {% if pct >= 100 %}border-success{% endif %}" id="card-{{ loop.index }}">
+        <div class="lib-card h-100 position-relative {% if pct_tiempo >= 100 and evs >= 12 %}border-success{% endif %}" id="card-{{ loop.index }}">
           <script>
-            if ("{{ 'true' if pct >= 100 else 'false' }}" === "true") {
+            if ("{{ 'true' if pct_tiempo >= 100 and evs >= 12 else 'false' }}" === "true") {
               document.getElementById('card-{{ loop.index }}').style.boxShadow = "0 0 15px rgba(63,185,80,0.15)";
             }
           </script>
-          {% if pct >= 100 %}
+          {% if pct_tiempo >= 100 and evs >= 12 %}
           <div class="position-absolute top-0 end-0 p-2">
              <span class="badge-lib badge-green"><i class="bi bi-star-fill text-warning me-1"></i> Completado</span>
           </div>
@@ -35,18 +37,33 @@
               </div>
             </div>
             
+            <!-- Progreso de Tiempo -->
             <div class="mb-3">
               <div class="d-flex justify-content-between mb-1">
-                <span class="small text-muted text-uppercase fw-bold">Horas</span>
-                <span class="small fw-bold">{{ pct }}%</span>
+                <span class="small text-muted text-uppercase fw-bold"><i class="bi bi-calendar-check me-1"></i>Semestre</span>
+                <span class="small fw-bold">{{ pct_tiempo }}%</span>
               </div>
               <div class="progress" style="height: 8px; background: var(--bg-hover);">
-                <div class="progress-bar {% if pct >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" id="pb-{{ loop.index }}"></div>
+                <div class="progress-bar {% if pct_tiempo >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" id="pb-t-{{ loop.index }}" style="width: {{ pct_tiempo }}%;"></div>
               </div>
-              <script>document.getElementById('pb-{{ loop.index }}').style.width = "{{ pct }}%";</script>
-              <div class="d-flex justify-content-between mt-2 small">
-                <span class="text-success"><i class="bi bi-play-fill"></i> {{ ap.horas_cumplidas or 0 }}</span>
-                <span class="text-primary"><i class="bi bi-flag-fill"></i> {{ ap.horas_requeridas or 0 }}</span>
+              <div class="d-flex justify-content-between mt-1 small text-muted">
+                <span>{{ item.evs }} evid. enviadas</span>
+                <span>6 meses</span>
+              </div>
+            </div>
+
+            <!-- Progreso de Evidencias -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="small text-muted text-uppercase fw-bold"><i class="bi bi-file-earmark-check me-1"></i>Evidencias</span>
+                <span class="small fw-bold" style="color: var(--accent-purple);">{{ evs }} / 12</span>
+              </div>
+              <div class="progress" style="height: 8px; background: var(--bg-hover);">
+                <div class="progress-bar {% if evs >= 12 %}bg-success{% endif %}" role="progressbar" id="pb-e-{{ loop.index }}" style="width: {{ pct_evidencias }}%; {% if evs < 12 %}background: var(--accent-purple);{% endif %}"></div>
+              </div>
+              <div class="d-flex justify-content-between mt-1 small text-muted">
+                <span>{{ pct_evidencias }}% completado</span>
+                <span>Máx. 12</span>
               </div>
             </div>
             
