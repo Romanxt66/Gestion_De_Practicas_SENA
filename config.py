@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///flaskdb.sqlite')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     print("DATABASE_URL:", SQLALCHEMY_DATABASE_URI, flush=True)  # Debug
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
