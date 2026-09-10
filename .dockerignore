@@ -9,3 +9,8 @@ venv/
 .git/
 .gitignore
 .gitattributes
+
+# Secretos: se leen en tiempo de ejecución (env_file / bind mount),
+# no deben quedar horneados en las capas de la imagen.
+.env
+instance/.secret_key
