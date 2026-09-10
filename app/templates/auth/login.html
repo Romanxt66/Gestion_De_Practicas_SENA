@@ -232,6 +232,7 @@
       <p class="subtitle">Ingresa tus credenciales para continuar.</p>
       
       <form method="POST" action="{{ url_for('auth.login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="minimal-form-group">
           <label class="minimal-label" for="correo">CORREO ELECTRÓNICO</label>
           <input class="minimal-input" type="email" id="correo" name="correo" placeholder="usuario@soy.sena.edu.co" required autofocus>

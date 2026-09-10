@@ -16,6 +16,7 @@
       <div class="biblioteca-shell-body p-4">
         
         <form method="POST" action="{{ url_for('admin.asignar_rol') }}" class="mb-5 p-4 rounded" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-default);">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <h5 class="fs-6 fw-bold mb-3"><i class="bi bi-plus-circle text-success me-2"></i> Asignar nuevo rol a usuario existente</h5>
           
           <div class="row gx-3 align-items-end">
@@ -63,6 +64,7 @@
                   <td><span class="badge-lib badge-gray text-uppercase px-2">{{ ur.rol.nombre }}</span></td>
                   <td>
                     <form method="POST" action="{{ url_for('admin.quitar_rol') }}" class="d-flex justify-content-end" onsubmit="return confirm('¿Seguro que desea revocar el rol {{ ur.rol.nombre }} de {{ u.nombres }}?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <input type="hidden" name="id_usuario" value="{{ u.id_usuario }}">
                       <input type="hidden" name="id_rol" value="{{ ur.rol.id_rol }}">
                       {% if current_user.id_usuario != u.id_usuario or ur.rol.nombre != 'superusuario' %}

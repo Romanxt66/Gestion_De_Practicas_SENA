@@ -16,6 +16,7 @@
       <div class="biblioteca-shell-body">
         
         <form method="POST" action="{{ url_for('aprendiz.informacion') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <!-- Static fields -->
           <div class="row mb-3">
             <div class="col-md-6 mb-3 mb-md-0">
@@ -42,8 +43,9 @@
               <input type="text" class="form-control" id="telefono" name="telefono" value="{{ usuario.telefono or '' }}">
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="ficha">Número de Ficha <i class="bi bi-pencil-fill text-muted ms-1" style="font-size: 0.75rem;"></i></label>
-              <input type="text" class="form-control" id="ficha" name="ficha" value="{{ aprendiz.ficha if aprendiz and aprendiz.ficha else '' }}">
+              <label class="form-label" for="ficha">Número de Ficha <i class="bi bi-lock-fill text-muted ms-1" style="font-size: 0.75rem;"></i></label>
+              <input type="text" class="form-control" id="ficha" value="{{ aprendiz.ficha if aprendiz and aprendiz.ficha else 'Sin asignar' }}" disabled>
+              <div class="form-text text-muted" style="font-size: 0.75rem;">La ficha la asigna tu instructor o el administrador.</div>
             </div>
           </div>
 

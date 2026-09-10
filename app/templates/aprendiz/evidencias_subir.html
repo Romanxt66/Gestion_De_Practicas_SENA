@@ -50,6 +50,7 @@
       </div>
       <div class="biblioteca-shell-body">
         <form method="POST" action="{{ url_for('aprendiz.evidencias_subir') }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <div class="mb-4">
             <label class="form-label" for="tipo">Tipo de evidencia <span class="text-danger">*</span></label>

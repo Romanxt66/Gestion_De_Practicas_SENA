@@ -16,6 +16,7 @@
       <div class="biblioteca-shell-body">
         
         <form method="POST" action="{{ url_for('instructor.alertas') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="mb-4">
              <label class="form-label text-muted fw-bold">Destinatario <span class="text-danger">*</span></label>
              <select name="destino" id="destino" class="form-select bg-dark text-white" required>

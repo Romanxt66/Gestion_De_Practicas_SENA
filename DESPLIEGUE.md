@@ -1,0 +1,114 @@
+# Guía de despliegue y mantenimiento
+
+## ⚠️ Lo primero: esta versión requiere un archivo `.env`
+
+Antes se tomaba `DATABASE_URL` de `docker-compose.yml`, donde la contraseña de
+Postgres estaba escrita en claro. Ahora todas las credenciales viven en `.env`
+(que **no** se sube al repositorio) y el compose las lee con `env_file`.
+
+En el servidor, crear `.env` a partir de `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+y completar como mínimo:
+
+| Variable | Valor |
+|---|---|
+| `DATABASE_URL` | `postgresql+psycopg://admin:LA_CONTRASENA@postgres-db:5432/master_db` |
+| `SECRET_KEY` | generar con `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
+| `SESSION_COOKIE_SECURE` | `True` si el sitio se sirve por HTTPS |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | credenciales del superusuario del seed |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | cuenta SMTP que envía las notificaciones |
+
+> Si no defines `SECRET_KEY`, la aplicación genera una y la guarda en
+> `instance/.secret_key`. Funciona, pero en un contenedor sin volumen
+> persistente esa carpeta se pierde en cada redeploy y las sesiones se cierran.
+> **Lo recomendado es definir `SECRET_KEY` en el `.env`.**
+
+## Primer despliegue de esta versión
+
+1. Crear el `.env` como se indicó arriba.
+2. Reconstruir la imagen (cambió `requirements.txt`, que además estaba en UTF‑16
+   y por eso `pip install -r` fallaba):
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. **Marcar la base de datos existente como ya migrada.** El proyecto ahora usa
+   Flask‑Migrate. Como las tablas ya existen en producción, hay que sellar el
+   estado en lugar de volver a crearlas:
+
+   ```bash
+   docker compose exec web flask db stamp head
+   ```
+
+   Este paso se hace **una sola vez**. Si se omite, el primer
+   `flask db upgrade` intentará crear tablas que ya existen y fallará.
+
+4. Verificar que el sitio responde y que se puede iniciar sesión.
+
+> Al desplegar, **todas las sesiones activas se cierran** (cambia la clave de
+> firma). Es normal: los usuarios solo tienen que volver a entrar.
+
+## Cambios de esquema de aquí en adelante
+
+Nunca vuelvas a confiar en `db.create_all()` para modificar tablas: solo crea
+las que faltan, jamás altera una existente. El flujo correcto es:
+
+```bash
+# 1. Editar el modelo en app/models/
+# 2. Generar la migración (en local)
+flask db migrate -m "descripción del cambio"
+# 3. Revisar a mano el archivo generado en migrations/versions/
+# 4. Aplicarla
+flask db upgrade
+```
+
+En producción, tras desplegar el código nuevo:
+
+```bash
+docker compose exec web flask db upgrade
+```
+
+Con varios workers conviene además poner `RUN_DB_INIT=0` en el `.env` para que
+el arranque no ejecute `create_all()`/seed en paralelo.
+
+## Desarrollo local
+
+```bash
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env      # y poner DATABASE_URL=sqlite:///flaskdb.sqlite
+.venv/bin/python run.py   # http://localhost:5001
+```
+
+Para activar el recargado automático y el depurador: `FLASK_DEBUG=1`.
+(Antes el `debug=True` estaba fijo en el código, lo que también quedaba
+activo en producción.)
+
+## Nota sobre el servidor
+
+`run.py` levanta el servidor de desarrollo de Werkzeug, que no está pensado
+para producción. Cuando quieras dar el paso, agregá `gunicorn` a
+`requirements.txt` y cambiá el `CMD` del `Dockerfile` por:
+
+```
+CMD ["gunicorn", "-w", "3", "-b", "0.0.0.0:5001", "run:app"]
+```
+
+Con varios workers, `SECRET_KEY` en el `.env` y `RUN_DB_INIT=0` dejan de ser
+recomendaciones y pasan a ser obligatorios.
+
+## Archivos de evidencia
+
+Se guardan en `app/static/uploads/evidencias/`. El acceso directo por
+`/static/uploads/...` está bloqueado; se descargan por
+`/archivos/evidencia/<id>`, que valida que quien pide el archivo sea el
+aprendiz dueño, un instructor de su ficha o un superusuario.
+
+Esa carpeta **debe estar en un volumen persistente**: hoy el `docker-compose.yml`
+monta todo el proyecto (`.:/app`), así que se conserva, pero si algún día se
+quita ese bind mount, las evidencias subidas se perderían en cada redeploy.

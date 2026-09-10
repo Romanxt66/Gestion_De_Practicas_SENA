@@ -110,6 +110,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form action="{{ url_for('instructor.actualizar_horas', id_aprendiz=ap.id_aprendiz) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title">Actualizar Progreso: {{ ap.usuario.nombres }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -139,6 +140,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form action="{{ url_for('instructor.asignar_empresa', id_aprendiz=ap.id_aprendiz) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title">Asignar Empresa a: {{ ap.usuario.nombres }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

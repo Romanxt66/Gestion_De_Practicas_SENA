@@ -13,6 +13,7 @@
     </div>
     <div class="login-card-body">
       <form method="POST" action="{{ url_for('auth.registro') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="row gx-3">
           <div class="col-md-6 mb-3">
             <label class="form-label" for="nombres">Nombres <span class="text-danger">*</span></label>

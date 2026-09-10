@@ -70,7 +70,7 @@
                 <a href="{{ ev.contenido }}" target="_blank" class="text-info text-decoration-none text-truncate d-block" title="{{ ev.contenido }}">Abrir enlace <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>
               {% elif ev.tipo == 'archivo' %}
                 <!-- Asume que el servidor sirve los estaticos dentro de uploads -->
-                <a href="{{ url_for('static', filename=ev.contenido) }}" target="_blank" class="text-success text-decoration-none"><i class="bi bi-download me-1"></i> Descargar archivo</a>
+                <a href="{{ url_for('archivos.evidencia', id_evidencia=ev.id_evidencia) }}" target="_blank" class="text-success text-decoration-none"><i class="bi bi-download me-1"></i> Descargar archivo</a>
               {% else %}
                 <div class="text-truncate" title="{{ ev.contenido }}">{{ ev.contenido }}</div>
               {% endif %}
@@ -113,6 +113,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form action="{{ url_for('instructor.evaluar_evidencia', id_evidencia=ev.id_evidencia) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title">Calificar Evidencia #{{ ev.id_evidencia }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

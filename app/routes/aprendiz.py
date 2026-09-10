@@ -8,22 +8,21 @@ Blueprint Aprendiz — 6 módulos:
   /aprendiz/mis-evidencias
 """
 import os
+
 from flask import (Blueprint, render_template, redirect, url_for,
-                   flash, request, current_app)
+                   flash, request)
 from flask_login import current_user, login_required
-from werkzeug.utils import secure_filename
+
 from app import db
-from app.utils import role_required, enviar_correo_evidencia, make_aware
 from app.models.evidencia import Evidencia
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
+from app.utils import (role_required, enviar_correo_evidencia, calcular_progreso,
+                       extension_permitida, nombre_archivo_seguro,
+                       directorio_evidencias, EXTENSIONES_PERMITIDAS)
 
 bp = Blueprint('aprendiz', __name__, url_prefix='/aprendiz')
 
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'zip', 'txt'}
-
-def _allowed(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def _get_aprendiz():
     return current_user.aprendiz
@@ -35,21 +34,10 @@ def _get_aprendiz():
 @role_required('aprendiz')
 def dashboard():
     ap = _get_aprendiz()
-    pct_tiempo = 0
-    pct_evidencias = 0
-    evidencias_count = 0
-    if ap and ap.usuario and ap.usuario.fecha_creacion:
-        from datetime import datetime, timezone
-        dias_transcurridos = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days
-        pct_tiempo = min(100, max(0, round((dias_transcurridos / 180) * 100, 1)))
-        
-        evidencias_count = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
-        pct_evidencias = min(100, round((evidencias_count / 12) * 100, 1))
+    p = calcular_progreso(ap)
 
-    notifs_sin_leer = 0
-    if ap:
-        notifs_sin_leer = Notificacion.query.filter_by(
-            id_usuario=current_user.id_usuario, leida=False).count()
+    notifs_sin_leer = Notificacion.query.filter_by(
+        id_usuario=current_user.id_usuario, leida=False).count()
 
     evidencias_recientes = []
     if ap:
@@ -60,9 +48,9 @@ def dashboard():
 
     return render_template('aprendiz/dashboard.html',
                            aprendiz=ap,
-                           pct_tiempo=pct_tiempo,
-                           pct_evidencias=pct_evidencias,
-                           evidencias_count=evidencias_count,
+                           pct_tiempo=p['pct_tiempo'],
+                           pct_evidencias=p['pct_evidencias'],
+                           evidencias_count=p['evidencias_count'],
                            notifs_sin_leer=notifs_sin_leer,
                            evidencias_recientes=evidencias_recientes)
 
@@ -77,17 +65,13 @@ def evidencias_subir():
         flash('No tienes un perfil de aprendiz registrado.', 'danger')
         return redirect(url_for('aprendiz.dashboard'))
 
-    # Calcular progreso
-    pct_tiempo = 0
-    pct_evidencias = 0
-    evidencias_count = 0
-    if ap and ap.usuario and ap.usuario.fecha_creacion:
-        from datetime import datetime, timezone
-        dias_transcurridos = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days
-        pct_tiempo = min(100, max(0, round((dias_transcurridos / 180) * 100, 1)))
-        
-        evidencias_count = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
-        pct_evidencias = min(100, round((evidencias_count / 12) * 100, 1))
+    p = calcular_progreso(ap)
+
+    def _volver(mensaje, categoria='danger'):
+        flash(mensaje, categoria)
+        return render_template('aprendiz/evidencias_subir.html', aprendiz=ap,
+                               pct_tiempo=p['pct_tiempo'],
+                               pct_evidencias=p['pct_evidencias'])
 
     if request.method == 'POST':
         tipo = request.form.get('tipo', '')
@@ -96,28 +80,29 @@ def evidencias_subir():
         if tipo == 'archivo':
             archivo = request.files.get('archivo')
             if not archivo or archivo.filename == '':
-                flash('Selecciona un archivo.', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
-            if not _allowed(archivo.filename):
-                flash('Tipo de archivo no permitido.', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
-            fname = secure_filename(archivo.filename)
-            upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'evidencias')
-            os.makedirs(upload_dir, exist_ok=True)
-            archivo.save(os.path.join(upload_dir, fname))
+                return _volver('Selecciona un archivo.')
+            if not extension_permitida(archivo.filename):
+                permitidas = ', '.join(sorted(EXTENSIONES_PERMITIDAS))
+                return _volver(f'Tipo de archivo no permitido. Permitidos: {permitidas}.')
+
+            # Nombre único: evita que dos aprendices con el mismo nombre de
+            # archivo se sobrescriban la evidencia entre sí.
+            fname = nombre_archivo_seguro(archivo.filename, ap.id_aprendiz)
+            try:
+                archivo.save(os.path.join(directorio_evidencias(), fname))
+            except OSError as e:
+                print(f"Error guardando evidencia: {e}", flush=True)
+                return _volver('No se pudo guardar el archivo. Inténtalo de nuevo.')
             contenido = f'uploads/evidencias/{fname}'
 
         elif tipo == 'enlace':
-            if not contenido.startswith('http'):
-                flash('El enlace debe comenzar con http:// o https://', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
+            if not contenido.startswith(('http://', 'https://')):
+                return _volver('El enlace debe comenzar con http:// o https://')
         elif tipo == 'texto':
             if not contenido:
-                flash('Escribe el contenido de la evidencia.', 'danger')
-                return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
+                return _volver('Escribe el contenido de la evidencia.')
         else:
-            flash('Selecciona un tipo de evidencia.', 'danger')
-            return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
+            return _volver('Selecciona un tipo de evidencia.')
 
         evidencia = Evidencia(
             id_aprendiz=ap.id_aprendiz,
@@ -127,19 +112,25 @@ def evidencias_subir():
         )
         db.session.add(evidencia)
         db.session.commit()
-        
-        # Notificar a los instructores por correo
+
+        # Notificar a los instructores (el envío corre en segundo plano)
         nombre_aprendiz = f"{current_user.nombres} {current_user.apellidos}"
+        destinatarios = set()
         for ca in ap.cursos:
-            nombre_curso = ca.curso.nombre
+            if not ca.curso:
+                continue
             for ci in ca.curso.instructores:
                 if ci.instructor and ci.instructor.usuario and ci.instructor.usuario.correo:
-                    enviar_correo_evidencia(ci.instructor.usuario.correo, nombre_aprendiz, nombre_curso)
+                    destinatarios.add((ci.instructor.usuario.correo, ca.curso.nombre))
+        for correo, nombre_curso in destinatarios:
+            enviar_correo_evidencia(correo, nombre_aprendiz, nombre_curso)
 
         flash('Evidencia enviada correctamente.', 'success')
         return redirect(url_for('aprendiz.mis_evidencias'))
 
-    return render_template('aprendiz/evidencias_subir.html', aprendiz=ap, pct_tiempo=pct_tiempo, pct_evidencias=pct_evidencias)
+    return render_template('aprendiz/evidencias_subir.html', aprendiz=ap,
+                           pct_tiempo=p['pct_tiempo'],
+                           pct_evidencias=p['pct_evidencias'])
 
 
 # ─── Mi Progreso ──────────────────────────────
@@ -148,28 +139,18 @@ def evidencias_subir():
 @role_required('aprendiz')
 def progreso():
     ap = _get_aprendiz()
-    pct_tiempo = 0
-    pct_evidencias = 0
-    evidencias_count = 0
-    dias_transcurridos = 0
-    if ap and ap.usuario and ap.usuario.fecha_creacion:
-        from datetime import datetime, timezone
-        dias_transcurridos = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days
-        pct_tiempo = min(100, max(0, round((dias_transcurridos / 180) * 100, 1)))
-        
-        evidencias_count = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
-        pct_evidencias = min(100, round((evidencias_count / 12) * 100, 1))
+    p = calcular_progreso(ap)
 
     progreso_cursos = []
     if ap:
         progreso_cursos = (ProgresoAprendiz.query
                            .filter_by(id_aprendiz=ap.id_aprendiz).all())
     return render_template('aprendiz/progreso.html',
-                           aprendiz=ap, 
-                           pct_tiempo=pct_tiempo,
-                           pct_evidencias=pct_evidencias,
-                           evidencias_count=evidencias_count,
-                           dias_transcurridos=dias_transcurridos,
+                           aprendiz=ap,
+                           pct_tiempo=p['pct_tiempo'],
+                           pct_evidencias=p['pct_evidencias'],
+                           evidencias_count=p['evidencias_count'],
+                           dias_transcurridos=p['dias_transcurridos'],
                            progreso_cursos=progreso_cursos)
 
 
@@ -180,9 +161,13 @@ def progreso():
 def informacion():
     ap = _get_aprendiz()
     if request.method == 'POST':
-        current_user.telefono = request.form.get('telefono', '').strip()
-        if ap:
-            ap.ficha = request.form.get('ficha', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        if telefono and not telefono.replace(' ', '').replace('-', '').replace('+', '').isdigit():
+            flash('El teléfono solo puede contener números.', 'danger')
+            return redirect(url_for('aprendiz.informacion'))
+        current_user.telefono = telefono
+        # La ficha la asigna el instructor/administrador: el aprendiz no puede
+        # cambiarla por su cuenta porque dejaría de coincidir con su curso.
         db.session.commit()
         flash('Información actualizada.', 'success')
         return redirect(url_for('aprendiz.informacion'))
@@ -199,10 +184,10 @@ def notificaciones():
               .filter_by(id_usuario=current_user.id_usuario)
               .order_by(Notificacion.fecha.desc()).all())
     # Marcar como leídas
-    for n in notifs:
-        if not n.leida:
+    if any(not n.leida for n in notifs):
+        for n in notifs:
             n.leida = True
-    db.session.commit()
+        db.session.commit()
     return render_template('aprendiz/notificaciones.html', notificaciones=notifs)
 
 

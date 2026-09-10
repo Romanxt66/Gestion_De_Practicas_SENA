@@ -33,6 +33,7 @@
               </td>
               <td>
                 <form action="{{ url_for('admin.editar_area_instructor', id_instructor=inst.id_instructor) }}" method="POST" class="d-flex align-items-center gap-2 m-0">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="text" name="area_formacion" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ inst.area_formacion or '' }}" placeholder="Sin definir" style="max-width: 200px;">
                   <button type="submit" class="btn btn-sm btn-ghost" title="Guardar Área"><i class="bi bi-check2"></i></button>
                 </form>
@@ -46,6 +47,7 @@
               </td>
               <td>
                 <form action="{{ url_for('admin.toggle_instructor', id_instructor=inst.id_instructor) }}" method="POST" class="d-flex justify-content-end" onsubmit="return confirm('¿Cambiar estado del instructor?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   {% if inst.activo %}
                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Marcar Inactivo">Inactivar</button>
                   {% else %}

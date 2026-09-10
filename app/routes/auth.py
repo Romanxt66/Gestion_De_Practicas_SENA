@@ -15,9 +15,11 @@ from app.models.usuario_rol import UsuarioRol
 from app.models.aprendiz import Aprendiz
 from app.models.curso import Curso
 from app.models.curso_aprendiz import CursoAprendiz
-from app.utils import get_user_role
+from app.utils import get_user_role, HORAS_PRACTICA_POR_DEFECTO
 
 bp = Blueprint('auth', __name__)
+
+LONGITUD_MINIMA_PASSWORD = 6
 
 
 # ─── Landing page ─────────────────────────────
@@ -39,20 +41,23 @@ def login():
         correo   = request.form.get('correo', '').strip().lower()
         password = request.form.get('password', '')
 
+        if not correo or not password:
+            flash('Ingresa tu correo y contraseña.', 'danger')
+            return render_template('auth/login.html')
+
         usuario = Usuario.query.filter_by(correo=correo).first()
 
-        if not usuario:
-            flash('Correo no encontrado.', 'danger')
+        # Mensaje genérico: no revelamos si el correo existe o no,
+        # para no facilitar el descubrimiento de cuentas.
+        if not usuario or not check_password_hash(usuario.password_hash, password):
+            flash('Correo o contraseña incorrectos.', 'danger')
             return render_template('auth/login.html')
 
         if not usuario.estado:
             flash('Tu cuenta está desactivada. Contacta al administrador.', 'warning')
             return render_template('auth/login.html')
 
-        if not check_password_hash(usuario.password_hash, password):
-            flash('Contraseña incorrecta.', 'danger')
-            return render_template('auth/login.html')
-
+        session.permanent = True
         login_user(usuario, remember=False)
         flash(f'¡Bienvenido, {usuario.nombres}!', 'success')
         
@@ -90,8 +95,13 @@ def registro():
             flash('Las contraseñas no coinciden.', 'danger')
             return render_template('auth/registro.html')
 
-        if len(datos['password']) < 6:
-            flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
+        if len(datos['password']) < LONGITUD_MINIMA_PASSWORD:
+            flash(f"La contraseña debe tener al menos {LONGITUD_MINIMA_PASSWORD} caracteres.",
+                  'danger')
+            return render_template('auth/registro.html')
+
+        if '@' not in datos['correo'] or '.' not in datos['correo'].split('@')[-1]:
+            flash('Ingresa un correo electrónico válido.', 'danger')
             return render_template('auth/registro.html')
 
         if Usuario.query.filter_by(correo=datos['correo']).first():
@@ -127,7 +137,7 @@ def registro():
             id_usuario=nuevo_usuario.id_usuario,
             ficha=datos['codigo_ficha'],
             estado_practica='En proceso',
-            horas_requeridas=880,
+            horas_requeridas=HORAS_PRACTICA_POR_DEFECTO,
             horas_cumplidas=0
         )
         db.session.add(aprendiz)
@@ -150,6 +160,7 @@ def registro():
 @login_required
 def logout():
     logout_user()
+    session.clear()
     flash('Sesión cerrada.', 'info')
     return redirect(url_for('auth.landing'))
 

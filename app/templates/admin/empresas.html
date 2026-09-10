@@ -44,6 +44,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form action="{{ url_for('admin.editar_empresa', id_empresa=e.id_empresa) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="modal-header">
             <h5 class="modal-title">Editar Empresa: {{ e.nombre }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -108,6 +109,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form action="{{ url_for('admin.crear_empresa') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="modal-header">
           <h5 class="modal-title"><i class="bi bi-building-add text-primary me-2"></i> Añadir Nueva Empresa</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

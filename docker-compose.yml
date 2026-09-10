@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     build: .
@@ -11,10 +9,12 @@ services:
       # Evitamos sobrescribir los directorios de entorno virtual y caché generados localmente
       - /app/.venv
       - /app/__pycache__
+    # Las credenciales y secretos se leen del archivo .env (ver .env.example).
+    # NO se escriben aquí: este archivo va al repositorio.
+    env_file:
+      - .env
     environment:
-      - FLASK_ENV=development
       - FLASK_APP=run.py
-      - DATABASE_URL=postgresql+psycopg://admin:1052020405Nr.@postgres-db:5432/master_db
     networks:
       - coolify
     restart: unless-stopped

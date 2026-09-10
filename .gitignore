@@ -16,3 +16,16 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# Clave de firma de sesiones generada automáticamente
+instance/.secret_key
+
+# Entorno virtual local
+.venv/
+
+# Base de datos local de desarrollo (la real es Postgres en el servidor)
+instance/*.sqlite
+instance/*.db
+
+# Evidencias subidas por los aprendices: datos personales, viven en el servidor
+app/static/uploads/

@@ -1,5 +1,5 @@
 """
-Blueprint Admin/Superusuario — 7 módulos:
+Blueprint Admin/Superusuario:
   /admin/dashboard
   /admin/usuarios
   /admin/roles
@@ -7,29 +7,63 @@ Blueprint Admin/Superusuario — 7 módulos:
   /admin/empresas
   /admin/historial
   /admin/backup
+  /admin/fichas
 """
 import io
-import json
-from datetime import datetime, timezone
+from datetime import datetime
+
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, send_file)
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
+
 from app import db
-from app.utils import role_required, log_historial, make_aware
-from app.models.usuario import Usuario
-from app.models.rol import Rol
-from app.models.usuario_rol import UsuarioRol
-from app.models.instructor import Instructor
 from app.models.aprendiz import Aprendiz
-from app.models.empresa import Empresa
-from app.models.historial_cambios import HistorialCambios
 from app.models.curso import Curso
-from app.models.curso_instructor import CursoInstructor
 from app.models.curso_aprendiz import CursoAprendiz
+from app.models.curso_instructor import CursoInstructor
+from app.models.empresa import Empresa
 from app.models.evidencia import Evidencia
+from app.models.historial_cambios import HistorialCambios
+from app.models.instructor import Instructor
+from app.models.rol import Rol
+from app.models.usuario import Usuario
+from app.models.usuario_rol import UsuarioRol
+from app.utils import (role_required, log_historial, calcular_progreso,
+                       HORAS_PRACTICA_POR_DEFECTO)
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+LONGITUD_MINIMA_PASSWORD = 6
+
+
+# ─────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────
+def _parse_fecha(valor):
+    return datetime.strptime(valor, '%Y-%m-%d').date() if valor else None
+
+
+def _id_rol_superusuario():
+    rol = Rol.query.filter_by(nombre='superusuario').first()
+    return rol.id_rol if rol else None
+
+
+def _total_superusuarios_activos():
+    id_rol = _id_rol_superusuario()
+    if not id_rol:
+        return 0
+    return (db.session.query(Usuario)
+            .join(UsuarioRol, UsuarioRol.id_usuario == Usuario.id_usuario)
+            .filter(UsuarioRol.id_rol == id_rol, Usuario.estado.is_(True))
+            .count())
+
+
+def _es_superusuario(id_usuario):
+    id_rol = _id_rol_superusuario()
+    if not id_rol:
+        return False
+    return UsuarioRol.query.filter_by(id_usuario=id_usuario, id_rol=id_rol).first() is not None
 
 
 # ─── Dashboard ────────────────────────────────
@@ -37,14 +71,14 @@ bp = Blueprint('admin', __name__, url_prefix='/admin')
 @login_required
 @role_required('superusuario')
 def dashboard():
-    total_usuarios    = Usuario.query.count()
-    total_fichas      = Curso.query.count()
-    total_aprendices  = Aprendiz.query.count()
+    total_usuarios     = Usuario.query.count()
+    total_fichas       = Curso.query.count()
+    total_aprendices   = Aprendiz.query.count()
     total_instructores = Instructor.query.count()
-    total_empresas    = Empresa.query.filter_by(activa=True).count()
-    cambios_recientes = (HistorialCambios.query
-                         .order_by(HistorialCambios.fecha.desc())
-                         .limit(10).all())
+    total_empresas     = Empresa.query.filter_by(activa=True).count()
+    cambios_recientes  = (HistorialCambios.query
+                          .order_by(HistorialCambios.fecha.desc())
+                          .limit(10).all())
     return render_template('admin/dashboard.html',
                            total_usuarios=total_usuarios,
                            total_fichas=total_fichas,
@@ -82,8 +116,22 @@ def crear_usuario():
     password  = request.form.get('password', '')
     id_rol    = request.form.get('id_rol', type=int)
 
+    if not nombres or not apellidos or not correo:
+        flash('Nombres, apellidos y correo son obligatorios.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    if len(password) < LONGITUD_MINIMA_PASSWORD:
+        flash(f'La contraseña debe tener al menos {LONGITUD_MINIMA_PASSWORD} caracteres.',
+              'danger')
+        return redirect(url_for('admin.usuarios'))
+
     if Usuario.query.filter_by(correo=correo).first():
         flash('Ya existe un usuario con ese correo.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    rol = Rol.query.get(id_rol) if id_rol else None
+    if id_rol and not rol:
+        flash('El rol seleccionado no existe.', 'danger')
         return redirect(url_for('admin.usuarios'))
 
     u = Usuario(nombres=nombres, apellidos=apellidos, correo=correo,
@@ -91,17 +139,15 @@ def crear_usuario():
     db.session.add(u)
     db.session.flush()
 
-    if id_rol:
-        db.session.add(UsuarioRol(id_usuario=u.id_usuario, id_rol=id_rol))
-
-    # Si es aprendiz, crear registro
-    rol = Rol.query.get(id_rol)
-    if rol and rol.nombre == 'aprendiz':
-        db.session.add(Aprendiz(id_usuario=u.id_usuario,
-                                estado_practica='En proceso',
-                                horas_requeridas=880, horas_cumplidas=0))
-    elif rol and rol.nombre == 'instructor':
-        db.session.add(Instructor(id_usuario=u.id_usuario, activo=True))
+    if rol:
+        db.session.add(UsuarioRol(id_usuario=u.id_usuario, id_rol=rol.id_rol))
+        if rol.nombre == 'aprendiz':
+            db.session.add(Aprendiz(id_usuario=u.id_usuario,
+                                    estado_practica='En proceso',
+                                    horas_requeridas=HORAS_PRACTICA_POR_DEFECTO,
+                                    horas_cumplidas=0))
+        elif rol.nombre == 'instructor':
+            db.session.add(Instructor(id_usuario=u.id_usuario, activo=True))
 
     log_historial(current_user, 'Usuarios', 'CREAR', f'Usuario {correo} creado')
     db.session.commit()
@@ -124,10 +170,14 @@ def editar_usuario(id_usuario):
         flash('Nombres, apellidos y correo son obligatorios.', 'danger')
         return redirect(url_for('admin.usuarios'))
 
-    if correo != u.correo:
-        if Usuario.query.filter_by(correo=correo).first():
-            flash('Ya existe otro usuario con ese correo.', 'warning')
-            return redirect(url_for('admin.usuarios'))
+    if correo != u.correo and Usuario.query.filter_by(correo=correo).first():
+        flash('Ya existe otro usuario con ese correo.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    if password and len(password) < LONGITUD_MINIMA_PASSWORD:
+        flash(f'La contraseña debe tener al menos {LONGITUD_MINIMA_PASSWORD} caracteres.',
+              'danger')
+        return redirect(url_for('admin.usuarios'))
 
     u.nombres = nombres
     u.apellidos = apellidos
@@ -148,6 +198,16 @@ def editar_usuario(id_usuario):
 @role_required('superusuario')
 def toggle_usuario(id_usuario):
     u = Usuario.query.get_or_404(id_usuario)
+
+    if u.id_usuario == current_user.id_usuario:
+        flash('No puedes desactivar tu propia cuenta.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    # Evita quedarse sin ningún superusuario activo (bloqueo total del sistema)
+    if u.estado and _es_superusuario(u.id_usuario) and _total_superusuarios_activos() <= 1:
+        flash('No puedes desactivar al único superusuario activo.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
     u.estado = not u.estado
     estado_str = 'activado' if u.estado else 'desactivado'
     log_historial(current_user, 'Usuarios', 'MODIFICAR',
@@ -179,18 +239,23 @@ def asignar_rol():
         flash('Datos incompletos.', 'danger')
         return redirect(url_for('admin.roles'))
 
-    existe = UsuarioRol.query.filter_by(id_usuario=id_usuario, id_rol=id_rol).first()
-    if existe:
+    usuario = Usuario.query.get(id_usuario)
+    rol = Rol.query.get(id_rol)
+    if not usuario or not rol:
+        flash('Usuario o rol inexistente.', 'danger')
+        return redirect(url_for('admin.roles'))
+
+    if UsuarioRol.query.filter_by(id_usuario=id_usuario, id_rol=id_rol).first():
         flash('El usuario ya tiene ese rol.', 'warning')
         return redirect(url_for('admin.roles'))
 
     db.session.add(UsuarioRol(id_usuario=id_usuario, id_rol=id_rol))
     # Crear perfil si no existe
-    rol = Rol.query.get(id_rol)
     if rol.nombre == 'aprendiz' and not Aprendiz.query.filter_by(id_usuario=id_usuario).first():
         db.session.add(Aprendiz(id_usuario=id_usuario,
                                 estado_practica='En proceso',
-                                horas_requeridas=880, horas_cumplidas=0))
+                                horas_requeridas=HORAS_PRACTICA_POR_DEFECTO,
+                                horas_cumplidas=0))
     elif rol.nombre == 'instructor' and not Instructor.query.filter_by(id_usuario=id_usuario).first():
         db.session.add(Instructor(id_usuario=id_usuario, activo=True))
 
@@ -207,6 +272,16 @@ def asignar_rol():
 def quitar_rol():
     id_usuario = request.form.get('id_usuario', type=int)
     id_rol     = request.form.get('id_rol', type=int)
+
+    if (id_usuario == current_user.id_usuario
+            and id_rol == _id_rol_superusuario()):
+        flash('No puedes quitarte a ti mismo el rol de superusuario.', 'warning')
+        return redirect(url_for('admin.roles'))
+
+    if id_rol == _id_rol_superusuario() and _total_superusuarios_activos() <= 1:
+        flash('No puedes quitar el rol al único superusuario del sistema.', 'danger')
+        return redirect(url_for('admin.roles'))
+
     ur = UsuarioRol.query.filter_by(id_usuario=id_usuario, id_rol=id_rol).first()
     if ur:
         db.session.delete(ur)
@@ -290,7 +365,12 @@ def crear_empresa():
 @role_required('superusuario')
 def editar_empresa(id_empresa):
     e = Empresa.query.get_or_404(id_empresa)
-    e.nombre           = request.form.get('nombre', e.nombre).strip()
+    nombre = request.form.get('nombre', '').strip()
+    if not nombre:
+        flash('El nombre es obligatorio.', 'danger')
+        return redirect(url_for('admin.empresas'))
+
+    e.nombre           = nombre
     e.nit              = request.form.get('nit', e.nit or '').strip()
     e.direccion        = request.form.get('direccion', e.direccion or '').strip()
     e.telefono         = request.form.get('telefono', e.telefono or '').strip()
@@ -320,9 +400,9 @@ def historial():
 @login_required
 @role_required('superusuario')
 def backup():
-    aprendices  = Aprendiz.query.all()
+    aprendices   = Aprendiz.query.all()
     instructores = Instructor.query.all()
-    empresas    = Empresa.query.all()
+    empresas     = Empresa.query.all()
     return render_template('admin/backup.html',
                            aprendices=aprendices,
                            instructores=instructores,
@@ -336,7 +416,7 @@ def exportar_excel(tipo):
     try:
         import openpyxl
     except ImportError:
-        flash('Instala openpyxl: pip install openpyxl', 'danger')
+        flash('Falta la librería openpyxl en el servidor.', 'danger')
         return redirect(url_for('admin.backup'))
 
     wb = openpyxl.Workbook()
@@ -349,9 +429,9 @@ def exportar_excel(tipo):
         for ap in Aprendiz.query.all():
             ws.append([
                 ap.id_aprendiz,
-                ap.usuario.nombres,
-                ap.usuario.apellidos,
-                ap.usuario.correo,
+                ap.usuario.nombres if ap.usuario else '',
+                ap.usuario.apellidos if ap.usuario else '',
+                ap.usuario.correo if ap.usuario else '',
                 ap.ficha or '',
                 ap.estado_practica or '',
                 ap.horas_requeridas or 0,
@@ -366,9 +446,9 @@ def exportar_excel(tipo):
         for inst in Instructor.query.all():
             ws.append([
                 inst.id_instructor,
-                inst.usuario.nombres,
-                inst.usuario.apellidos,
-                inst.usuario.correo,
+                inst.usuario.nombres if inst.usuario else '',
+                inst.usuario.apellidos if inst.usuario else '',
+                inst.usuario.correo if inst.usuario else '',
                 inst.area_formacion or '',
                 'Sí' if inst.activo else 'No'
             ])
@@ -392,7 +472,7 @@ def exportar_excel(tipo):
         for h in HistorialCambios.query.order_by(HistorialCambios.fecha.desc()).all():
             ws.append([
                 h.id_historial,
-                f'{h.usuario.nombres} {h.usuario.apellidos}',
+                f'{h.usuario.nombres} {h.usuario.apellidos}' if h.usuario else '',
                 h.modulo or '',
                 h.accion or '',
                 h.descripcion or '',
@@ -413,7 +493,6 @@ def exportar_excel(tipo):
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
-
 # ─── Gestionar Fichas ─────────────────────────
 @bp.route('/fichas')
 @login_required
@@ -421,32 +500,32 @@ def exportar_excel(tipo):
 def fichas():
     """Listado completo de fichas/cursos con búsqueda y filtrado"""
     q = request.args.get('q', '').strip()
-    
+
     query = Curso.query
     if q:
-        query = query.filter(Curso.nombre.ilike(f'%{q}%'))
-    
+        query = query.filter(Curso.nombre.ilike(f'%{q}%') | Curso.ficha.ilike(f'%{q}%'))
+
     cursos = query.order_by(Curso.nombre).all()
-    
-    # Agregar datos para cada curso
-    fichas_data = []
-    for curso in cursos:
-        instructores = [ci.instructor for ci in curso.instructores]
-        aprendices_count = db.session.query(CursoAprendiz).filter_by(
-            id_curso=curso.id_curso).count()
-        
-        fichas_data.append({
-            'curso': curso,
-            'instructores': instructores,
-            'aprendices_count': aprendices_count
-        })
-    
+
+    # Conteo de aprendices de todas las fichas en UNA consulta (antes: una por ficha)
+    conteos = dict(
+        db.session.query(CursoAprendiz.id_curso,
+                         db.func.count(CursoAprendiz.id_aprendiz))
+        .group_by(CursoAprendiz.id_curso).all()
+    )
+
+    fichas_data = [{
+        'curso': curso,
+        'instructores': [ci.instructor for ci in curso.instructores if ci.instructor],
+        'aprendices_count': int(conteos.get(curso.id_curso, 0)),
+    } for curso in cursos]
+
     instructores_disponibles = Instructor.query.filter_by(activo=True).all()
-    
+
     return render_template('admin/fichas/lista.html',
-                          fichas_data=fichas_data,
-                          instructores=instructores_disponibles,
-                          q=q)
+                           fichas_data=fichas_data,
+                           instructores=instructores_disponibles,
+                           q=q)
 
 
 @bp.route('/fichas/crear', methods=['POST'])
@@ -456,27 +535,36 @@ def crear_ficha():
     """Crear nueva ficha/curso"""
     nombre = request.form.get('nombre', '').strip()
     ficha = request.form.get('ficha', '').strip()
-    fecha_inicio_str = request.form.get('fecha_inicio', '')
-    fecha_fin_str = request.form.get('fecha_fin', '')
-    
-    fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date() if fecha_inicio_str else None
-    fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date() if fecha_fin_str else None
-    
+
     if not nombre:
         flash('El nombre es requerido.', 'danger')
         return redirect(url_for('admin.fichas'))
-    
+
+    try:
+        fecha_inicio = _parse_fecha(request.form.get('fecha_inicio', ''))
+        fecha_fin = _parse_fecha(request.form.get('fecha_fin', ''))
+    except ValueError:
+        flash('Formato de fecha inválido.', 'danger')
+        return redirect(url_for('admin.fichas'))
+
+    if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
+        flash('La fecha de fin no puede ser anterior a la de inicio.', 'danger')
+        return redirect(url_for('admin.fichas'))
+
     if Curso.query.filter_by(nombre=nombre).first():
         flash('Ya existe una ficha con ese nombre.', 'warning')
         return redirect(url_for('admin.fichas'))
-    
-    curso = Curso(nombre=nombre, ficha=ficha,
-                  fecha_inicio=fecha_inicio if fecha_inicio else None,
-                  fecha_fin=fecha_fin if fecha_fin else None)
+
+    if ficha and Curso.query.filter_by(ficha=ficha).first():
+        flash('Ya existe una ficha con ese código.', 'warning')
+        return redirect(url_for('admin.fichas'))
+
+    curso = Curso(nombre=nombre, ficha=ficha or None,
+                  fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
     db.session.add(curso)
     log_historial(current_user, 'Fichas', 'CREAR', f'Ficha {nombre} creada')
     db.session.commit()
-    
+
     flash('Ficha creada correctamente.', 'success')
     return redirect(url_for('admin.fichas'))
 
@@ -489,24 +577,35 @@ def editar_ficha(id_curso):
     curso = Curso.query.get_or_404(id_curso)
     nombre = request.form.get('nombre', '').strip()
     ficha = request.form.get('ficha', '').strip()
-    fecha_inicio_str = request.form.get('fecha_inicio', '')
-    fecha_fin_str = request.form.get('fecha_fin', '')
-    
-    fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date() if fecha_inicio_str else None
-    fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date() if fecha_fin_str else None
-    
+
+    try:
+        fecha_inicio = _parse_fecha(request.form.get('fecha_inicio', ''))
+        fecha_fin = _parse_fecha(request.form.get('fecha_fin', ''))
+    except ValueError:
+        flash('Formato de fecha inválido.', 'danger')
+        return redirect(url_for('admin.fichas'))
+
+    if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
+        flash('La fecha de fin no puede ser anterior a la de inicio.', 'danger')
+        return redirect(url_for('admin.fichas'))
+
     if nombre and nombre != curso.nombre:
         if Curso.query.filter_by(nombre=nombre).first():
             flash('Ya existe una ficha con ese nombre.', 'warning')
             return redirect(url_for('admin.fichas'))
         curso.nombre = nombre
-    
-    curso.ficha = ficha
-    curso.fecha_inicio = fecha_inicio if fecha_inicio else None
-    curso.fecha_fin = fecha_fin if fecha_fin else None
-    
-    log_historial(current_user, 'Fichas', 'MODIFICAR',
-                  f'Ficha {curso.nombre} editada')
+
+    if ficha and ficha != (curso.ficha or ''):
+        otra = Curso.query.filter_by(ficha=ficha).first()
+        if otra and otra.id_curso != curso.id_curso:
+            flash('Ya existe una ficha con ese código.', 'warning')
+            return redirect(url_for('admin.fichas'))
+
+    curso.ficha = ficha or None
+    curso.fecha_inicio = fecha_inicio
+    curso.fecha_fin = fecha_fin
+
+    log_historial(current_user, 'Fichas', 'MODIFICAR', f'Ficha {curso.nombre} editada')
     db.session.commit()
     flash('Ficha actualizada.', 'success')
     return redirect(url_for('admin.fichas'))
@@ -518,19 +617,20 @@ def editar_ficha(id_curso):
 def eliminar_ficha(id_curso):
     """Eliminar ficha (con validación)"""
     curso = Curso.query.get_or_404(id_curso)
-    
-    # Validar que no tenga aprendices asignados
-    aprendices_count = db.session.query(CursoAprendiz).filter_by(
-        id_curso=id_curso).count()
-    if aprendices_count > 0:
+
+    if CursoAprendiz.query.filter_by(id_curso=id_curso).count() > 0:
         flash('No se puede eliminar una ficha con aprendices asignados.', 'danger')
         return redirect(url_for('admin.fichas'))
-    
+
     nombre = curso.nombre
+    # Limpiar filas dependientes: sin esto la BD rechaza el DELETE por llave foránea
+    CursoInstructor.query.filter_by(id_curso=id_curso).delete(synchronize_session=False)
+    from app.models.progreso_aprendiz import ProgresoAprendiz
+    ProgresoAprendiz.query.filter_by(id_curso=id_curso).delete(synchronize_session=False)
     db.session.delete(curso)
     log_historial(current_user, 'Fichas', 'ELIMINAR', f'Ficha {nombre} eliminada')
     db.session.commit()
-    
+
     flash('Ficha eliminada correctamente.', 'success')
     return redirect(url_for('admin.fichas'))
 
@@ -542,47 +642,45 @@ def asignar_instructor_ficha(id_curso):
     """Asignar instructor a ficha"""
     curso = Curso.query.get_or_404(id_curso)
     id_instructor = request.form.get('id_instructor', type=int)
-    
+
     if not id_instructor:
         flash('Selecciona un instructor.', 'danger')
         return redirect(url_for('admin.fichas'))
-    
+
     instructor = Instructor.query.get_or_404(id_instructor)
-    
-    # Verificar que no esté ya asignado
-    existe = db.session.query(CursoInstructor).filter_by(
-        id_curso=id_curso, id_instructor=id_instructor).first()
-    
-    if existe:
+
+    if CursoInstructor.query.filter_by(id_curso=id_curso,
+                                       id_instructor=id_instructor).first():
         flash('Este instructor ya está asignado a la ficha.', 'warning')
         return redirect(url_for('admin.fichas'))
-    
-    db.session.add(CursoInstructor(id_curso=id_curso,
-                                   id_instructor=id_instructor))
+
+    db.session.add(CursoInstructor(id_curso=id_curso, id_instructor=id_instructor))
     log_historial(current_user, 'Fichas', 'MODIFICAR',
                   f'Instructor {instructor.usuario.nombres} asignado a {curso.nombre}')
     db.session.commit()
-    
+
     flash('Instructor asignado correctamente.', 'success')
     return redirect(url_for('admin.fichas'))
 
 
-@bp.route('/fichas/<int:id_curso>/desasignar-instructor/<int:id_instructor>', methods=['POST'])
+@bp.route('/fichas/<int:id_curso>/desasignar-instructor/<int:id_instructor>',
+          methods=['POST'])
 @login_required
 @role_required('superusuario')
 def desasignar_instructor_ficha(id_curso, id_instructor):
     """Remover instructor de ficha"""
-    ci = db.session.query(CursoInstructor).filter_by(
+    ci = CursoInstructor.query.filter_by(
         id_curso=id_curso, id_instructor=id_instructor).first_or_404()
-    
+
     curso = ci.curso
     instructor = ci.instructor
+    nombre_inst = instructor.usuario.nombres if instructor and instructor.usuario else id_instructor
     db.session.delete(ci)
-    
+
     log_historial(current_user, 'Fichas', 'MODIFICAR',
-                  f'Instructor {instructor.usuario.nombres} desasignado de {curso.nombre}')
+                  f'Instructor {nombre_inst} desasignado de {curso.nombre}')
     db.session.commit()
-    
+
     flash('Instructor removido de la ficha.', 'success')
     return redirect(url_for('admin.fichas'))
 
@@ -593,32 +691,31 @@ def desasignar_instructor_ficha(id_curso, id_instructor):
 def ficha_detalle(id_curso):
     """Vista detallada de la ficha para administrador"""
     curso = Curso.query.get_or_404(id_curso)
-    
-    # Obtener aprendices de este curso
-    aprendices_curso = db.session.query(CursoAprendiz).filter_by(
-        id_curso=id_curso).all()
-    
+
+    matriculas = CursoAprendiz.query.filter_by(id_curso=id_curso).all()
+    aprendices = [ca.aprendiz for ca in matriculas if ca.aprendiz]
+
+    # Todas las evidencias de la ficha en una sola consulta
+    evidencias_por_aprendiz = {}
+    if aprendices:
+        todas = (Evidencia.query
+                 .filter(Evidencia.id_aprendiz.in_([a.id_aprendiz for a in aprendices]))
+                 .order_by(Evidencia.fecha_entrega.desc()).all())
+        for ev in todas:
+            evidencias_por_aprendiz.setdefault(ev.id_aprendiz, []).append(ev)
+
     aprendices_data = []
-    from datetime import datetime, timezone
-    for ca in aprendices_curso:
-        ap = ca.aprendiz
-        dias = (datetime.now(timezone.utc) - make_aware(ap.usuario.fecha_creacion)).days if ap.usuario and ap.usuario.fecha_creacion else 0
-        pct_tiempo = min(100, max(0, round((dias / 180) * 100, 1)))
-        evs = Evidencia.query.filter_by(id_aprendiz=ap.id_aprendiz).count()
-        pct_evidencias = min(100, round((evs / 12) * 100, 1))
-        
-        evidencias = Evidencia.query.filter_by(
-            id_aprendiz=ap.id_aprendiz).order_by(
-            Evidencia.fecha_entrega.desc()).all()
-        
+    for ap in aprendices:
+        evidencias = evidencias_por_aprendiz.get(ap.id_aprendiz, [])
+        p = calcular_progreso(ap, evidencias_count=len(evidencias))
         aprendices_data.append({
             'aprendiz': ap,
-            'pct_tiempo': pct_tiempo,
-            'pct_evidencias': pct_evidencias,
-            'evidencias_count': evs,
-            'evidencias': evidencias
+            'pct_tiempo': p['pct_tiempo'],
+            'pct_evidencias': p['pct_evidencias'],
+            'evidencias_count': p['evidencias_count'],
+            'evidencias': evidencias,
         })
-    
+
     return render_template('admin/fichas/detalle.html',
                            curso=curso,
                            aprendices_data=aprendices_data)
@@ -629,16 +726,17 @@ def ficha_detalle(id_curso):
 @role_required('superusuario')
 def remover_aprendiz_ficha(id_curso, id_aprendiz):
     """Remover aprendiz del curso (Solo Superusuario)"""
-    ca = db.session.query(CursoAprendiz).filter_by(
+    ca = CursoAprendiz.query.filter_by(
         id_curso=id_curso, id_aprendiz=id_aprendiz).first_or_404()
-    
+
     curso = ca.curso
     aprendiz = ca.aprendiz
+    nombre_ap = aprendiz.usuario.nombres if aprendiz and aprendiz.usuario else id_aprendiz
     db.session.delete(ca)
-    
+
     log_historial(current_user, 'Fichas Admin', 'MODIFICAR',
-                  f'Aprendiz {aprendiz.usuario.nombres} removido de la ficha {curso.nombre}')
+                  f'Aprendiz {nombre_ap} removido de la ficha {curso.nombre}')
     db.session.commit()
-    
+
     flash('Aprendiz removido de la ficha.', 'success')
     return redirect(url_for('admin.ficha_detalle', id_curso=id_curso))

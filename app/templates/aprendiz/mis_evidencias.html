@@ -44,7 +44,7 @@
                 <a href="{{ ev.contenido }}" target="_blank" class="text-info text-decoration-none" title="{{ ev.contenido }}">Abrir enlace <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>
               {% elif ev.tipo == 'archivo' %}
                 <!-- Asume que el servidor sirve los estaticos dentro de uploads -->
-                <a href="{{ url_for('static', filename=ev.contenido) }}" target="_blank" class="text-success text-decoration-none">Descargar archivo <i class="bi bi-download ms-1" style="font-size: 0.7rem;"></i></a>
+                <a href="{{ url_for('archivos.evidencia', id_evidencia=ev.id_evidencia) }}" target="_blank" class="text-success text-decoration-none">Descargar archivo <i class="bi bi-download ms-1" style="font-size: 0.7rem;"></i></a>
               {% else %}
                 <span title="{{ ev.contenido }}">{{ ev.contenido }}</span>
               {% endif %}

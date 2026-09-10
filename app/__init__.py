@@ -1,16 +1,25 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+import logging
 import os
+
+from flask import Flask, render_template, request, abort
+from flask_login import LoginManager, current_user
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+migrate = Migrate()
+csrf = CSRFProtect()
+
 
 def create_app():
 
-    app = Flask(__name__)    
+    app = Flask(__name__)
     app.config.from_object('config.Config')
     db.init_app(app)
+    migrate.init_app(app, db)
+    csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Inicia sesión para continuar.'
@@ -19,9 +28,9 @@ def create_app():
     @login_manager.user_loader
     def load_user(id_usuario):
         from .models.usuario import Usuario
-        return Usuario.query.get(int(id_usuario))
+        return db.session.get(Usuario, int(id_usuario))
 
-    # Importar modelos para que SQLAlchemy los registre
+    # Importar modelos para que SQLAlchemy (y Alembic) los registre
     with app.app_context():
         from app.models import (
             usuario, rol, usuario_rol, instructor,
@@ -31,35 +40,98 @@ def create_app():
         )
 
     # Register blueprints
-    from app.routes import (
-        auth,
-        instructor, aprendiz, curso,
-        evidencia, empresa, notificacion,
-        admin
-    )
+    from app.routes import auth, instructor, aprendiz, admin, archivos
     app.register_blueprint(auth.bp)
     app.register_blueprint(instructor.bp)
     app.register_blueprint(aprendiz.bp)
-    app.register_blueprint(curso.bp)
-    app.register_blueprint(evidencia.bp)
-    app.register_blueprint(empresa.bp)
-    app.register_blueprint(notificacion.bp)
     app.register_blueprint(admin.bp)
+    app.register_blueprint(archivos.bp)
 
-    from werkzeug.exceptions import HTTPException
+    # ─────────────────────────────────────────────
+    # Las evidencias viven en static/uploads/ pero NO deben ser públicas:
+    # se sirven únicamente por /archivos/evidencias/<nombre>, que valida permisos.
+    # ─────────────────────────────────────────────
+    @app.before_request
+    def bloquear_acceso_directo_a_uploads():
+        if request.path.startswith('/static/uploads/'):
+            abort(404)
+
+    # ─────────────────────────────────────────────
+    # Manejo de errores
+    # ─────────────────────────────────────────────
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        return render_template(
+            'errores/error.html',
+            codigo=400,
+            titulo='Sesión expirada',
+            mensaje='Tu sesión expiró o el formulario no es válido. '
+                    'Vuelve a iniciar sesión e inténtalo de nuevo.'
+        ), 400
+
+    @app.errorhandler(403)
+    def handle_403(e):
+        return render_template(
+            'errores/error.html',
+            codigo=403,
+            titulo='Acceso denegado',
+            mensaje='No tienes permiso para acceder a esta sección.'
+        ), 403
+
+    @app.errorhandler(404)
+    def handle_404(e):
+        return render_template(
+            'errores/error.html',
+            codigo=404,
+            titulo='Página no encontrada',
+            mensaje='La página que buscas no existe o fue movida.'
+        ), 404
+
+    @app.errorhandler(413)
+    def handle_413(e):
+        limite = app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)
+        return render_template(
+            'errores/error.html',
+            codigo=413,
+            titulo='Archivo demasiado grande',
+            mensaje=f'El archivo supera el límite de {limite} MB permitido.'
+        ), 413
 
     @app.errorhandler(Exception)
     def handle_error(e):
+        from werkzeug.exceptions import HTTPException
         if isinstance(e, HTTPException):
-            return e # Let Flask handle standard HTTP exceptions (404, 401, etc.)
-        print(f"An error occurred: {str(e)}")
-        return {"error": str(e)}, 500
+            return e  # Flask maneja los errores HTTP estándar
+        # Deshacer la transacción rota para no envenenar la sesión de BD
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        # Se registra el detalle en el log, pero NUNCA se expone al usuario
+        app.logger.exception("Error no controlado en %s", request.path)
+        return render_template(
+            'errores/error.html',
+            codigo=500,
+            titulo='Error interno',
+            mensaje='Ocurrió un error inesperado. Si persiste, contacta al administrador.'
+        ), 500
 
     @app.after_request
     def add_header(response):
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
+        # Los estáticos (Bootstrap, iconos, imágenes) sí se cachean;
+        # solo las páginas dinámicas se marcan como no cacheables.
+        if request.endpoint == 'static':
+            response.headers.setdefault("Cache-Control", "public, max-age=2592000")
+        else:
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "same-origin")
         return response
+
+    if not app.debug:
+        logging.basicConfig(level=logging.INFO)
 
     return app

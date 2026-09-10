@@ -58,6 +58,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="background-color: var(--surface-light); border-color: var(--border-color);">
       <form action="{{ url_for('instructor.crear_ficha', next=request.endpoint) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="modal-header border-bottom">
           <h5 class="modal-title" id="modalCrearFichaLabel"><i class="bi bi-journal-plus text-success me-2"></i> Crear Nueva Ficha / Curso</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
