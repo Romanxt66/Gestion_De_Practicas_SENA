@@ -20,10 +20,11 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body class="biblioteca-body">
+{% set mostrar_chrome = current_user.is_authenticated and request.blueprint != 'auth' %}
 <div class="d-flex" style="min-height: 100vh;">
 
 <!-- ══ SIDEBAR ══════════════════════════════ -->
-{% if current_user.is_authenticated %}
+{% if mostrar_chrome %}
 <nav class="biblioteca-nav offcanvas-md offcanvas-start d-flex flex-column p-4 flex-shrink-0" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel" style="width: 280px; height: 100vh; overflow-y: auto; overflow-x: hidden; border-right: 1px solid var(--border-default); border-bottom: none;">
   <!-- Offcanvas Header for Mobile -->
   <div class="offcanvas-header d-md-none px-0 pb-3 mb-2 border-bottom" style="border-color: var(--border-default)!important;">
@@ -142,7 +143,7 @@
 <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
 
    <!-- Mobile Topbar -->
-   {% if current_user.is_authenticated %}
+   {% if mostrar_chrome %}
    <div class="d-md-none d-flex justify-content-between align-items-center p-3 border-bottom shadow-sm" style="background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(20px); border-color: var(--border-default)!important; position: sticky; top: 0; z-index: 1020;">
      <div class="d-flex align-items-center gap-2">
        <div class="avatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--sena-green); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #111;"><i class="bi bi-shield-lock"></i></div>
@@ -174,7 +175,7 @@
    </div>
    {% endif %}
 
-  <main class="flex-grow-1 {% if current_user.is_authenticated %}p-3 p-md-4{% endif %} position-relative" style="overflow-y: auto;">
+  <main class="flex-grow-1 {% if mostrar_chrome %}p-3 p-md-4{% endif %} position-relative" style="overflow-y: auto;">
 
     <!-- Flash Messages (Toasts) -->
     <div class="toast-container position-absolute top-0 start-50 translate-middle-x p-3 mt-2" style="z-index: 1060; width: 100%; max-width: 600px;">
@@ -199,10 +200,10 @@
   </main>
 
 <!-- ══ FOOTER ══════════════════════════════ -->
-{% if current_user.is_authenticated %}
+{% if mostrar_chrome %}
 <footer class="biblioteca-footer text-center mt-auto">
   <div class="container-fluid">
-    <span><i class="bi bi-mortarboard-fill me-1"></i>SENA Prácticas &copy; {{ moment().year if moment else 2026 }}</span>
+    <span><i class="bi bi-mortarboard-fill me-1"></i>SENA Prácticas &copy; {{ anio_actual }}</span>
   </div>
 </footer>
 {% endif %}

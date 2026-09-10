@@ -116,6 +116,17 @@ def create_app():
             mensaje='Ocurrió un error inesperado. Si persiste, contacta al administrador.'
         ), 500
 
+    @app.context_processor
+    def inyectar_globales():
+        """Valores disponibles en todas las plantillas."""
+        from datetime import datetime
+        from app.utils import hoy_local
+        try:
+            anio = hoy_local().year
+        except Exception:
+            anio = datetime.now().year
+        return {'anio_actual': anio}
+
     @app.after_request
     def add_header(response):
         # Los estáticos (Bootstrap, iconos, imágenes) sí se cachean;

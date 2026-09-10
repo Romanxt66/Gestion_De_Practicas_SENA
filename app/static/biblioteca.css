@@ -918,3 +918,476 @@ body.biblioteca-body::before {
     text-transform: uppercase;
   }
 }
+
+/* ============================================================
+   SISTEMA "PORTAL" — componentes compartidos
+   Lenguaje visual del rediseño de acceso, en la paleta del
+   proyecto (verde SENA sobre fondo oscuro). Se usan tanto en
+   las vistas públicas como dentro del panel.
+   ============================================================ */
+
+/* ── Barra superior de las vistas públicas ── */
+.portal-topbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  /* Sin backdrop-filter: sobre una barra casi opaca no aporta nada y, junto a
+     position:sticky, provoca artefactos de repintado al hacer scroll. */
+  background: #0c0c0c;
+}
+
+.portal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.portal-brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  color: #0a0a0a;
+  background: linear-gradient(145deg, #4ade80, var(--sena-green));
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+}
+
+.portal-brand-name {
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.portal-brand-sub {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Píldora de estado ── */
+.ui-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 99px;
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ui-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sena-green);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+}
+
+.ui-pill-accent {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+  color: #9BFF4D;
+}
+
+/* ── Tarjeta central ── */
+.portal-card {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 1.5rem clamp(1.25rem, 4vw, 2.5rem) 2rem;
+  border-radius: 22px;
+  border: 1px solid var(--border-default);
+  background: rgba(18, 18, 18, 0.72);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.portal-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Marca luminosa ── */
+.ui-mark {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  font-size: 1.9rem;
+  color: #0a0a0a;
+  background: linear-gradient(145deg, #4ade80, var(--sena-green));
+  box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.07),
+              0 0 45px rgba(34, 197, 94, 0.35);
+}
+
+.portal-title {
+  margin: 1.1rem 0 0.35rem;
+  text-align: center;
+  font-size: clamp(1.75rem, 4vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.portal-subtitle {
+  margin: 0 auto 1.75rem;
+  max-width: 34ch;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+/* ── Control segmentado ── */
+.ui-segmented-label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ui-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: 99px;
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ui-segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-segmented label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all var(--trans-fast);
+  user-select: none;
+}
+
+.ui-segmented label:hover { color: #fff; background: var(--bg-hover); }
+
+.ui-segmented input:checked + label {
+  background: linear-gradient(145deg, #4ade80, var(--sena-green));
+  color: #0a0a0a;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+}
+
+.ui-segmented input:focus-visible + label {
+  outline: 2px solid var(--sena-green);
+  outline-offset: 2px;
+}
+
+/* ── Panel informativo ── */
+.ui-note {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ui-note-icon { color: var(--sena-green); font-size: 1rem; line-height: 1.4; }
+
+.ui-note-title {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.15rem;
+}
+
+.ui-note-text { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+
+/* ── Campos de formulario ── */
+.ui-field { margin-bottom: 1.1rem; }
+
+.ui-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.ui-field-head label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ui-field-hint { font-size: 0.72rem; color: var(--text-muted); }
+
+.ui-input-shell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
+}
+
+.ui-input-shell:focus-within {
+  border-color: var(--sena-green);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.ui-input-shell > i { color: var(--text-muted); font-size: 1rem; }
+
+.ui-input-shell input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: var(--font-sans);
+}
+
+.ui-input-shell input::placeholder { color: var(--text-disabled); }
+
+.ui-input-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.25rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.ui-input-toggle:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+/* ── Botón principal ── */
+.btn-cta {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1.25rem;
+  border: 0;
+  border-radius: 99px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0a0a0a;
+  text-decoration: none;           /* también se usa sobre <a> */
+  background: linear-gradient(145deg, #4ade80, var(--sena-green));
+  box-shadow: 0 10px 26px rgba(34, 197, 94, 0.32);
+  transition: transform var(--trans-fast), box-shadow var(--trans-fast), filter var(--trans-fast);
+}
+
+.btn-cta:hover {
+  color: #0a0a0a;
+  text-decoration: none;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(34, 197, 94, 0.42);
+}
+
+.btn-cta:active { transform: translateY(0); }
+
+/* ── Separador con texto ── */
+.ui-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 1.5rem 0 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ui-divider::before,
+.ui-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-default);
+}
+
+/* ── Pie de la tarjeta y metadatos ── */
+.portal-card-foot {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.portal-card-foot a { color: var(--sena-green); text-decoration: none; }
+.portal-card-foot a:hover { text-decoration: underline; }
+
+.portal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.portal-meta span { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+.portal-footer {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem 1.75rem;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 575.98px) {
+  .portal-topbar, .portal-footer { padding: 1rem; }
+  .portal-footer { justify-content: center; text-align: center; }
+  .ui-segmented { grid-auto-flow: row; border-radius: var(--radius-md); }
+  .ui-segmented label { border-radius: var(--radius-sm); }
+}
+
+/* ============================================================
+   UNIFICACIÓN CON EL ESTILO DE ACCESO
+   Alinea los componentes del panel con el lenguaje del login:
+   mismos radios, mismos bordes y el mismo verde de foco.
+   ============================================================ */
+
+/* Campos: mismo tratamiento que .ui-input-shell */
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+  padding: 0.7rem 0.9rem;
+  transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
+}
+
+.form-control::placeholder { color: var(--text-disabled) !important; }
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--sena-green) !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.45rem;
+}
+
+/* Acción principal: mismo degradado que el botón del login */
+.btn-success {
+  background: linear-gradient(145deg, #4ade80, var(--sena-green)) !important;
+  border: 0 !important;
+  color: #0a0a0a !important;
+  text-shadow: none;
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.28);
+}
+
+.btn-success:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.38);
+}
+
+/* Marca de la barra lateral, igual a la de las vistas públicas */
+/* El bloque tiene dos líneas de texto: rejilla de 2 columnas con el icono
+   ocupando ambas filas, para que quede al lado y no encima. */
+.sidebar-brand {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.75rem;
+}
+
+/* La utilidad .d-md-block de Bootstrap lleva !important; hay que igualarla
+   para pasar a grid, manteniendo el bloque oculto en móvil. */
+@media (min-width: 768px) {
+  .sidebar-brand.d-md-block { display: grid !important; }
+}
+
+.sidebar-brand::before {
+  content: "\F1AE";              /* bi-mortarboard-fill */
+  font-family: "bootstrap-icons";
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  color: #0a0a0a;
+  background: linear-gradient(145deg, #4ade80, var(--sena-green));
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+}
+
+/* Encabezado de tarjeta: icono con el mismo acabado que .ui-mark */
+.shell-header-icon {
+  border-radius: 11px;
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.22);
+}
