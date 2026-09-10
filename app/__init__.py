@@ -118,14 +118,39 @@ def create_app():
 
     @app.context_processor
     def inyectar_globales():
-        """Valores disponibles en todas las plantillas."""
+        """Valores disponibles en todas las plantillas.
+
+        Solo datos de presentación para el armazón (año y contadores de los
+        avisos de la barra superior). No altera ninguna regla de negocio.
+        """
         from datetime import datetime
+        from flask_login import current_user
         from app.utils import hoy_local
+
         try:
             anio = hoy_local().year
         except Exception:
             anio = datetime.now().year
-        return {'anio_actual': anio}
+
+        datos = {'anio_actual': anio, 'nav_notificaciones': 0, 'nav_pendientes': 0}
+
+        try:
+            if current_user.is_authenticated:
+                if current_user.aprendiz:
+                    from app.models.notificacion import Notificacion
+                    datos['nav_notificaciones'] = Notificacion.query.filter_by(
+                        id_usuario=current_user.id_usuario, leida=False).count()
+                elif current_user.instructor:
+                    from app.utils import (ids_aprendices_de_instructor,
+                                           contar_evidencias_por_aprendiz)
+                    ids = ids_aprendices_de_instructor(current_user.instructor)
+                    conteos = contar_evidencias_por_aprendiz(ids, estado='Entregada')
+                    datos['nav_pendientes'] = sum(conteos.values())
+        except Exception:
+            # Un contador nunca debe impedir que se pinte la página
+            pass
+
+        return datos
 
     @app.after_request
     def add_header(response):

@@ -6,60 +6,46 @@
   main { display: flex; flex-direction: column; padding: 0 !important; overflow: visible !important; }
   .login-shell {
     flex: 1; min-height: 0; display: flex; flex-direction: column;
-    background:
-      radial-gradient(1100px 620px at 50% -8%, rgba(34, 197, 94, 0.10), transparent 62%),
-      radial-gradient(820px 520px at 88% 108%, rgba(34, 197, 94, 0.06), transparent 60%),
-      linear-gradient(180deg, #0d0f0e 0%, #0a0a0a 55%, #070807 100%);
+    background: linear-gradient(180deg, #0c0d0c 0%, #000 60%);
   }
-  .login-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2.5rem 1rem; }
-  .portal-nav-links { display: flex; gap: 1.75rem; font-size: 0.9rem; }
-  .portal-nav-links a { color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color var(--trans-fast); }
-  .portal-nav-links a:hover, .portal-nav-links a.active { color: var(--text-primary); }
-  @media (max-width: 767.98px) { .portal-nav-links { display: none; } }
+  .login-shell::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(760px 420px at 50% 0%, var(--acc-soft), transparent 65%);
+  }
+  .login-main {
+    flex: 1; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem 1rem 3rem;
+  }
+  .login-caja { width: 100%; max-width: 560px; }
+  .login-marca {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.6rem; margin-bottom: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .login-marca i { color: var(--acc); font-size: 1.1rem; }
+  .login-titulo { margin: 0 0 0.4rem; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+  .login-sub { margin: 0 0 1.5rem; color: var(--text-muted); font-size: 0.88rem; }
+  .login-caja .ui-field { margin-bottom: 0.9rem; }
+  .login-caja .btn-cta { margin-top: 0.75rem; padding: 0.8rem 1.25rem; font-size: 0.95rem; }
+  .login-pie { margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
+  .login-pie a { color: var(--acc); text-decoration: none; font-weight: 600; }
+  .login-pie a:hover { text-decoration: underline; }
+  .login-legal { padding: 1.25rem; text-align: center; font-size: 0.72rem; color: var(--text-disabled); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="login-shell">
-
-  <header class="portal-topbar">
-    <a class="portal-brand" href="{{ url_for('auth.landing') }}">
-      <span class="portal-brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
-      <span>
-        <span class="portal-brand-name">SENA Prácticas</span>
-        <span class="portal-brand-sub">Gestión de etapa productiva</span>
-      </span>
-    </a>
-    <nav class="portal-nav-links">
-      <a href="{{ url_for('auth.login') }}">Acceso institucional</a>
-      <a href="{{ url_for('auth.registro') }}" class="active">Registro de aprendiz</a>
-    </nav>
-    <span class="ui-pill"><span class="ui-pill-dot"></span> Sistema en línea</span>
-  </header>
-
   <main class="login-main">
-    <div class="portal-card" style="max-width: 680px;">
+    <div class="login-caja">
 
-      <div class="portal-card-head">
-        <span class="ui-pill ui-pill-accent"><span class="ui-pill-dot"></span> Registro de aprendiz</span>
-        <span class="ui-pill"><i class="bi bi-person-plus"></i> Cuenta nueva</span>
-      </div>
+      <div class="login-marca"><i class="bi bi-mortarboard-fill"></i> SENA Prácticas</div>
 
-      <div class="ui-mark"><i class="bi bi-person-plus-fill"></i></div>
-
-      <h1 class="portal-title">Crear cuenta</h1>
-      <p class="portal-subtitle">Completa tus datos para registrarte en el sistema de prácticas.</p>
-
-      <div class="ui-note mb-4">
-        <i class="bi bi-info-circle ui-note-icon"></i>
-        <div>
-          <span class="ui-note-title">Necesitas el código de tu ficha</span>
-          <p class="ui-note-text">
-            Con él quedas matriculado automáticamente en el curso. Si no lo tienes,
-            pídeselo al instructor a cargo de tu formación.
-          </p>
-        </div>
-      </div>
+      <h1 class="login-titulo">Crear cuenta</h1>
+      <p class="login-sub">Registro de aprendiz. Necesitas el código de tu ficha.</p>
 
       <form method="POST" action="{{ url_for('auth.registro') }}" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -171,7 +157,7 @@
           <div class="col-md-6">
             <div class="ui-field">
               <div class="ui-field-head">
-                <label for="confirm_password">Confirmar contraseña</label>
+                <label for="confirm_password">Confirmar</label>
                 <span class="ui-field-hint">Requerido</span>
               </div>
               <div class="ui-input-shell">
@@ -183,22 +169,17 @@
           </div>
         </div>
 
-        <button class="btn-cta mt-2" type="submit">
+        <button class="btn-cta" type="submit">
           Crear mi cuenta <i class="bi bi-arrow-right"></i>
         </button>
       </form>
 
-      <div class="ui-divider">¿Ya tienes cuenta?</div>
-
-      <a class="btn btn-ghost w-100 justify-content-center" href="{{ url_for('auth.login') }}">
-        <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión
-      </a>
+      <p class="login-pie">
+        ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a>
+      </p>
     </div>
   </main>
 
-  <footer class="portal-footer">
-    <span>&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</span>
-    <span class="portal-meta m-0"><span><i class="bi bi-shield-check"></i> Acceso por rol</span></span>
-  </footer>
+  <div class="login-legal">&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</div>
 </div>
 {% endblock %}

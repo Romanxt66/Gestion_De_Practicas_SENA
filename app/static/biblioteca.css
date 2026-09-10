@@ -8,66 +8,72 @@
 
 /* ── Design Tokens ── */
 :root {
-  /* Paleta adaptada al nuevo diseño Dark Glassmorphism */
-  --sena-green:       #22c55e; /* Neon Green */
+  /* ── Paleta del rediseño: negro puro + esmeralda ── */
+  --sena-green:       #10b981;
+  --sena-green-dark:  #059669;
+  --sena-orange:      #f59e0b;
 
   /* Acento activo. Las vistas de acceso lo reescriben según el rol elegido;
      en el resto del sistema se queda en el verde institucional. */
-  --acc:        #22c55e;
-  --acc-strong: #4ade80;
-  --acc-glow:   rgba(34, 197, 94, 0.35);
-  --acc-soft:   rgba(34, 197, 94, 0.15);
-  --sena-green-dark:  #16a34a; 
-  --sena-orange:      #f59e0b; 
-  
-  /* Dark Theme Defaults */
-  --bg-base:       #0a0a0a; /* Almost Black */
-  --bg-surface:    #161616; /* Cards background */
-  --bg-elevated:   #1f1f1f; 
-  --bg-hover:      rgba(255, 255, 255, 0.05);
+  --acc:        #10b981;
+  --acc-strong: #34d399;
+  --acc-glow:   rgba(16, 185, 129, 0.32);
+  --acc-soft:   rgba(16, 185, 129, 0.12);
 
-  /* Mapping legacy variables */
-  --accent-cyan:   #38BDF8; 
-  --accent-cyan-glow: rgba(56, 189, 248, 0.15);
-  --accent-green:  #22c55e;
-  --accent-green-glow: rgba(34, 197, 94, 0.15);
-  --accent-amber:  #F59E0B;
+  /* Superficies */
+  --bg-base:       #000000;
+  --bg-surface:    #0a0a0a;
+  --bg-elevated:   #101010;
+  --bg-hover:      rgba(255, 255, 255, 0.04);
+
+  /* Acentos secundarios */
+  --accent-cyan:   #38bdf8;
+  --accent-cyan-glow: rgba(56, 189, 248, 0.12);
+  --accent-green:  #10b981;
+  --accent-green-glow: rgba(16, 185, 129, 0.12);
+  --accent-amber:  #f59e0b;
+  --accent-amber-glow: rgba(245, 158, 11, 0.12);
   --accent-red:    #ef4444;
-  --accent-red-glow:  rgba(239, 68, 68, 0.15);
+  --accent-red-glow:  rgba(239, 68, 68, 0.12);
   --accent-purple: #a855f7;
+  --accent-purple-glow: rgba(168, 85, 247, 0.12);
 
-  /* Textos contrastantes para Dark Mode */
+  /* Texto */
   --text-primary:  #ffffff;
   --text-secondary:#a1a1aa;
   --text-muted:    #71717a;
   --text-disabled: #52525b;
 
-  /* Borders / Glass Strokes */
-  --border-subtle: rgba(255, 255, 255, 0.04);
+  /* Bordes */
+  --border-subtle: rgba(255, 255, 255, 0.05);
   --border-default: rgba(255, 255, 255, 0.08);
-  --border-muted:  rgba(255, 255, 255, 0.15);
-  --border-glow:   rgba(34, 197, 94, 0.5);
+  --border-muted:  rgba(255, 255, 255, 0.14);
+  --border-glow:   rgba(16, 185, 129, 0.45);
 
-  /* Shadows */
-  --shadow-sm:  0 1px 2px 0 rgba(0,0,0,0.2);
-  --shadow-md:  0 4px 6px -1px rgba(0,0,0,0.3);
-  --shadow-lg:  0 10px 15px -3px rgba(0,0,0,0.4);
+  /* Sombras */
+  --shadow-sm:  0 1px 2px 0 rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 10px -2px rgba(0,0,0,0.5);
+  --shadow-lg:  0 16px 40px -8px rgba(0,0,0,0.7);
   --shadow-glass: none;
 
-  /* Radius */
-  --radius-sm:  6px;
-  --radius-md:  10px;
+  /* Radios */
+  --radius-sm:  8px;
+  --radius-md:  12px;
   --radius-lg:  16px;
   --radius-xl:  20px;
 
-  /* Transitions */
-  --trans-fast: 150ms ease-in-out;
-  --trans-base: 250ms ease-in-out;
+  /* Transiciones */
+  --trans-fast: 150ms ease;
+  --trans-base: 250ms ease;
   --trans-slow: 350ms ease;
 
-  /* Typography */
-  --font-sans:  'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono:  'JetBrains Mono', 'Courier New', monospace;
+  /* Tipografía */
+  --font-sans:  'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Medidas del armazón */
+  --appbar-h:   72px;
+  --dock-h:     64px;
 }
 
 /* ── Base Reset ── */
@@ -897,33 +903,13 @@ body.biblioteca-body::before {
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+/* Nota: aquí había una versión móvil que ocultaba las cabeceras y apilaba las
+   celdas usando content: attr(data-label). Ninguna plantilla define ese
+   atributo, así que las celdas quedaban sin etiqueta y no se sabía qué era
+   cada dato. Ahora las tablas conservan su cabecera y se desplazan en
+   horizontal (ver el bloque responsive del rediseño, más abajo). */
 @media (max-width: 768px) {
-  .biblioteca-shell-body { padding: 1rem; }
-  .login-card-header, .login-card-body { padding-left: 1.25rem; padding-right: 1.25rem; }
-  .page-toolbar { flex-direction: column; align-items: stretch; text-align: center;}
   .toolbar-actions { justify-content: center; }
-  .biblioteca-table thead { display: none; }
-  .table thead { display: none; } /* override for bootstrap generic table */
-  
-  .biblioteca-table tbody tr, .table tbody tr {
-    display: block;
-    padding: 1rem;
-    border-bottom: 2px solid var(--border-default);
-  }
-  .biblioteca-table tbody td, .table tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.35rem 0;
-    border: none !important;
-  }
-  .biblioteca-table tbody td::before, .table tbody td::before {
-    content: attr(data-label);
-    font-weight: 700;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
 }
 
 /* ============================================================
@@ -1406,10 +1392,10 @@ body.biblioteca-body::before {
 
 /* ── Acento según el perfil elegido en el acceso ──────────── */
 [data-perfil="aprendiz"] {
-  --acc:        #22c55e;
-  --acc-strong: #4ade80;
-  --acc-glow:   rgba(34, 197, 94, 0.35);
-  --acc-soft:   rgba(34, 197, 94, 0.15);
+  --acc:        #10b981;
+  --acc-strong: #34d399;
+  --acc-glow:   rgba(16, 185, 129, 0.32);
+  --acc-soft:   rgba(16, 185, 129, 0.12);
 }
 [data-perfil="instructor"] {
   --acc:        #38bdf8;
@@ -1422,4 +1408,534 @@ body.biblioteca-body::before {
   --acc-strong: #c084fc;
   --acc-glow:   rgba(168, 85, 247, 0.35);
   --acc-soft:   rgba(168, 85, 247, 0.15);
+}
+
+/* ════════════════════════════════════════════════════════════
+   REDISEÑO — armazón de la aplicación
+   Barra superior fija + dock inferior flotante, sobre negro puro.
+   ════════════════════════════════════════════════════════════ */
+
+body.biblioteca-body {
+  background: var(--bg-base) !important;
+  font-size: 14px;
+}
+/* Se retira la fotografía desenfocada del fondo: el diseño es negro plano */
+body.biblioteca-body::before { content: none !important; }
+
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Barra superior ─────────────────────────────────────── */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  height: var(--appbar-h);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0 1.5rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.appbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.appbar-mark {
+  width: 42px; height: 42px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  display: grid; place-items: center;
+  font-size: 1.15rem;
+  color: var(--acc);
+  background: var(--acc-soft);
+  border: 1px solid var(--acc-glow);
+}
+
+.appbar-title {
+  display: block;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.appbar-sub {
+  display: block;
+  color: var(--acc);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.appbar-search { flex: 1; max-width: 420px; margin: 0 auto; }
+
+.appbar-search .ui-input-shell {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.appbar-search input { padding: 0.6rem 0; font-size: 0.88rem; }
+
+.appbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.appbar-icon {
+  position: relative;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--text-secondary);
+  font-size: 1.15rem;
+  text-decoration: none;
+  transition: all var(--trans-fast);
+}
+.appbar-icon:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.appbar-badge {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 17px; height: 17px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: var(--accent-amber);
+  color: #000;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 17px;
+  text-align: center;
+  border: 2px solid var(--bg-surface);
+}
+.appbar-badge.is-dot {
+  min-width: 10px; height: 10px; padding: 0;
+  background: var(--acc);
+}
+
+.appbar-sep { width: 1px; height: 32px; background: var(--border-default); }
+
+/* Pastilla de usuario */
+.nav-user-pill {
+  display: flex !important;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.3rem;
+  border-radius: 99px;
+  text-decoration: none;
+  transition: background var(--trans-fast);
+}
+.nav-user-pill:hover { background: var(--bg-hover); }
+.nav-user-pill::after { display: none; }
+
+.nav-user-pill .avatar {
+  width: 38px; height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--acc);
+  background: var(--acc-soft);
+  border: 1px solid var(--acc-glow);
+  font-size: 1rem;
+}
+
+.appbar-user-name {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 140px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.appbar-user-rol {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: capitalize;
+}
+
+.dark-dropdown {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.4rem !important;
+}
+.dark-dropdown .dropdown-item {
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-secondary);
+}
+.dark-dropdown .dropdown-item:hover { background: var(--bg-hover); color: #fff; }
+
+/* ── Dock inferior flotante ─────────────────────────────── */
+.dock-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 1040;
+  max-width: calc(100vw - 1.5rem);
+}
+
+.dock {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.45rem;
+  border-radius: 18px;
+  background: rgba(12, 12, 12, 0.92);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dock::-webkit-scrollbar { display: none; }
+
+.dock-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--trans-fast);
+}
+.dock-item i { font-size: 1rem; }
+.dock-item:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.dock-item.active {
+  color: var(--acc);
+  background: var(--acc-soft);
+  border: 1px solid var(--acc-glow);
+}
+
+.dock-badge {
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  border-radius: 99px;
+  background: var(--accent-amber);
+  color: #000;
+  font-size: 0.63rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* El contenido deja hueco para que el dock no tape nada */
+.app-main { flex: 1; padding: 1.75rem 1.5rem calc(var(--dock-h) + 2.5rem); }
+
+/* ════════════════════════════════════════════════════════════
+   REDISEÑO — módulos de contenido
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Cabecera de página ─────────────────────────────────── */
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: none;
+  box-shadow: none;
+  text-align: left;
+}
+.page-toolbar h2 {
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.page-toolbar .page-sub {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* ── Paneles (biblioteca-shell) y tarjetas (lib-card) ───── */
+.biblioteca-shell,
+.lib-card {
+  background: var(--bg-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: none !important;
+  transition: border-color var(--trans-base);
+}
+.biblioteca-shell:hover,
+.lib-card:hover { border-color: var(--border-default) !important; }
+
+.biblioteca-shell-header {
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 1.35rem 1.6rem;
+  gap: 0.85rem;
+}
+.biblioteca-shell-header h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.biblioteca-shell-body { padding: 1.6rem; }
+
+.lib-card-body { padding: 1.6rem; }
+.lib-card-title {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary) !important;
+}
+.lib-divider { border-color: var(--border-subtle) !important; opacity: 1; }
+
+/* Icono cuadrado redondeado de cabecera */
+.shell-header-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--acc-soft);
+  border: 1px solid var(--acc-glow);
+  color: var(--acc);
+  font-size: 1rem;
+}
+
+/* Cifra grande de las tarjetas de estadística */
+.stat-num {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: #fff;
+}
+.stat-num.is-acc   { color: var(--acc); }
+.stat-num.is-amber { color: var(--accent-amber); }
+.stat-hint { margin: 0.6rem 0 0; color: var(--text-muted); font-size: 0.82rem; }
+
+/* Botón de pie de tarjeta */
+.stat-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--acc);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--trans-fast);
+}
+.stat-cta:hover { background: var(--acc-soft); border-color: var(--acc-glow); color: var(--acc); }
+
+/* ── Barras de progreso ─────────────────────────────────── */
+.progress {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-bar { border-radius: 99px; background: var(--acc) !important; }
+.progress-bar.bg-success { background: var(--acc) !important; }
+
+/* ── Tablas ─────────────────────────────────────────────── */
+.table { color: var(--text-secondary); margin: 0; }
+.table > :not(caption) > * > * { background: transparent !important; }
+
+.table thead th,
+.biblioteca-table thead th {
+  background: transparent !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  color: var(--text-muted) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.9rem 1rem !important;
+}
+
+.table tbody td,
+.biblioteca-table tbody td {
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 1rem !important;
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+.table tbody tr:last-child td { border-bottom: 0 !important; }
+.table-hover tbody tr:hover > * { background: var(--bg-hover) !important; }
+
+/* Nombre destacado dentro de una tabla */
+.table a, .table strong[style*="cyan"] { color: var(--accent-cyan); }
+.codigo-ficha {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* ── Badges ─────────────────────────────────────────────── */
+.badge-lib {
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.badge-cyan   { background: var(--accent-cyan-glow);   color: var(--accent-cyan);   border: 1px solid rgba(56,189,248,0.28); text-shadow: none; }
+.badge-green  { background: var(--accent-green-glow);  color: var(--acc-strong);    border: 1px solid var(--acc-glow); text-shadow: none; }
+.badge-red    { background: var(--accent-red-glow);    color: #f87171;              border: 1px solid rgba(239,68,68,0.28); }
+.badge-amber  { background: var(--accent-amber-glow);  color: var(--accent-amber);  border: 1px solid rgba(245,158,11,0.28); }
+.badge-blue   { background: var(--accent-cyan-glow);   color: var(--accent-cyan);   border: 1px solid rgba(56,189,248,0.28); }
+.badge-purple { background: var(--accent-purple-glow); color: var(--accent-purple); border: 1px solid rgba(168,85,247,0.28); }
+.badge-gray   { background: rgba(255,255,255,0.05);    color: var(--text-secondary);border: 1px solid var(--border-default); }
+
+/* ── Botones ────────────────────────────────────────────── */
+.btn {
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+}
+.btn-success {
+  background: var(--acc) !important;
+  border: 0 !important;
+  color: #04140d !important;
+  box-shadow: none;
+}
+.btn-success:hover { background: var(--acc-strong) !important; box-shadow: 0 6px 18px var(--acc-glow); }
+
+.btn-ghost, .btn-outline-secondary {
+  background: transparent !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-secondary) !important;
+}
+.btn-ghost:hover, .btn-outline-secondary:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-muted) !important;
+}
+
+/* Tarjeta-acción de "Acciones rápidas" */
+.accion-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.015);
+  text-decoration: none;
+  transition: all var(--trans-fast);
+}
+.accion-card:hover { border-color: var(--acc-glow); background: var(--acc-soft); }
+.accion-card .accion-ico {
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 1.1rem;
+  background: var(--acc-soft);
+  border: 1px solid var(--acc-glow);
+  color: var(--acc);
+}
+.accion-card strong { display: block; color: var(--text-primary); font-size: 0.9rem; }
+.accion-card span { display: block; color: var(--text-muted); font-size: 0.78rem; }
+
+/* Filas de datos tipo "Mi perfil" */
+.dato-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.dato-row:last-child { border-bottom: 0; }
+.dato-row .dato-k {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dato-row .dato-v { color: var(--text-primary); font-weight: 600; font-size: 0.88rem; text-align: right; }
+
+/* Estado vacío */
+.empty-state { padding: 3rem 1rem; text-align: center; color: var(--text-muted); }
+.empty-state i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; opacity: 0.4; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 991.98px) {
+  .appbar-search { display: none; }
+}
+
+@media (max-width: 767.98px) {
+  :root { --appbar-h: 62px; }
+  .appbar { padding: 0 0.9rem; gap: 0.75rem; }
+  .appbar-mark { width: 36px; height: 36px; font-size: 1rem; }
+  .appbar-title { font-size: 0.92rem; }
+  .appbar-sub { display: none; }
+  .appbar-sep { display: none; }
+  .appbar-user-name, .appbar-user-rol { display: none; }
+  .nav-user-pill { padding: 0.2rem; }
+
+  .app-main { padding: 1rem 0.9rem calc(var(--dock-h) + 2rem); }
+
+  .page-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 1.15rem;
+  }
+  .page-toolbar h2 { font-size: 1.15rem !important; }
+
+  .biblioteca-shell-header { padding: 1.1rem 1.15rem; }
+  .biblioteca-shell-body,
+  .lib-card-body { padding: 1.15rem; }
+
+  .stat-num { font-size: 2.35rem; }
+
+  .dock-wrap { left: 0; right: 0; bottom: 0; transform: none; max-width: 100%; }
+  .dock {
+    border-radius: 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    padding: 0.4rem 0.5rem;
+    justify-content: flex-start;
+  }
+  .dock-item { padding: 0.5rem 0.7rem; font-size: 0.75rem; }
+
+  /* Tablas: se desplazan en horizontal en vez de romper la página */
+  .table-responsive { -webkit-overflow-scrolling: touch; }
+  .table thead th, .table tbody td { padding: 0.75rem 0.7rem !important; white-space: nowrap; }
+}
+
+@media (max-width: 575.98px) {
+  .dato-row { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .dato-row .dato-v { text-align: left; }
 }
