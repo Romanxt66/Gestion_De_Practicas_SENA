@@ -73,6 +73,7 @@
           <tr>
             <th>Nombre</th>
             <th>Empresa</th>
+            <th>Periodo de práctica</th>
             <th>Semestre</th>
             <th class="text-center">Evidencias</th>
             <th>Estado</th>
@@ -99,6 +100,28 @@
                   <i class="bi bi-check2"></i>
                 </button>
               </form>
+            </td>
+            <td>
+              <form action="{{ url_for('instructor.actualizar_horas', id_aprendiz=item.aprendiz.id_aprendiz) }}" method="POST" class="d-flex align-items-center gap-1 m-0 p-0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.url }}">
+                <input type="hidden" name="estado_practica" value="{{ item.aprendiz.estado_practica or 'En proceso' }}">
+                <input type="date" name="fecha_inicio_practica" class="form-control form-control-sm"
+                       style="width: 140px;" title="Inicio de práctica"
+                       value="{{ item.aprendiz.fecha_inicio_practica.strftime('%Y-%m-%d') if item.aprendiz.fecha_inicio_practica else '' }}">
+                <span class="text-muted small">→</span>
+                <input type="date" name="fecha_fin_practica" class="form-control form-control-sm"
+                       style="width: 140px;" title="Fin de práctica"
+                       value="{{ item.aprendiz.fecha_fin_practica.strftime('%Y-%m-%d') if item.aprendiz.fecha_fin_practica else '' }}">
+                <button type="submit" class="btn btn-sm btn-outline-success p-1 lh-1" title="Guardar fechas">
+                  <i class="bi bi-check2"></i>
+                </button>
+              </form>
+              {% if item.periodo_definido %}
+                <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                  {{ item.dias_restantes }} días restantes de {{ item.dias_totales }}
+                </div>
+              {% endif %}
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">

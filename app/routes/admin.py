@@ -713,6 +713,11 @@ def ficha_detalle(id_curso):
             'pct_tiempo': p['pct_tiempo'],
             'pct_evidencias': p['pct_evidencias'],
             'evidencias_count': p['evidencias_count'],
+            'dias_totales': p['dias_totales'],
+            'dias_restantes': p['dias_restantes'],
+            'periodo_definido': p['periodo_definido'],
+            'fecha_inicio': p['fecha_inicio'],
+            'fecha_fin': p['fecha_fin'],
             'evidencias': evidencias,
         })
 

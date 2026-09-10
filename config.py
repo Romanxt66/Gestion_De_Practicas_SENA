@@ -67,6 +67,12 @@ class Config:
     SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
     PERMANENT_SESSION_LIFETIME = timedelta(hours=int(os.getenv('SESSION_HOURS', 8)))
 
+    # ─── Zona horaria ───────────────────────────────────
+    # Los datetime se guardan en UTC, pero las fechas de práctica son fechas
+    # civiles: "hoy" debe evaluarse en la hora local, no en UTC, o el progreso
+    # avanzaría un día antes de tiempo cada tarde.
+    APP_TIMEZONE = os.getenv('APP_TIMEZONE', 'America/Bogota')
+
     # ─── Subida de archivos ─────────────────────────────
     # Tamaño máximo por petición (evita que un archivo enorme tumbe el servidor)
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_UPLOAD_MB', 15)) * 1024 * 1024

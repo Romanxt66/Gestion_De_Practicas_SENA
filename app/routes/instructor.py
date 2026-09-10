@@ -225,6 +225,11 @@ def ficha_detalle(id_curso):
             'pct_tiempo': p['pct_tiempo'],
             'pct_evidencias': p['pct_evidencias'],
             'evidencias_count': p['evidencias_count'],
+            'dias_totales': p['dias_totales'],
+            'dias_restantes': p['dias_restantes'],
+            'periodo_definido': p['periodo_definido'],
+            'fecha_inicio': p['fecha_inicio'],
+            'fecha_fin': p['fecha_fin'],
             'evidencias': evidencias,
         })
 
@@ -275,26 +280,53 @@ def asignar_empresa(id_aprendiz):
     return redirect(_destino_seguro())
 
 
-# ─── Actualizar estado aprendiz ───────────────
+# ─── Actualizar estado y periodo de práctica del aprendiz ──
 @bp.route('/aprendices/<int:id_aprendiz>/horas', methods=['POST'])
 @login_required
 @role_required('instructor')
 def actualizar_horas(id_aprendiz):
     _exigir_acceso_a_aprendiz(id_aprendiz)
     ap = Aprendiz.query.get_or_404(id_aprendiz)
+    destino = _destino_seguro()
 
     estado = request.form.get('estado_practica', '').strip()
     if estado and estado not in ESTADOS_PRACTICA:
         flash('Estado de práctica inválido.', 'danger')
-        return redirect(url_for('instructor.aprendices'))
+        return redirect(destino)
 
-    if estado:
+    try:
+        inicio = _parse_fecha(request.form.get('fecha_inicio_practica', '').strip())
+        fin = _parse_fecha(request.form.get('fecha_fin_practica', '').strip())
+    except ValueError:
+        flash('Formato de fecha inválido.', 'danger')
+        return redirect(destino)
+
+    if inicio and fin and fin <= inicio:
+        flash('La fecha de finalización debe ser posterior a la de inicio.', 'danger')
+        return redirect(destino)
+
+    cambios = []
+    if estado and estado != ap.estado_practica:
         ap.estado_practica = estado
-        log_historial(current_user, 'Aprendiz', 'MODIFICAR',
-                      f'Estado actualizado aprendiz {id_aprendiz}: {estado}')
-        db.session.commit()
-        flash('Estado actualizado correctamente.', 'success')
-    return redirect(url_for('instructor.aprendices'))
+        cambios.append(f'estado: {estado}')
+
+    if inicio != ap.fecha_inicio_practica:
+        ap.fecha_inicio_practica = inicio
+        cambios.append(f'inicio de práctica: {inicio or "sin definir"}')
+
+    if fin != ap.fecha_fin_practica:
+        ap.fecha_fin_practica = fin
+        cambios.append(f'fin de práctica: {fin or "sin definir"}')
+
+    if not cambios:
+        flash('No hubo cambios que guardar.', 'info')
+        return redirect(destino)
+
+    log_historial(current_user, 'Aprendiz', 'MODIFICAR',
+                  f'Aprendiz {id_aprendiz} — ' + '; '.join(cambios))
+    db.session.commit()
+    flash('Datos de la práctica actualizados correctamente.', 'success')
+    return redirect(destino)
 
 
 # ─── Revisar Evidencias ───────────────────────

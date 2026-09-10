@@ -27,6 +27,26 @@ EXTENSIONES_PERMITIDAS = {
 # ─────────────────────────────────────────────
 # Helper: asegurar compatibilidad de datetime
 # ─────────────────────────────────────────────
+def hoy_local():
+    """Fecha de hoy en la zona horaria de la aplicación (por defecto Bogotá).
+
+    Las fechas de práctica las carga un instructor en hora local; usar la fecha
+    UTC haría que el periodo avanzara un día antes de tiempo cada tarde.
+    """
+    from flask import current_app
+    nombre = 'America/Bogota'
+    try:
+        nombre = current_app.config.get('APP_TIMEZONE', nombre)
+    except RuntimeError:
+        pass  # fuera de contexto de aplicación
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo(nombre)).date()
+    except Exception:
+        # Sin base de datos de zonas horarias, se cae a UTC
+        return datetime.now(timezone.utc).date()
+
+
 def make_aware(dt):
     """Convierte un datetime naive a aware con UTC si es necesario."""
     if dt is None:
@@ -122,12 +142,18 @@ def puede_ver_evidencia(usuario, evidencia):
 def calcular_progreso(aprendiz, evidencias_count=None):
     """Calcula el progreso de un aprendiz.
 
-    Devuelve un dict con: dias_transcurridos, pct_tiempo, pct_evidencias,
-    evidencias_count y pct_general. Si `evidencias_count` se pasa desde fuera
-    (por ejemplo, precalculado en lote), se evita una consulta extra.
+    El avance por tiempo se mide sobre el periodo real de la práctica cuando el
+    instructor cargó las fechas (fecha_inicio_practica / fecha_fin_practica).
+    Si faltan, se estima como antes: 180 días desde la creación del usuario.
+
+    Devuelve un dict con: dias_transcurridos, dias_totales, dias_restantes,
+    pct_tiempo, pct_evidencias, evidencias_count, pct_general, periodo_definido,
+    fecha_inicio y fecha_fin.
     """
-    vacio = {'dias_transcurridos': 0, 'pct_tiempo': 0.0, 'pct_evidencias': 0.0,
-             'evidencias_count': 0, 'pct_general': 0.0}
+    vacio = {'dias_transcurridos': 0, 'dias_totales': DIAS_PRACTICA,
+             'dias_restantes': 0, 'pct_tiempo': 0.0, 'pct_evidencias': 0.0,
+             'evidencias_count': 0, 'pct_general': 0.0,
+             'periodo_definido': False, 'fecha_inicio': None, 'fecha_fin': None}
     if not aprendiz:
         return vacio
 
@@ -136,21 +162,37 @@ def calcular_progreso(aprendiz, evidencias_count=None):
         evidencias_count = (db.session.query(Evidencia)
                             .filter_by(id_aprendiz=aprendiz.id_aprendiz).count())
 
-    dias = 0
-    if aprendiz.usuario and aprendiz.usuario.fecha_creacion:
-        dias = (datetime.now(timezone.utc)
-                - make_aware(aprendiz.usuario.fecha_creacion)).days
+    hoy = hoy_local()
+    inicio = getattr(aprendiz, 'fecha_inicio_practica', None)
+    fin = getattr(aprendiz, 'fecha_fin_practica', None)
+    periodo_definido = bool(inicio and fin and fin > inicio)
 
-    pct_tiempo = min(100, max(0, round((dias / DIAS_PRACTICA) * 100, 1)))
+    if periodo_definido:
+        dias_totales = (fin - inicio).days
+        dias = (hoy - inicio).days
+    else:
+        dias_totales = DIAS_PRACTICA
+        dias = 0
+        if aprendiz.usuario and aprendiz.usuario.fecha_creacion:
+            dias = (datetime.now(timezone.utc)
+                    - make_aware(aprendiz.usuario.fecha_creacion)).days
+
+    dias = max(0, dias)
+    pct_tiempo = min(100, max(0, round((dias / dias_totales) * 100, 1)))
     pct_evidencias = min(100, max(0, round(
         (evidencias_count / EVIDENCIAS_ESPERADAS) * 100, 1)))
 
     return {
-        'dias_transcurridos': dias,
+        'dias_transcurridos': min(dias, dias_totales),
+        'dias_totales': dias_totales,
+        'dias_restantes': max(0, dias_totales - dias),
         'pct_tiempo': pct_tiempo,
         'pct_evidencias': pct_evidencias,
         'evidencias_count': evidencias_count,
         'pct_general': round((pct_tiempo + pct_evidencias) / 2, 1),
+        'periodo_definido': periodo_definido,
+        'fecha_inicio': inicio,
+        'fecha_fin': fin,
     }
 
 
@@ -186,6 +228,11 @@ def progreso_de_aprendices(aprendices, estado=None):
             'pct_evidencias': p['pct_evidencias'],
             'evidencias_count': p['evidencias_count'],
             'dias_transcurridos': p['dias_transcurridos'],
+            'dias_totales': p['dias_totales'],
+            'dias_restantes': p['dias_restantes'],
+            'periodo_definido': p['periodo_definido'],
+            'fecha_inicio': p['fecha_inicio'],
+            'fecha_fin': p['fecha_fin'],
             'pct_general': p['pct_general'],
         })
     return datos

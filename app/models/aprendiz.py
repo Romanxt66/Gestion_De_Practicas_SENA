@@ -9,6 +9,10 @@ class Aprendiz(db.Model):
     estado_practica  = db.Column(db.String(30), default='En proceso')
     horas_requeridas = db.Column(db.Integer, default=0)
     horas_cumplidas  = db.Column(db.Integer, default=0)
+    # Periodo real de la práctica. Si están vacías, el progreso por tiempo se
+    # estima desde la fecha de creación del usuario (comportamiento anterior).
+    fecha_inicio_practica = db.Column(db.Date, nullable=True)
+    fecha_fin_practica    = db.Column(db.Date, nullable=True)
 
     usuario          = db.relationship('Usuario', back_populates='aprendiz')
     empresa          = db.relationship('Empresa', backref='aprendices')

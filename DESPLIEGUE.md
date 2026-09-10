@@ -21,6 +21,7 @@ y completar como mínimo:
 | `SESSION_COOKIE_SECURE` | `True` si el sitio se sirve por HTTPS |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | credenciales del superusuario del seed |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | cuenta SMTP que envía las notificaciones |
+| `APP_TIMEZONE` | `America/Bogota` (zona en la que se evalúa "hoy") |
 
 > Si no defines `SECRET_KEY`, la aplicación genera una y la guarda en
 > `instance/.secret_key`. Funciona, pero en un contenedor sin volumen
@@ -72,6 +73,12 @@ En producción, tras desplegar el código nuevo:
 ```bash
 docker compose exec web flask db upgrade
 ```
+
+> **Pendiente en el próximo despliegue:** la migración `d6c632069ed4` agrega
+> `fecha_inicio_practica` y `fecha_fin_practica` a la tabla `aprendiz`. Son dos
+> columnas nulables, así que el `ALTER TABLE` es instantáneo y no bloquea; los
+> aprendices existentes quedan sin fechas y siguen con la estimación de 6 meses
+> hasta que un instructor las cargue.
 
 Con varios workers conviene además poner `RUN_DB_INIT=0` en el `.env` para que
 el arranque no ejecute `create_all()`/seed en paralelo.

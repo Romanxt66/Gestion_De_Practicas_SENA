@@ -289,6 +289,78 @@ if id_nueva:
     check('no elimina una ficha con aprendices',
           'aprendices asignados' in r.get_data(as_text=True))
 
+print('\n── Fechas de práctica (instructor) ──')
+from datetime import date, timedelta
+if propio:
+    hoy = date.today()
+    ini, fin = hoy - timedelta(days=30), hoy + timedelta(days=70)   # 100 días, 30 corridos
+    t = token(c_inst, '/instructor/aprendices')
+    r = c_inst.post(f'/instructor/aprendices/{propio}/horas', data={
+        'estado_practica': 'En proceso', 'csrf_token': t,
+        'fecha_inicio_practica': ini.isoformat(),
+        'fecha_fin_practica': fin.isoformat()}, follow_redirects=True)
+    with app.app_context():
+        a = db.session.get(Aprendiz, propio)
+        check('guarda la fecha de inicio', a.fecha_inicio_practica == ini, str(a.fecha_inicio_practica))
+        check('guarda la fecha de fin', a.fecha_fin_practica == fin, str(a.fecha_fin_practica))
+        from app.utils import calcular_progreso
+        pr = calcular_progreso(a)
+        check('el progreso usa el periodo real, no los 180 días',
+              pr['periodo_definido'] and pr['dias_totales'] == 100, str(pr['dias_totales']))
+        check('el % de tiempo se calcula sobre ese periodo (30/100 = 30%)',
+              pr['pct_tiempo'] == 30.0, str(pr['pct_tiempo']))
+        check('calcula los días restantes', pr['dias_restantes'] == 70, str(pr['dias_restantes']))
+
+    # fin anterior al inicio: se rechaza y no se guarda
+    t = token(c_inst, '/instructor/aprendices')
+    r = c_inst.post(f'/instructor/aprendices/{propio}/horas', data={
+        'estado_practica': 'En proceso', 'csrf_token': t,
+        'fecha_inicio_practica': hoy.isoformat(),
+        'fecha_fin_practica': (hoy - timedelta(days=5)).isoformat()}, follow_redirects=True)
+    check('rechaza fin anterior al inicio', 'posterior a la de inicio' in r.get_data(as_text=True))
+    with app.app_context():
+        check('no sobrescribió las fechas válidas',
+              db.session.get(Aprendiz, propio).fecha_inicio_practica == ini)
+
+    # fecha con formato basura: no debe dar 500
+    t = token(c_inst, '/instructor/aprendices')
+    r = c_inst.post(f'/instructor/aprendices/{propio}/horas', data={
+        'estado_practica': 'En proceso', 'csrf_token': t,
+        'fecha_inicio_practica': 'no-es-fecha'}, follow_redirects=True)
+    check('una fecha inválida no rompe la app', r.status_code == 200 and 'inválido' in r.get_data(as_text=True), str(r.status_code))
+
+    # vaciar las fechas vuelve a la estimación automática
+    t = token(c_inst, '/instructor/aprendices')
+    c_inst.post(f'/instructor/aprendices/{propio}/horas', data={
+        'estado_practica': 'En proceso', 'csrf_token': t,
+        'fecha_inicio_practica': '', 'fecha_fin_practica': ''}, follow_redirects=True)
+    with app.app_context():
+        a = db.session.get(Aprendiz, propio)
+        pr = calcular_progreso(a)
+        check('al vaciarlas vuelve a la estimación de 180 días',
+              a.fecha_inicio_practica is None and not pr['periodo_definido']
+              and pr['dias_totales'] == 180)
+
+    # un instructor no puede tocar las fechas de un aprendiz ajeno
+    if ajeno:
+        t = token(c_inst, '/instructor/aprendices')
+        r = c_inst.post(f'/instructor/aprendices/{ajeno}/horas', data={
+            'estado_practica': 'En proceso', 'csrf_token': t,
+            'fecha_inicio_practica': ini.isoformat()})
+        check('no puede fijar fechas a un aprendiz ajeno', r.status_code == 403, str(r.status_code))
+
+    # el formulario del detalle de ficha guarda por la misma ruta
+    t = token(c_inst, f'/instructor/fichas/{id_curso}/detalle')
+    if t:
+        r = c_inst.post(f'/instructor/aprendices/{propio}/horas', data={
+            'estado_practica': 'En proceso', 'csrf_token': t,
+            'fecha_inicio_practica': ini.isoformat(),
+            'fecha_fin_practica': fin.isoformat(),
+            'next': f'/instructor/fichas/{id_curso}/detalle'})
+        check('desde el detalle de ficha vuelve a esa misma página',
+              r.status_code == 302 and 'detalle' in r.headers.get('Location', ''),
+              r.headers.get('Location', str(r.status_code)))
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

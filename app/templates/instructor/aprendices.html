@@ -53,11 +53,22 @@
             <td>
               <div class="d-flex align-items-center gap-2">
                 <span class="fw-bold {% if item.pct_tiempo >= 100 %}text-success{% else %}text-primary{% endif %}">{{ item.pct_tiempo }}%</span>
-                <span class="text-muted small">6 meses</span>
+                {% if item.periodo_definido %}
+                  <span class="text-muted small" title="{{ item.fecha_inicio.strftime('%d/%m/%Y') }} → {{ item.fecha_fin.strftime('%d/%m/%Y') }}">
+                    {{ item.dias_restantes }} días restantes
+                  </span>
+                {% else %}
+                  <span class="text-muted small fst-italic" title="Sin fechas de práctica cargadas">6 meses (estimado)</span>
+                {% endif %}
               </div>
               <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
                 <div class="progress-bar {% if item.pct_tiempo >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ item.pct_tiempo }}%;"></div>
               </div>
+              {% if item.periodo_definido %}
+                <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                  {{ item.fecha_inicio.strftime('%d/%m/%Y') }} – {{ item.fecha_fin.strftime('%d/%m/%Y') }}
+                </div>
+              {% endif %}
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
@@ -77,8 +88,8 @@
             </td>
             <td>
               <div class="d-flex gap-2 justify-content-end">
-                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalHoras{{ ap.id_aprendiz }}" title="Actualizar Horas y Estado">
-                  <i class="bi bi-clock-history"></i>
+                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalHoras{{ ap.id_aprendiz }}" title="Estado y fechas de práctica">
+                  <i class="bi bi-calendar-range"></i>
                 </button>
                 <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modalEmpresa{{ ap.id_aprendiz }}" title="Asignar Empresa">
                   <i class="bi bi-building"></i>
@@ -111,8 +122,9 @@
       <div class="modal-content">
         <form action="{{ url_for('instructor.actualizar_horas', id_aprendiz=ap.id_aprendiz) }}" method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.url }}">
           <div class="modal-header">
-            <h5 class="modal-title">Actualizar Progreso: {{ ap.usuario.nombres }}</h5>
+            <h5 class="modal-title">Práctica de {{ ap.usuario.nombres }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -124,6 +136,31 @@
                 <option value="Reprobado" {% if ap.estado_practica == 'Reprobado' %}selected{% endif %}>Reprobado</option>
                 <option value="Cancelado" {% if ap.estado_practica == 'Cancelado' %}selected{% endif %}>Cancelado</option>
               </select>
+            </div>
+
+            <hr style="border-color: var(--border-default);">
+
+            <p class="text-muted small mb-3">
+              <i class="bi bi-calendar-range me-1"></i>
+              Periodo de la práctica. Al definirlo, el avance por tiempo se calcula
+              sobre estas fechas en lugar de estimarse en 6 meses.
+            </p>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label" for="inicio_{{ ap.id_aprendiz }}">Inicio de práctica</label>
+                <input type="date" class="form-control" id="inicio_{{ ap.id_aprendiz }}"
+                       name="fecha_inicio_practica"
+                       value="{{ ap.fecha_inicio_practica.strftime('%Y-%m-%d') if ap.fecha_inicio_practica else '' }}">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" for="fin_{{ ap.id_aprendiz }}">Fin de práctica</label>
+                <input type="date" class="form-control" id="fin_{{ ap.id_aprendiz }}"
+                       name="fecha_fin_practica"
+                       value="{{ ap.fecha_fin_practica.strftime('%Y-%m-%d') if ap.fecha_fin_practica else '' }}">
+              </div>
+            </div>
+            <div class="form-text text-muted mt-2" style="font-size: 0.75rem;">
+              Dejá ambas vacías para volver a la estimación automática.
             </div>
           </div>
           <div class="modal-footer">
