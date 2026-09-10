@@ -6,17 +6,36 @@ Antes se tomaba `DATABASE_URL` de `docker-compose.yml`, donde la contraseña de
 Postgres estaba escrita en claro. Ahora todas las credenciales viven en `.env`
 (que **no** se sube al repositorio) y el compose las lee con `env_file`.
 
-En el servidor, crear `.env` a partir de `.env.example`:
+Las variables están **declaradas** en `docker-compose.yml` como `${VARIABLE}`,
+sin valor. Gracias a eso, Coolify (y cualquier panel que lea el compose) crea
+los campos vacíos en su sección *Environment Variables* y solo hay que
+rellenarlos desde la interfaz. Los valores reales nunca se escriben en el
+compose, que va al repositorio.
+
+**En Coolify:** recurso de la aplicación → *Environment Variables* → completar
+los campos que aparecen.
+
+**Sin panel, con `docker compose` a mano:** crear un `.env` **junto al
+`docker-compose.yml`** (Compose lo lee solo para sustituir las `${...}`):
 
 ```bash
 cp .env.example .env
 ```
 
-y completar como mínimo:
+> Cuidado: no basta con tener un `.env` en cualquier carpeta del servidor.
+> Compose solo lee el que está junto al `docker-compose.yml`, y la aplicación
+> ya no monta el proyecto dentro del contenedor.
+
+Valores mínimos:
 
 | Variable | Valor |
 |---|---|
 | `DATABASE_URL` | `postgresql+psycopg://admin:LA_CONTRASENA@postgres-db:5432/master_db` |
+
+> El prefijo debe ser `postgresql+psycopg://`. Si se copia la cadena que muestra
+> el panel de Postgres, vendrá como `postgres://` y SQLAlchemy no encontrará el
+> driver. El host es el nombre interno del servicio (`postgres-db`), no
+> `localhost`.
 | `SECRET_KEY` | generar con `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
 | `SESSION_COOKIE_SECURE` | `True` si el sitio se sirve por HTTPS |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | credenciales del superusuario del seed |

@@ -4,18 +4,53 @@ services:
     expose:
       - "5001"
     # El código viaja dentro de la imagen (Dockerfile: COPY . .).
-    # NO montar el proyecto sobre /app: taparía lo recién construido y la
-    # aplicación seguiría ejecutando la versión anterior.
-    # Solo se persiste lo que debe sobrevivir a un redespliegue:
+    # NO montar el proyecto sobre /app: taparía lo recién construido y el
+    # contenedor seguiría ejecutando la versión anterior.
+    # En volúmenes va solo lo que debe sobrevivir a un redespliegue:
     volumes:
       - evidencias:/app/app/static/uploads   # archivos subidos por los aprendices
       - instancia:/app/instance              # clave de sesión persistida
-    # Las credenciales y secretos se leen del archivo .env (ver .env.example).
-    # NO se escriben aquí: este archivo va al repositorio.
-    env_file:
-      - .env
+
+    # Las variables se declaran aquí, pero NUNCA con su valor: así Coolify
+    # (y cualquier otro panel que lea el compose) crea los campos vacíos para
+    # rellenarlos desde su interfaz. Sin panel, Docker Compose las toma del
+    # archivo .env que esté junto a este docker-compose.yml.
+    # Los valores reales no se escriben nunca en este archivo: va al repositorio.
     environment:
       - FLASK_APP=run.py
+
+      # ── Obligatoria ──
+      - DATABASE_URL=${DATABASE_URL}
+
+      # ── Seguridad ──
+      - SECRET_KEY=${SECRET_KEY}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-True}
+      - SESSION_HOURS=${SESSION_HOURS:-8}
+
+      # ── Comportamiento ──
+      - APP_TIMEZONE=${APP_TIMEZONE:-America/Bogota}
+      - MAX_UPLOAD_MB=${MAX_UPLOAD_MB:-15}
+      - RUN_DB_INIT=${RUN_DB_INIT:-1}
+
+      # ── Correo (opcional: sin esto no salen las notificaciones) ──
+      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USE_TLS=${MAIL_USE_TLS:-True}
+      - MAIL_USE_SSL=${MAIL_USE_SSL:-False}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_TIMEOUT=${MAIL_TIMEOUT:-10}
+
+      # ── Superusuario inicial (opcional) ──
+      # Con ADMIN_PASSWORD definida, cada arranque fija esa contraseña.
+      # Déjala vacía si prefieres gestionarla desde la aplicación.
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - ADMIN_NOMBRES=${ADMIN_NOMBRES:-}
+      - ADMIN_APELLIDOS=${ADMIN_APELLIDOS:-}
+      - ADMIN_TIPO_DOCUMENTO=${ADMIN_TIPO_DOCUMENTO:-}
+      - ADMIN_NUMERO_DOCUMENTO=${ADMIN_NUMERO_DOCUMENTO:-}
+
     networks:
       - coolify
     restart: unless-stopped
