@@ -10,6 +10,13 @@
 :root {
   /* Paleta adaptada al nuevo diseño Dark Glassmorphism */
   --sena-green:       #22c55e; /* Neon Green */
+
+  /* Acento activo. Las vistas de acceso lo reescriben según el rol elegido;
+     en el resto del sistema se queda en el verde institucional. */
+  --acc:        #22c55e;
+  --acc-strong: #4ade80;
+  --acc-glow:   rgba(34, 197, 94, 0.35);
+  --acc-soft:   rgba(34, 197, 94, 0.15);
   --sena-green-dark:  #16a34a; 
   --sena-orange:      #f59e0b; 
   
@@ -957,8 +964,9 @@ body.biblioteca-body::before {
   place-items: center;
   font-size: 1.05rem;
   color: #0a0a0a;
-  background: linear-gradient(145deg, #4ade80, var(--sena-green));
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+  background: linear-gradient(145deg, var(--acc-strong), var(--acc));
+  box-shadow: 0 6px 18px var(--acc-glow);
+  transition: background var(--trans-base), box-shadow var(--trans-base);
 }
 
 .portal-brand-name {
@@ -998,14 +1006,16 @@ body.biblioteca-body::before {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--sena-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+  background: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-soft);
+  transition: background var(--trans-base);
 }
 
 .ui-pill-accent {
-  border-color: rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.08);
-  color: #9BFF4D;
+  border-color: var(--acc-glow);
+  background: var(--acc-soft);
+  color: var(--acc-strong);
+  transition: all var(--trans-base);
 }
 
 /* ── Tarjeta central ── */
@@ -1041,9 +1051,10 @@ body.biblioteca-body::before {
   place-items: center;
   font-size: 1.9rem;
   color: #0a0a0a;
-  background: linear-gradient(145deg, #4ade80, var(--sena-green));
-  box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.07),
-              0 0 45px rgba(34, 197, 94, 0.35);
+  background: linear-gradient(145deg, var(--acc-strong), var(--acc));
+  box-shadow: 0 0 0 10px var(--acc-soft),
+              0 0 45px var(--acc-glow);
+  transition: background var(--trans-base), box-shadow var(--trans-base);
 }
 
 .portal-title {
@@ -1109,13 +1120,13 @@ body.biblioteca-body::before {
 .ui-segmented label:hover { color: #fff; background: var(--bg-hover); }
 
 .ui-segmented input:checked + label {
-  background: linear-gradient(145deg, #4ade80, var(--sena-green));
+  background: linear-gradient(145deg, var(--acc-strong), var(--acc));
   color: #0a0a0a;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 4px 14px var(--acc-glow);
 }
 
 .ui-segmented input:focus-visible + label {
-  outline: 2px solid var(--sena-green);
+  outline: 2px solid var(--acc);
   outline-offset: 2px;
 }
 
@@ -1130,7 +1141,7 @@ body.biblioteca-body::before {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.ui-note-icon { color: var(--sena-green); font-size: 1rem; line-height: 1.4; }
+.ui-note-icon { color: var(--acc); font-size: 1rem; line-height: 1.4; }
 
 .ui-note-title {
   display: block;
@@ -1176,8 +1187,8 @@ body.biblioteca-body::before {
 }
 
 .ui-input-shell:focus-within {
-  border-color: var(--sena-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-soft);
 }
 
 .ui-input-shell > i { color: var(--text-muted); font-size: 1rem; }
@@ -1224,8 +1235,8 @@ body.biblioteca-body::before {
   font-weight: 700;
   color: #0a0a0a;
   text-decoration: none;           /* también se usa sobre <a> */
-  background: linear-gradient(145deg, #4ade80, var(--sena-green));
-  box-shadow: 0 10px 26px rgba(34, 197, 94, 0.32);
+  background: linear-gradient(145deg, var(--acc-strong), var(--acc));
+  box-shadow: 0 10px 26px var(--acc-glow);
   transition: transform var(--trans-fast), box-shadow var(--trans-fast), filter var(--trans-fast);
 }
 
@@ -1234,7 +1245,7 @@ body.biblioteca-body::before {
   text-decoration: none;
   filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px rgba(34, 197, 94, 0.42);
+  box-shadow: 0 16px 34px var(--acc-glow);
 }
 
 .btn-cta:active { transform: translateY(0); }
@@ -1270,7 +1281,7 @@ body.biblioteca-body::before {
   color: var(--text-muted);
 }
 
-.portal-card-foot a { color: var(--sena-green); text-decoration: none; }
+.portal-card-foot a { color: var(--acc); text-decoration: none; }
 .portal-card-foot a:hover { text-decoration: underline; }
 
 .portal-meta {
@@ -1390,4 +1401,25 @@ body.biblioteca-body::before {
   border-radius: 11px;
   background: rgba(34, 197, 94, 0.10);
   border-color: rgba(34, 197, 94, 0.22);
+}
+
+
+/* ── Acento según el perfil elegido en el acceso ──────────── */
+[data-perfil="aprendiz"] {
+  --acc:        #22c55e;
+  --acc-strong: #4ade80;
+  --acc-glow:   rgba(34, 197, 94, 0.35);
+  --acc-soft:   rgba(34, 197, 94, 0.15);
+}
+[data-perfil="instructor"] {
+  --acc:        #38bdf8;
+  --acc-strong: #7dd3fc;
+  --acc-glow:   rgba(56, 189, 248, 0.35);
+  --acc-soft:   rgba(56, 189, 248, 0.15);
+}
+[data-perfil="admin"] {
+  --acc:        #a855f7;
+  --acc-strong: #c084fc;
+  --acc-glow:   rgba(168, 85, 247, 0.35);
+  --acc-soft:   rgba(168, 85, 247, 0.15);
 }

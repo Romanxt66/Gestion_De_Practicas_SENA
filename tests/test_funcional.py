@@ -217,9 +217,51 @@ check('login con clave incorrecta falla con mensaje genérico',
       'Correo o contraseña incorrectos' in r.get_data(as_text=True))
 t = token(anon, '/login')
 r = anon.post('/login', data={'correo': correo_ap, 'password': 'clave-test-123',
-                              'csrf_token': t})
+                              'perfil': 'aprendiz', 'csrf_token': t})
 check('login correcto redirige al panel', r.status_code == 302 and 'aprendiz' in r.headers['Location'],
       r.headers.get('Location', str(r.status_code)))
+
+# ── El perfil elegido debe corresponder al rol de la cuenta ──
+otro = app.test_client()
+t = token(otro, '/login')
+r = otro.post('/login', data={'correo': correo_ap, 'password': 'clave-test-123',
+                              'perfil': 'admin', 'csrf_token': t})
+check('un aprendiz no entra eligiendo Administrador',
+      r.status_code == 200 and 'no es de tipo Administrador' in r.get_data(as_text=True))
+with otro.session_transaction() as ses:
+    check('y no queda sesión iniciada', '_user_id' not in ses)
+
+t = token(otro, '/login')
+r = otro.post('/login', data={'correo': correo_ap, 'password': 'clave-test-123',
+                              'perfil': 'instructor', 'csrf_token': t})
+check('un aprendiz no entra eligiendo Instructor',
+      'no es de tipo Instructor' in r.get_data(as_text=True))
+check('el mensaje le indica el perfil correcto',
+      'Ingresa como Aprendiz' in r.get_data(as_text=True))
+
+t = token(otro, '/login')
+r = otro.post('/login', data={'correo': correo_ap, 'password': 'clave-test-123',
+                              'csrf_token': t})
+check('sin elegir perfil no deja entrar',
+      'Selecciona el tipo de cuenta' in r.get_data(as_text=True))
+
+# El administrador sí entra eligiendo Administrador
+adm = app.test_client()
+with app.app_context():
+    u = db.session.get(Usuario, admin.id_usuario)
+    u.password_hash = generate_password_hash('clave-admin-test')
+    db.session.commit()
+    correo_admin = u.correo
+t = token(adm, '/login')
+r = adm.post('/login', data={'correo': correo_admin, 'password': 'clave-admin-test',
+                             'perfil': 'admin', 'csrf_token': t})
+check('el administrador entra eligiendo Administrador',
+      r.status_code == 302 and 'admin' in r.headers.get('Location', ''),
+      r.headers.get('Location', str(r.status_code)))
+
+# El color de acento del formulario responde al perfil
+html = anon.get('/login').get_data(as_text=True)
+check('el formulario declara el perfil para el color', 'data-perfil=' in html)
 
 anon2 = app.test_client()
 with app.app_context():

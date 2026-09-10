@@ -21,6 +21,19 @@ bp = Blueprint('auth', __name__)
 
 LONGITUD_MINIMA_PASSWORD = 6
 
+# Perfil elegido en el formulario -> nombre del rol en la base de datos.
+# El acceso solo se concede si la cuenta tiene ese rol.
+PERFILES = {
+    'aprendiz':   'aprendiz',
+    'instructor': 'instructor',
+    'admin':      'superusuario',
+}
+ETIQUETA_PERFIL = {
+    'aprendiz':   'Aprendiz',
+    'instructor': 'Instructor',
+    'admin':      'Administrador',
+}
+
 
 # ─── Landing page ─────────────────────────────
 @bp.route('/')
@@ -57,11 +70,29 @@ def login():
             flash('Tu cuenta está desactivada. Contacta al administrador.', 'warning')
             return render_template('auth/login.html')
 
+        # El perfil elegido debe corresponder a un rol de la cuenta.
+        perfil = request.form.get('perfil', '').strip().lower()
+        if perfil not in PERFILES:
+            flash('Selecciona el tipo de cuenta con el que quieres ingresar.', 'danger')
+            return render_template('auth/login.html')
+
+        rol_requerido = PERFILES[perfil]
+        roles_usuario = {ur.rol.nombre.lower() for ur in usuario.roles}
+        if rol_requerido not in roles_usuario:
+            propios = [ETIQUETA_PERFIL[p] for p, r in PERFILES.items() if r in roles_usuario]
+            if propios:
+                flash(f'Esta cuenta no es de tipo {ETIQUETA_PERFIL[perfil]}. '
+                      f'Ingresa como {" o ".join(propios)}.', 'danger')
+            else:
+                flash('Tu cuenta no tiene un rol asignado. Contacta al administrador.',
+                      'danger')
+            return render_template('auth/login.html', perfil=perfil)
+
         session.permanent = True
         login_user(usuario, remember=False)
         flash(f'¡Bienvenido, {usuario.nombres}!', 'success')
-        
-        return _redirect_by_role(usuario, login_success=True)
+
+        return _redirect_by_perfil(perfil, login_success=True)
 
     return render_template('auth/login.html')
 
@@ -163,6 +194,16 @@ def logout():
     session.clear()
     flash('Sesión cerrada.', 'info')
     return redirect(url_for('auth.landing'))
+
+
+# ─── Helper: redirigir al panel del perfil elegido ──
+def _redirect_by_perfil(perfil, login_success=False):
+    kwargs = {'login_success': '1'} if login_success else {}
+    if perfil == 'admin':
+        return redirect(url_for('admin.dashboard', **kwargs))
+    if perfil == 'instructor':
+        return redirect(url_for('instructor.dashboard', **kwargs))
+    return redirect(url_for('aprendiz.dashboard', **kwargs))
 
 
 # ─── Helper: redirigir según rol ──────────────

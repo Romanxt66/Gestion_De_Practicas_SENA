@@ -1,131 +1,113 @@
 {% extends 'base.html' %}
 {% block title %}Iniciar Sesión — SENA Prácticas{% endblock %}
 
+{% set perfil_activo = perfil if perfil in ['aprendiz', 'instructor', 'admin'] else 'aprendiz' %}
+
 {% block extra_css %}
 <style>
-  /* base.html ya aporta el alto completo: el shell solo rellena <main>.
-     Usar 100vh aquí generaba un documento del doble de alto. */
-  /* overflow visible: con overflow:auto, <main> se vuelve el contenedor de
-     scroll y la barra superior sticky nunca se activa. */
   main { display: flex; flex-direction: column; padding: 0 !important; overflow: visible !important; }
 
   .login-shell {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    /* Capa de fondo propia: el fondo fijo del panel no cubre toda la altura
-       cuando la página crece y hay que hacer scroll. */
-    background:
-      radial-gradient(1100px 620px at 50% -8%, rgba(34, 197, 94, 0.10), transparent 62%),
-      radial-gradient(820px 520px at 88% 108%, rgba(34, 197, 94, 0.06), transparent 60%),
-      linear-gradient(180deg, #0d0f0e 0%, #0a0a0a 55%, #070807 100%);
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #0c0d0c 0%, #0a0a0a 60%, #080808 100%);
+    transition: background var(--trans-slow);
   }
+  /* Un único halo, del color del perfil elegido */
+  .login-shell::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(760px 420px at 50% 0%, var(--acc-soft), transparent 65%);
+    pointer-events: none;
+    transition: background var(--trans-slow);
+  }
+
   .login-main {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2.5rem 1rem;
+    flex: 1; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem 1rem 3rem;
   }
-  .portal-nav-links {
-    display: flex;
-    gap: 1.75rem;
-    font-size: 0.9rem;
-  }
-  .portal-nav-links a {
+
+  .login-caja { width: 100%; max-width: 380px; }
+
+  .login-marca {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.6rem; margin-bottom: 2.25rem;
     color: var(--text-secondary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color var(--trans-fast);
+    font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
   }
-  .portal-nav-links a:hover,
-  .portal-nav-links a.active { color: var(--text-primary); }
-  @media (max-width: 767.98px) { .portal-nav-links { display: none; } }
+  .login-marca i { color: var(--acc); font-size: 1.1rem; transition: color var(--trans-base); }
+
+  .login-titulo {
+    margin: 0 0 0.4rem;
+    font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
+    color: #fff;
+  }
+  .login-sub { margin: 0 0 1.75rem; color: var(--text-muted); font-size: 0.88rem; }
+
+  /* Segmentado compacto */
+  .login-caja .ui-segmented { padding: 0.25rem; margin-bottom: 0.5rem; }
+  .login-caja .ui-segmented label { padding: 0.5rem 0.4rem; font-size: 0.82rem; gap: 0.35rem; }
+
+  .login-ayuda {
+    min-height: 2.4em;
+    margin: 0 0 1.5rem;
+    font-size: 0.78rem; line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .login-caja .ui-field { margin-bottom: 0.9rem; }
+  .login-caja .ui-input-shell { background: rgba(255, 255, 255, 0.025); }
+  .login-caja .btn-cta { margin-top: 0.5rem; padding: 0.8rem 1.25rem; font-size: 0.95rem; }
+
+  .login-pie {
+    margin-top: 1.75rem; text-align: center;
+    font-size: 0.8rem; color: var(--text-muted);
+  }
+  .login-pie a { color: var(--acc); text-decoration: none; font-weight: 600; }
+  .login-pie a:hover { text-decoration: underline; }
+
+  .login-legal {
+    padding: 1.25rem; text-align: center;
+    font-size: 0.72rem; color: var(--text-disabled);
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-shell">
-
-  <!-- ══ Barra superior ══ -->
-  <header class="portal-topbar">
-    <a class="portal-brand" href="{{ url_for('auth.landing') }}">
-      <span class="portal-brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
-      <span>
-        <span class="portal-brand-name">SENA Prácticas</span>
-        <span class="portal-brand-sub">Gestión de etapa productiva</span>
-      </span>
-    </a>
-
-    <nav class="portal-nav-links">
-      <a href="{{ url_for('auth.login') }}" class="active">Acceso institucional</a>
-      <a href="{{ url_for('auth.registro') }}">Registro de aprendiz</a>
-    </nav>
-
-    <span class="ui-pill">
-      <span class="ui-pill-dot"></span> Sistema en línea
-    </span>
-  </header>
-
-  <!-- ══ Tarjeta de acceso ══ -->
+<div class="login-shell" data-perfil="{{ perfil_activo }}" id="loginShell">
   <main class="login-main">
-    <div class="portal-card">
+    <div class="login-caja">
 
-      <div class="portal-card-head">
-        <span class="ui-pill ui-pill-accent">
-          <span class="ui-pill-dot"></span> Acceso institucional
-        </span>
-        {% if request.is_secure %}
-          <span class="ui-pill"><i class="bi bi-lock-fill"></i> Conexión cifrada</span>
-        {% else %}
-          <span class="ui-pill"><i class="bi bi-hdd-network"></i> Conexión local</span>
-        {% endif %}
+      <div class="login-marca">
+        <i class="bi bi-mortarboard-fill"></i> SENA Prácticas
       </div>
 
-      <div class="ui-mark"><i class="bi bi-mortarboard-fill"></i></div>
-
-      <h1 class="portal-title">Iniciar Sesión</h1>
-      <p class="portal-subtitle">Ingresa con tu correo y contraseña para entrar a tu panel.</p>
+      <h1 class="login-titulo">Iniciar sesión</h1>
+      <p class="login-sub">Selecciona tu tipo de cuenta e ingresa tus datos.</p>
 
       <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <!-- Selector orientativo de perfil -->
-        <span class="ui-segmented-label">Tipo de cuenta</span>
         <div class="ui-segmented" role="radiogroup" aria-label="Tipo de cuenta">
-          <input type="radio" name="perfil_ayuda" id="perfil-aprendiz" value="aprendiz" checked>
+          <input type="radio" name="perfil" id="perfil-aprendiz" value="aprendiz"
+                 {% if perfil_activo == 'aprendiz' %}checked{% endif %}>
           <label for="perfil-aprendiz"><i class="bi bi-mortarboard"></i> Aprendiz</label>
 
-          <input type="radio" name="perfil_ayuda" id="perfil-instructor" value="instructor">
+          <input type="radio" name="perfil" id="perfil-instructor" value="instructor"
+                 {% if perfil_activo == 'instructor' %}checked{% endif %}>
           <label for="perfil-instructor"><i class="bi bi-person-badge"></i> Instructor</label>
 
-          <input type="radio" name="perfil_ayuda" id="perfil-admin" value="admin">
+          <input type="radio" name="perfil" id="perfil-admin" value="admin"
+                 {% if perfil_activo == 'admin' %}checked{% endif %}>
           <label for="perfil-admin"><i class="bi bi-shield-lock"></i> Admin</label>
         </div>
 
-        <div class="ui-note">
-          <i class="bi bi-info-circle ui-note-icon"></i>
-          <div>
-            <span class="ui-note-title" data-perfil-titulo>Aprendiz / Etapa productiva</span>
-            <p class="ui-note-text" data-perfil-texto>
-              Ingresa con el correo con el que te registraste. Si aún no tienes cuenta,
-              regístrate con el código de tu ficha.
-            </p>
-            <p class="ui-note-text mt-2" style="opacity:.75;">
-              Entras con tu correo y contraseña: tu panel se abre según el rol que
-              tengas asignado. Esta selección solo cambia la ayuda de arriba.
-            </p>
-          </div>
-        </div>
+        <p class="login-ayuda" data-perfil-texto></p>
 
-
-        <!-- Correo -->
-        <div class="ui-field mt-4">
-          <div class="ui-field-head">
-            <label for="correo">Correo institucional</label>
-            <span class="ui-field-hint">Requerido</span>
-          </div>
+        <div class="ui-field">
+          <div class="ui-field-head"><label for="correo">Correo</label></div>
           <div class="ui-input-shell">
             <i class="bi bi-envelope"></i>
             <input type="email" id="correo" name="correo"
@@ -134,12 +116,8 @@
           </div>
         </div>
 
-        <!-- Contraseña -->
         <div class="ui-field">
-          <div class="ui-field-head">
-            <label for="password">Contraseña</label>
-            <span class="ui-field-hint">Requerido</span>
-          </div>
+          <div class="ui-field-head"><label for="password">Contraseña</label></div>
           <div class="ui-input-shell">
             <i class="bi bi-key"></i>
             <input type="password" id="password" name="password"
@@ -152,74 +130,58 @@
         </div>
 
         <button class="btn-cta" type="submit">
-          Acceder al portal <i class="bi bi-arrow-right"></i>
+          Entrar <i class="bi bi-arrow-right"></i>
         </button>
       </form>
 
-      <div class="ui-divider">¿No tienes cuenta?</div>
-
-      <a class="btn btn-ghost w-100 justify-content-center" href="{{ url_for('auth.registro') }}">
-        <i class="bi bi-person-plus me-2"></i> Registrarme como aprendiz
-      </a>
-
-      <div class="portal-card-foot">
-        ¿Olvidaste tu contraseña o no puedes entrar?
-        Comunícate con el instructor de tu ficha o con el administrador del sistema.
-      </div>
+      <p class="login-pie">
+        ¿Eres aprendiz y no tienes cuenta?
+        <a href="{{ url_for('auth.registro') }}">Regístrate</a>
+      </p>
     </div>
   </main>
 
-  <!-- ══ Pie ══ -->
-  <footer class="portal-footer">
-    <span>&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</span>
-    <span class="portal-meta m-0">
-      <span><i class="bi bi-shield-check"></i> Acceso por rol</span>
-    </span>
-  </footer>
+  <div class="login-legal">&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Mostrar / ocultar contraseña
   (function () {
     const boton = document.getElementById('togglePassword');
     const campo = document.getElementById('password');
     const icono = document.getElementById('togglePasswordIcon');
-    if (!boton || !campo) return;
-    boton.addEventListener('click', function () {
-      const oculto = campo.type === 'password';
-      campo.type = oculto ? 'text' : 'password';
-      icono.className = oculto ? 'bi bi-eye-slash' : 'bi bi-eye';
-    });
+    if (boton && campo) {
+      boton.addEventListener('click', function () {
+        const oculto = campo.type === 'password';
+        campo.type = oculto ? 'text' : 'password';
+        icono.className = oculto ? 'bi bi-eye-slash' : 'bi bi-eye';
+      });
+    }
   })();
 
-  // El selector de perfil solo cambia el texto de ayuda
   (function () {
+    // El perfil elegido cambia el color de acento y el texto de ayuda.
+    // La validación real la hace el servidor.
     const ayuda = {
-      aprendiz: {
-        titulo: 'Aprendiz / Etapa productiva',
-        texto: 'Ingresa con el correo con el que te registraste. Si aún no tienes cuenta, regístrate con el código de tu ficha.'
-      },
-      instructor: {
-        titulo: 'Instructor',
-        texto: 'Usa el correo institucional con el que el administrador creó tu cuenta. Desde tu panel gestionas tus fichas, aprendices y evidencias.'
-      },
-      admin: {
-        titulo: 'Administrador',
-        texto: 'Acceso a la gestión global: usuarios, roles, fichas, empresas y auditoría del sistema.'
-      }
+      aprendiz:   'Solo cuentas de aprendiz. Si aún no tienes, regístrate con el código de tu ficha.',
+      instructor: 'Solo cuentas de instructor, creadas por el administrador.',
+      admin:      'Solo cuentas de administrador del sistema.'
     };
-    const titulo = document.querySelector('[data-perfil-titulo]');
+    const shell = document.getElementById('loginShell');
     const texto = document.querySelector('[data-perfil-texto]');
-    document.querySelectorAll('input[name="perfil_ayuda"]').forEach(function (radio) {
-      radio.addEventListener('change', function () {
-        const datos = ayuda[this.value];
-        if (!datos) return;
-        titulo.textContent = datos.titulo;
-        texto.textContent = datos.texto;
-      });
+
+    function aplicar(valor) {
+      shell.setAttribute('data-perfil', valor);
+      texto.textContent = ayuda[valor] || '';
+    }
+
+    document.querySelectorAll('input[name="perfil"]').forEach(function (radio) {
+      radio.addEventListener('change', function () { aplicar(this.value); });
     });
+
+    const marcado = document.querySelector('input[name="perfil"]:checked');
+    aplicar(marcado ? marcado.value : 'aprendiz');
   })();
 </script>
 {% endblock %}
