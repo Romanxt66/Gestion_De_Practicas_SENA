@@ -43,13 +43,32 @@ y completar como mínimo:
    estado en lugar de volver a crearlas:
 
    ```bash
-   docker compose exec web flask db stamp head
+   docker compose exec web flask db stamp b2dfee22bcd7
    ```
 
    Este paso se hace **una sola vez**. Si se omite, el primer
    `flask db upgrade` intentará crear tablas que ya existen y fallará.
 
-4. Verificar que el sitio responde y que se puede iniciar sesión.
+   > ⚠️ Sellar con `head` en lugar de `b2dfee22bcd7` es un error: `head` apunta
+   > siempre a la **última** migración, así que Alembic daría por aplicadas
+   > migraciones que la base todavía no tiene y esas columnas nunca se crearían.
+   > Hay que sellar la revisión que refleja el esquema real de producción, que
+   > es la inicial (`b2dfee22bcd7`).
+
+4. **Aplicar las migraciones pendientes:**
+
+   ```bash
+   docker compose exec web flask db upgrade
+   ```
+
+   Agrega `fecha_inicio_practica` y `fecha_fin_practica` a la tabla `aprendiz`.
+   Para confirmar en qué revisión quedó la base:
+
+   ```bash
+   docker compose exec web flask db current
+   ```
+
+5. Verificar que el sitio responde y que se puede iniciar sesión.
 
 > Al desplegar, **todas las sesiones activas se cierran** (cambia la clave de
 > firma). Es normal: los usuarios solo tienen que volver a entrar.
