@@ -29,3 +29,6 @@ instance/*.db
 
 # Evidencias subidas por los aprendices: datos personales, viven en el servidor
 app/static/uploads/
+
+# Configuración local del entorno de desarrollo
+.claude/
