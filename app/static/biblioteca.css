@@ -71,6 +71,10 @@
   --font-sans:  'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
+  /* Fondo opaco de los campos. Debe coincidir con el relleno que se usa
+     para anular el amarillo/blanco del autocompletado del navegador. */
+  --input-bg:   #101010;
+
   /* Medidas del armazón */
   --appbar-h:   72px;
   --dock-h:     64px;
@@ -1168,7 +1172,7 @@ body.biblioteca-body::before {
   padding: 0 0.9rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--input-bg);
   transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
 }
 
@@ -1479,7 +1483,7 @@ body.biblioteca-body::before { content: none !important; }
 
 .appbar-search .ui-input-shell {
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--input-bg);
 }
 .appbar-search input { padding: 0.6rem 0; font-size: 0.88rem; }
 
@@ -1594,11 +1598,12 @@ body.biblioteca-body::before { content: none !important; }
   gap: 0.2rem;
   padding: 0.45rem;
   border-radius: 18px;
-  background: rgba(12, 12, 12, 0.92);
-  border: 1px solid var(--border-default);
+  /* Translúcido: deja ver el contenido que pasa por detrás */
+  background: rgba(10, 10, 10, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1907,12 +1912,15 @@ body.biblioteca-body::before { content: none !important; }
 
   .app-main { padding: 1rem 0.9rem calc(var(--dock-h) + 2rem); }
 
+  /* Varias plantillas añaden .align-items-center de Bootstrap, que lleva
+     !important; hay que igualarlo para poder apilar en columna. */
   .page-toolbar {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: column !important;
+    align-items: flex-start !important;
     text-align: left;
     padding: 1.15rem;
   }
+  .page-toolbar > * { width: 100%; }
   .page-toolbar h2 { font-size: 1.15rem !important; }
 
   .biblioteca-shell-header { padding: 1.1rem 1.15rem; }
@@ -1938,4 +1946,149 @@ body.biblioteca-body::before { content: none !important; }
 @media (max-width: 575.98px) {
   .dato-row { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
   .dato-row .dato-v { text-align: left; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   AUTOCOMPLETADO DEL NAVEGADOR
+   Chrome pinta los campos autocompletados con un fondo claro propio
+   e ignora `background-color`. La única forma de taparlo es un
+   box-shadow interior opaco; el color del texto se fuerza con
+   -webkit-text-fill-color, porque `color` también se ignora.
+   La transición larguísima evita el destello claro del primer instante.
+   ════════════════════════════════════════════════════════════ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0 100px var(--input-bg) inset !important;
+  box-shadow: 0 0 0 100px var(--input-bg) inset !important;
+  caret-color: var(--text-primary);
+  border-radius: inherit;
+  transition: background-color 5000000s ease-in-out 0s,
+              color 5000000s ease-in-out 0s !important;
+}
+
+/* Selector estándar, para los navegadores que ya lo implementan */
+input:autofill,
+select:autofill,
+textarea:autofill {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  box-shadow: 0 0 0 100px var(--input-bg) inset !important;
+  caret-color: var(--text-primary);
+}
+
+/* Dentro de .ui-input-shell el fondo lo pone el contenedor: el relleno del
+   autocompletado se recorta a los bordes del propio input para no desbordar
+   el icono ni el botón del ojo. */
+.ui-input-shell input:-webkit-autofill,
+.ui-input-shell input:autofill {
+  border-radius: 0;
+}
+
+/* La sugerencia desplegable del navegador también en oscuro */
+input:-webkit-autofill::first-line {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+/* ════════════════════════════════════════════════════════════
+   UTILIDADES DE BOOTSTRAP EN LA PALETA DEL REDISEÑO
+   Las plantillas usan las clases semánticas de Bootstrap
+   (text-primary, btn-info, nav-pills…). Se remapean aquí para no
+   tener que editarlas una a una y evitar los azules por defecto.
+   ════════════════════════════════════════════════════════════ */
+.text-primary { color: var(--acc) !important; }
+.text-success { color: var(--acc-strong) !important; }
+.text-info    { color: var(--accent-cyan) !important; }
+.text-warning { color: var(--accent-amber) !important; }
+.text-danger  { color: #f87171 !important; }
+
+.bg-primary { background: var(--acc) !important; color: #04140d !important; }
+.bg-info    { background: var(--accent-cyan-glow) !important; color: var(--accent-cyan) !important; }
+.bg-warning { background: var(--accent-amber-glow) !important; color: var(--accent-amber) !important; }
+.bg-dark    { background: rgba(255, 255, 255, 0.02) !important; }
+
+.border-primary   { border-color: var(--acc-glow) !important; }
+.border-secondary { border-color: var(--border-default) !important; }
+
+.btn-primary {
+  background: var(--acc) !important;
+  border: 0 !important;
+  color: #04140d !important;
+  text-shadow: none;
+  box-shadow: none;
+}
+.btn-primary:hover {
+  background: var(--acc-strong) !important;
+  transform: none;
+  box-shadow: 0 6px 18px var(--acc-glow);
+}
+
+.btn-info {
+  background: var(--accent-cyan) !important;
+  border: 0 !important;
+  color: #04141d !important;
+}
+.btn-warning {
+  background: var(--accent-amber) !important;
+  border: 0 !important;
+  color: #1d1204 !important;
+}
+.btn-danger {
+  background: #ef4444 !important;
+  border: 0 !important;
+  color: #fff !important;
+}
+
+.btn-outline-success, .btn-outline-info, .btn-outline-warning, .btn-outline-primary {
+  background: transparent !important;
+  border: 1px solid var(--border-default) !important;
+}
+.btn-outline-success:hover, .btn-outline-info:hover,
+.btn-outline-warning:hover, .btn-outline-primary:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-muted) !important;
+}
+
+/* Pestañas de filtro */
+.nav-pills .nav-link {
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.9rem;
+}
+.nav-pills .nav-link:hover { color: var(--text-primary); background: var(--bg-hover); }
+.nav-pills .nav-link.active {
+  background: var(--acc) !important;
+  border-color: var(--acc) !important;
+  color: #04140d !important;
+}
+
+/* Paginación */
+.page-link {
+  background: transparent !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-secondary) !important;
+}
+.page-item.active .page-link {
+  background: var(--acc) !important;
+  border-color: var(--acc) !important;
+  color: #04140d !important;
+}
+.page-link:hover { background: var(--bg-hover) !important; color: #fff !important; }
+
+/* Listas y modales heredados */
+.list-group-item {
+  background: transparent !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary);
 }
