@@ -1,14 +1,15 @@
 services:
   web:
     build: .
-    container_name: sena_flask_app
     expose:
       - "5001"
+    # El código viaja dentro de la imagen (Dockerfile: COPY . .).
+    # NO montar el proyecto sobre /app: taparía lo recién construido y la
+    # aplicación seguiría ejecutando la versión anterior.
+    # Solo se persiste lo que debe sobrevivir a un redespliegue:
     volumes:
-      - .:/app
-      # Evitamos sobrescribir los directorios de entorno virtual y caché generados localmente
-      - /app/.venv
-      - /app/__pycache__
+      - evidencias:/app/app/static/uploads   # archivos subidos por los aprendices
+      - instancia:/app/instance              # clave de sesión persistida
     # Las credenciales y secretos se leen del archivo .env (ver .env.example).
     # NO se escriben aquí: este archivo va al repositorio.
     env_file:
@@ -18,6 +19,10 @@ services:
     networks:
       - coolify
     restart: unless-stopped
+
+volumes:
+  evidencias:
+  instancia:
 
 networks:
   coolify:

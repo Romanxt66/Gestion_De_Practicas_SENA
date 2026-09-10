@@ -135,6 +135,19 @@ Se guardan en `app/static/uploads/evidencias/`. El acceso directo por
 `/archivos/evidencia/<id>`, que valida que quien pide el archivo sea el
 aprendiz dueño, un instructor de su ficha o un superusuario.
 
-Esa carpeta **debe estar en un volumen persistente**: hoy el `docker-compose.yml`
-monta todo el proyecto (`.:/app`), así que se conserva, pero si algún día se
-quita ese bind mount, las evidencias subidas se perderían en cada redeploy.
+Se conservan en el volumen `evidencias`, declarado en `docker-compose.yml`.
+
+> **Importante:** el compose **no** debe montar el proyecto sobre `/app`
+> (`- .:/app`). Ese montaje tapa el código recién construido y el contenedor
+> sigue ejecutando la versión anterior, aunque el despliegue aparezca en verde.
+> El código viaja dentro de la imagen (`COPY . .` en el Dockerfile); en
+> volúmenes va solo lo que debe sobrevivir al redespliegue: las evidencias
+> subidas y la carpeta `instance` (donde se persiste la clave de sesión).
+
+Para copiar evidencias que estuvieran en una carpeta del servidor al volumen:
+
+```bash
+CONT=$(docker ps --format '{{.Names}}' | grep '^web-' | head -1)
+docker cp <ruta-en-el-servidor>/app/static/uploads/evidencias/. \
+          $CONT:/app/app/static/uploads/evidencias/
+```
