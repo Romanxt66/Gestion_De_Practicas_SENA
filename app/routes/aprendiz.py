@@ -17,7 +17,8 @@ from app import db
 from app.models.evidencia import Evidencia
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
-from app.utils import (role_required, enviar_correo_evidencia, calcular_progreso,
+from app.servicios import correo
+from app.utils import (role_required, calcular_progreso,
                        extension_permitida, nombre_archivo_seguro,
                        directorio_evidencias, EXTENSIONES_PERMITIDAS)
 
@@ -113,17 +114,25 @@ def evidencias_subir():
         db.session.add(evidencia)
         db.session.commit()
 
-        # Notificar a los instructores (el envío corre en segundo plano)
-        nombre_aprendiz = f"{current_user.nombres} {current_user.apellidos}"
-        destinatarios = set()
+        # Avisar a los instructores de sus fichas (el envío corre en segundo plano)
+        avisados = set()
         for ca in ap.cursos:
             if not ca.curso:
                 continue
             for ci in ca.curso.instructores:
-                if ci.instructor and ci.instructor.usuario and ci.instructor.usuario.correo:
-                    destinatarios.add((ci.instructor.usuario.correo, ca.curso.nombre))
-        for correo, nombre_curso in destinatarios:
-            enviar_correo_evidencia(correo, nombre_aprendiz, nombre_curso)
+                inst_usuario = ci.instructor.usuario if ci.instructor else None
+                if not inst_usuario or not inst_usuario.correo:
+                    continue
+                clave = (inst_usuario.id_usuario, ca.curso.id_curso)
+                if clave in avisados:
+                    continue
+                avisados.add(clave)
+                correo.avisar_evidencia_subida(
+                    instructor_usuario=inst_usuario,
+                    aprendiz_usuario=current_user,
+                    curso_nombre=ca.curso.nombre,
+                    tipo_evidencia=tipo,
+                )
 
         flash('Evidencia enviada correctamente.', 'success')
         return redirect(url_for('aprendiz.mis_evidencias'))

@@ -41,6 +41,12 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
       - MAIL_TIMEOUT=${MAIL_TIMEOUT:-10}
 
+      # ── Vincular cuentas de Google (opcional) ──
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-}
+      - TOKEN_ENCRYPTION_KEY=${TOKEN_ENCRYPTION_KEY:-}
+
       # ── Superusuario inicial (opcional) ──
       # Con ADMIN_PASSWORD definida, cada arranque fija esa contraseña.
       # Déjala vacía si prefieres gestionarla desde la aplicación.

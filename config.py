@@ -86,6 +86,17 @@ class Config:
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', '')
     MAIL_TIMEOUT = int(os.getenv('MAIL_TIMEOUT', 10))
 
+    # ─── Vinculación de cuentas de Google (OAuth) ───────
+    # Credenciales del proyecto en Google Cloud. Sin ellas, el apartado de
+    # conexiones queda visible pero deshabilitado y todo se envía por SMTP.
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+    GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
+    # Debe coincidir EXACTAMENTE con la URI registrada en Google Cloud.
+    GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', '')
+    # Clave para cifrar los refresh tokens. Si se deja vacía se deriva de
+    # SECRET_KEY, pero entonces cambiar SECRET_KEY obliga a reconectar.
+    TOKEN_ENCRYPTION_KEY = os.getenv('TOKEN_ENCRYPTION_KEY', '')
+
 # Comandos para descargar en instalar todas las librerias offline
 # python -m pip download -r requirements.txt -d librerias
 # pip install --no-index --find-links=librerias -r requirements.txt

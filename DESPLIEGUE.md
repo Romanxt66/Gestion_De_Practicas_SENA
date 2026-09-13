@@ -170,3 +170,52 @@ CONT=$(docker ps --format '{{.Names}}' | grep '^web-' | head -1)
 docker cp <ruta-en-el-servidor>/app/static/uploads/evidencias/. \
           $CONT:/app/app/static/uploads/evidencias/
 ```
+
+
+## Vincular cuentas de Google (apartado "Conexiones")
+
+Aprendices e instructores pueden vincular su cuenta de Google para que los
+avisos del sistema salgan desde su propia dirección. **Es opcional**: sin
+vincular nada, los avisos se envían desde la cuenta institucional
+(`MAIL_USERNAME`), así que la funcionalidad nunca depende de ello.
+
+Avisos que se envían:
+
+| Cuándo | A quién |
+|---|---|
+| Un aprendiz sube una evidencia | Al instructor de cada ficha del aprendiz |
+| Un instructor califica una evidencia | Al aprendiz |
+
+### Configuración en Google Cloud
+
+1. En [console.cloud.google.com](https://console.cloud.google.com) → *APIs y
+   servicios* → habilitar la **Gmail API**.
+2. *Credenciales* → crear un **ID de cliente de OAuth** de tipo *Aplicación web*.
+3. En **URIs de redireccionamiento autorizados**, añadir exactamente:
+   `https://TU-DOMINIO/cuenta/google/callback`
+4. Copiar el ID y el secreto a las variables `GOOGLE_CLIENT_ID` y
+   `GOOGLE_CLIENT_SECRET`, y poner esa misma URI en `GOOGLE_REDIRECT_URI`.
+
+> ⚠️ **Límite mientras la app no esté verificada por Google.** El permiso que se
+> pide (`gmail.send`) es sensible. Con la pantalla de consentimiento en modo
+> *Prueba*, solo funcionan las cuentas añadidas a mano como usuarios de prueba
+> (máximo 100) y **el permiso caduca a los 7 días**, obligando a reconectar.
+> Para usarlo con una ficha entera hay que publicar la app y pasar la
+> verificación de Google (requiere política de privacidad, dominio verificado y
+> un vídeo de demostración; tarda semanas).
+>
+> Por eso el sistema **no depende de esto**: mientras tanto, basta con dejar
+> `MAIL_USERNAME`/`MAIL_PASSWORD` configuradas y todos los avisos salen desde la
+> cuenta institucional.
+
+### Cifrado de los tokens
+
+El *refresh token* que devuelve Google se guarda **cifrado** (Fernet) en la
+tabla `cuenta_google`. La clave sale de `TOKEN_ENCRYPTION_KEY`; si se deja
+vacía, se deriva de `SECRET_KEY` — y entonces cambiar `SECRET_KEY` deja los
+tokens ilegibles y los usuarios tendrán que volver a conectar su cuenta.
+Conviene definirla explícitamente:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```

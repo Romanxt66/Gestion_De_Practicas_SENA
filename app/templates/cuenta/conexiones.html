@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Conexiones — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <div>
+    <h2 class="m-0"><i class="bi bi-plug me-2"></i>Conexiones</h2>
+    <span class="page-sub">Vincula tu cuenta de Google para que los avisos del sistema salgan a tu nombre</span>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="biblioteca-shell h-100">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon" style="background: rgba(234,67,53,.12); border-color: rgba(234,67,53,.3); color:#ea4335;">
+          <i class="bi bi-google"></i>
+        </div>
+        <h4>Cuenta de Google</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+
+        {% if cuenta %}
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="shell-header-icon" style="width:44px;height:44px;"><i class="bi bi-check-lg"></i></span>
+            <div>
+              <div class="fw-bold text-white">{{ cuenta.correo_google }}</div>
+              <div class="text-muted small">
+                Conectada el {{ cuenta.fecha_conexion.strftime('%d/%m/%Y') if cuenta.fecha_conexion else '—' }}
+              </div>
+            </div>
+            <span class="badge-lib badge-green ms-auto"><i class="bi bi-check-circle"></i> Activa</span>
+          </div>
+
+          {% if cuenta.ultimo_error %}
+          <div class="ui-note mb-4" style="border-color: rgba(245,158,11,.3);">
+            <i class="bi bi-exclamation-triangle ui-note-icon" style="color: var(--accent-amber);"></i>
+            <div>
+              <span class="ui-note-title">El último envío falló</span>
+              <p class="ui-note-text">{{ cuenta.ultimo_error }}</p>
+              <p class="ui-note-text mt-2">Vuelve a conectar la cuenta para renovar el permiso.
+                Mientras tanto, tus avisos salen desde la cuenta institucional.</p>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('cuenta.google_conectar') }}" class="btn btn-ghost">
+              <i class="bi bi-arrow-repeat me-1"></i> Volver a conectar
+            </a>
+            <form method="POST" action="{{ url_for('cuenta.google_desconectar') }}" class="m-0">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-ghost text-danger">
+                <i class="bi bi-x-circle me-1"></i> Desconectar
+              </button>
+            </form>
+          </div>
+
+        {% elif google_configurado %}
+          <p class="text-secondary mb-4">
+            Al conectar tu cuenta, los correos que genere el sistema por tus acciones
+            se enviarán desde tu dirección en lugar de la cuenta institucional.
+          </p>
+          <div class="ui-note mb-4">
+            <i class="bi bi-shield-check ui-note-icon"></i>
+            <div>
+              <span class="ui-note-title">Qué permiso se solicita</span>
+              <p class="ui-note-text">
+                Únicamente <strong>enviar correos</strong> en tu nombre. El sistema no
+                puede leer tu buzón, ni tus contactos, ni ningún otro dato de tu cuenta.
+                Puedes retirar el permiso cuando quieras desde aquí o desde tu cuenta de Google.
+              </p>
+            </div>
+          </div>
+          <a href="{{ url_for('cuenta.google_conectar') }}" class="btn-cta" style="max-width:320px;">
+            <i class="bi bi-google"></i> Conectar con Google
+          </a>
+
+        {% else %}
+          <div class="ui-note">
+            <i class="bi bi-info-circle ui-note-icon"></i>
+            <div>
+              <span class="ui-note-title">Todavía no disponible</span>
+              <p class="ui-note-text">
+                El administrador aún no ha cargado las credenciales de Google en el
+                servidor. Mientras tanto, los avisos se envían desde la cuenta
+                institucional del sistema.
+              </p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="biblioteca-shell h-100">
+      <div class="biblioteca-shell-header">
+        <div class="shell-header-icon" style="background: var(--accent-purple-glow); border-color: rgba(168,85,247,.28); color: var(--accent-purple);">
+          <i class="bi bi-envelope"></i>
+        </div>
+        <h4>Avisos que envía el sistema</h4>
+      </div>
+      <div class="biblioteca-shell-body">
+        <div class="dato-row">
+          <span class="dato-k">Al subir una evidencia</span>
+          <span class="dato-v">Se avisa al instructor de la ficha</span>
+        </div>
+        <div class="dato-row">
+          <span class="dato-k">Al calificar una evidencia</span>
+          <span class="dato-v">Se avisa al aprendiz</span>
+        </div>
+        <div class="dato-row">
+          <span class="dato-k">Tu correo de recepción</span>
+          <span class="dato-v">{{ current_user.correo }}</span>
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+          Recibes los avisos en el correo de tu cuenta del sistema, conectes Google o no.
+          La conexión solo cambia desde qué dirección se envían.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

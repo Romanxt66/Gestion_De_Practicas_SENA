@@ -17,6 +17,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import current_user, login_required
 
 from app import db
+from app.servicios import correo
 from app.models.aprendiz import Aprendiz
 from app.models.curso import Curso
 from app.models.curso_aprendiz import CursoAprendiz
@@ -367,12 +368,24 @@ def evaluar_evidencia(id_evidencia):
             ev.observaciones = observaciones
         log_historial(current_user, 'Evidencia', 'MODIFICAR',
                       f'Evidencia {id_evidencia} calificada como {estado}')
-        db.session.add(Notificacion(
-            id_usuario=ev.aprendiz.usuario.id_usuario,
-            mensaje=f'Tu evidencia del {ev.fecha_entrega:%d/%m/%Y} fue marcada como '
-                    f'"{estado}".' + (f' Observaciones: {observaciones}' if observaciones else '')
-        ))
+        aprendiz_usuario = ev.aprendiz.usuario if ev.aprendiz else None
+        if aprendiz_usuario:
+            db.session.add(Notificacion(
+                id_usuario=aprendiz_usuario.id_usuario,
+                mensaje=f'Tu evidencia del {ev.fecha_entrega:%d/%m/%Y} fue marcada como '
+                        f'"{estado}".' + (f' Observaciones: {observaciones}' if observaciones else '')
+            ))
         db.session.commit()
+
+        # Avisar por correo al aprendiz (en segundo plano)
+        if aprendiz_usuario and aprendiz_usuario.correo:
+            correo.avisar_evidencia_calificada(
+                aprendiz_usuario=aprendiz_usuario,
+                instructor_usuario=current_user,
+                estado=estado,
+                observaciones=observaciones,
+                fecha_entrega=ev.fecha_entrega,
+            )
         flash('Evidencia aprobada.' if estado == 'Aprobada' else 'Evidencia rechazada.',
               'success' if estado == 'Aprobada' else 'warning')
     else:

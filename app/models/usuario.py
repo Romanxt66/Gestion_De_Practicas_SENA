@@ -21,6 +21,8 @@ class Usuario(db.Model, UserMixin):
     aprendiz         = db.relationship('Aprendiz', back_populates='usuario', uselist=False)
     historial        = db.relationship('HistorialCambios', back_populates='usuario')
     notificaciones   = db.relationship('Notificacion', back_populates='usuario')
+    cuenta_google    = db.relationship('CuentaGoogle', back_populates='usuario',
+                                       uselist=False, cascade='all, delete-orphan')
 
     def get_id(self):
         return str(self.id_usuario)

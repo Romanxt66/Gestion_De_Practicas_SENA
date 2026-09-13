@@ -403,6 +403,87 @@ if propio:
               r.status_code == 302 and 'detalle' in r.headers.get('Location', ''),
               r.headers.get('Location', str(r.status_code)))
 
+print('\n── Conexión de Google y avisos por correo ──')
+from app.servicios import correo as svc_correo
+from app.servicios import google_oauth
+from app.models.cuenta_google import CuentaGoogle
+
+# El apartado es visible para aprendiz e instructor
+for etiqueta, cli in (('aprendiz', c_ap), ('instructor', c_inst)):
+    r = cli.get('/cuenta/conexiones')
+    check(f'{etiqueta} accede al apartado de conexiones', r.status_code == 200, str(r.status_code))
+html = c_ap.get('/cuenta/conexiones').get_data(as_text=True)
+check('sin credenciales avisa que no está disponible', 'Todaví' in html or 'no ha cargado' in html)
+
+# Sin credenciales de Google, conectar no rompe: redirige con aviso
+r = c_ap.get('/cuenta/google/conectar', follow_redirects=True)
+check('conectar sin credenciales no falla', r.status_code == 200)
+
+# El cifrado del refresh token es reversible y no guarda el valor en claro
+with app.app_context():
+    app.config['GOOGLE_CLIENT_ID'] = 'demo.apps.googleusercontent.com'
+    app.config['GOOGLE_CLIENT_SECRET'] = 'secreto-demo'
+    cifrado = google_oauth.cifrar('1//refresh-de-prueba')
+    check('el refresh token se guarda cifrado', '1//refresh-de-prueba' not in cifrado)
+    check('y se puede descifrar', google_oauth.descifrar(cifrado) == '1//refresh-de-prueba')
+    check('esta_configurado detecta las credenciales', google_oauth.esta_configurado())
+
+# El state del OAuth va firmado: uno manipulado se rechaza
+r = c_ap.get('/cuenta/google/callback?code=x&state=falsificado')
+check('un state inválido se rechaza', r.status_code == 400, str(r.status_code))
+
+# Los avisos se encolan sin tocar la red: se intercepta el hilo de entrega
+enviados = []
+original = svc_correo._entregar
+svc_correo._entregar = lambda app_, datos: enviados.append(datos)
+try:
+    with app.app_context():
+        with app.test_request_context():
+            u_ap = db.session.get(Usuario, ap.id_usuario)
+            u_in = db.session.get(Usuario, inst.id_usuario)
+            svc_correo.avisar_evidencia_subida(u_in, u_ap, 'Ficha Demo', 'archivo')
+            svc_correo.avisar_evidencia_calificada(u_ap, u_in, 'Aprobada', 'Buen trabajo', None)
+finally:
+    svc_correo._entregar = original
+
+check('se encolan los dos avisos', len(enviados) == 2, str(len(enviados)))
+if len(enviados) == 2:
+    subida, calificada = enviados
+    check('el aviso de subida va al instructor', subida['destinatario'] == inst.correo, subida['destinatario'])
+    check('el aviso de calificación va al aprendiz', calificada['destinatario'] == ap.correo, calificada['destinatario'])
+    check('el asunto de calificación incluye el estado', 'Aprobada' in calificada['asunto'], calificada['asunto'])
+    check('las observaciones viajan en el cuerpo', 'Buen trabajo' in calificada['texto'])
+    check('sin cuenta de Google el remitente es el institucional',
+          subida['refresh_token'] is None)
+
+# Con cuenta vinculada, el remitente pasa a ser la del usuario
+with app.app_context():
+    cuenta = CuentaGoogle(id_usuario=ap.id_usuario, correo_google='aprendiz@gmail.com',
+                          refresh_token=google_oauth.cifrar('token-demo'))
+    db.session.add(cuenta); db.session.commit()
+enviados.clear()
+svc_correo._entregar = lambda app_, datos: enviados.append(datos)
+try:
+    with app.app_context():
+        with app.test_request_context():
+            u_ap = db.session.get(Usuario, ap.id_usuario)
+            u_in = db.session.get(Usuario, inst.id_usuario)
+            svc_correo.avisar_evidencia_subida(u_in, u_ap, 'Ficha Demo', 'texto')
+finally:
+    svc_correo._entregar = original
+check('con cuenta vinculada el correo sale a nombre del usuario',
+      enviados and enviados[0]['remitente'] == 'aprendiz@gmail.com',
+      enviados[0]['remitente'] if enviados else 'sin envío')
+
+# El panel ya muestra la cuenta conectada y permite desconectarla
+html = c_ap.get('/cuenta/conexiones').get_data(as_text=True)
+check('el panel muestra la cuenta conectada', 'aprendiz@gmail.com' in html)
+t = token(c_ap, '/cuenta/conexiones')
+r = c_ap.post('/cuenta/google/desconectar', data={'csrf_token': t}, follow_redirects=True)
+with app.app_context():
+    check('desconectar elimina la cuenta',
+          CuentaGoogle.query.filter_by(id_usuario=ap.id_usuario).first() is None)
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

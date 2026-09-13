@@ -115,6 +115,9 @@
           {{ current_user.correo }}
         </span></li>
         <li><hr class="dropdown-divider" style="border-color:var(--border-default);"></li>
+        <li><a class="dropdown-item" href="{{ url_for('cuenta.conexiones') }}">
+          <i class="bi bi-plug me-2"></i> Conexiones
+        </a></li>
         <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
           <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
         </a></li>
@@ -166,6 +169,7 @@
         {% if nav_notificaciones %}<span class="dock-badge">{{ nav_notificaciones }}</span>{% endif %}
       </a>
       <a class="dock-item {% if 'informacion' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.informacion') }}"><i class="bi bi-person"></i> Mi info</a>
+      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
 
     {% elif rol.nombre == 'instructor' %}
       <a class="dock-item {% if request.endpoint == 'instructor.dashboard' %}active{% endif %}" href="{{ url_for('instructor.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
@@ -179,6 +183,7 @@
       <a class="dock-item {% if 'mis_cursos' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.mis_cursos') }}"><i class="bi bi-book"></i> Mis cursos</a>
       <a class="dock-item {% if 'alertas' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.alertas') }}"><i class="bi bi-send"></i> Alertas</a>
       <a class="dock-item {% if 'reportes' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.reportes') }}"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a>
+      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
 
     {% elif rol.nombre == 'superusuario' %}
       <a class="dock-item {% if (request.endpoint or '').startswith('admin.dashboard') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>

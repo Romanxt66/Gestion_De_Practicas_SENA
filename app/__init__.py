@@ -36,16 +36,18 @@ def create_app():
             usuario, rol, usuario_rol, instructor,
             aprendiz, curso, curso_instructor, curso_aprendiz,
             evidencia, progreso_aprendiz, empresa,
-            historial_cambios, notificacion, aprendiz_backup
+            historial_cambios, notificacion, aprendiz_backup,
+            cuenta_google
         )
 
     # Register blueprints
-    from app.routes import auth, instructor, aprendiz, admin, archivos
+    from app.routes import auth, instructor, aprendiz, admin, archivos, cuenta
     app.register_blueprint(auth.bp)
     app.register_blueprint(instructor.bp)
     app.register_blueprint(aprendiz.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(archivos.bp)
+    app.register_blueprint(cuenta.bp)
 
     # ─────────────────────────────────────────────
     # Las evidencias viven en static/uploads/ pero NO deben ser públicas:
