@@ -1,223 +1,233 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard Instructor — SENA Prácticas{% endblock %}
+{% block title %}Panel Instructor — SENA Prácticas{% endblock %}
 
 {% block content %}
-<div class="page-toolbar">
+<!-- ══ Indicadores ══ -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Fichas asignadas</span>
+      <span class="kpi-icono"><i class="bi bi-journal-bookmark"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ total_cursos }}</span>
+      <span class="kpi-nota">
+        {% if cursos_en_marcha %}{{ cursos_en_marcha }} en curso{% else %}sin fechas activas{% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="kpi is-cyan">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Aprendices en seguimiento</span>
+      <span class="kpi-icono"><i class="bi bi-people"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ total_aprendices }}</span>
+      <span class="kpi-nota">matriculados</span>
+    </div>
+  </div>
+
+  <div class="kpi {% if evidencias_pendientes %}is-amber{% endif %}">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Evidencias por calificar</span>
+      <span class="kpi-icono"><i class="bi bi-clipboard-check"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ evidencias_pendientes }}</span>
+      <span class="kpi-nota">
+        {% if entregadas_hoy %}{{ entregadas_hoy }} con entrega hoy{% else %}sin entregas hoy{% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="kpi is-purple">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Índice de aprobación</span>
+      <span class="kpi-icono"><i class="bi bi-bar-chart-line"></i></span>
+    </div>
+    <div class="kpi-valor">
+      {% if indice_aprobacion is not none %}
+        <span class="kpi-numero">{{ indice_aprobacion }}%</span>
+        <span class="kpi-nota">de lo ya calificado</span>
+      {% else %}
+        <span class="kpi-numero">—</span>
+        <span class="kpi-nota">aún sin calificaciones</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ══ Fichas ══ -->
+<div class="seccion">
+  <span class="seccion-icono"><i class="bi bi-book"></i></span>
   <div>
-    <h2 class="m-0">Panel Central — Instructor</h2>
-    <span class="page-sub">Gestión integral de aprendices, fichas lectivas y evidencias en revisión</span>
+    <h2>Cursos y fichas asignadas</h2>
+    <p>Gestiona las fichas de formación, haz seguimiento a las entregas y califica aprendices.</p>
   </div>
-  <span class="ui-pill ui-pill-accent"><span class="ui-pill-dot"></span> En línea</span>
-</div>
-
-<!-- ══ Tarjetas de resumen ══ -->
-<div class="row g-4 mb-4">
-  <div class="col-lg-4 col-md-6">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-4">
-          <div class="lib-card-title text-uppercase mb-0">Total Aprendices</div>
-          <div class="shell-header-icon" style="background: var(--accent-cyan-glow); border-color: rgba(56,189,248,0.28); color: var(--accent-cyan);">
-            <i class="bi bi-people"></i>
-          </div>
-        </div>
-        <p class="stat-num">{{ total_aprendices }}</p>
-        <p class="stat-hint">Matriculados en tus cursos</p>
-        <a href="{{ url_for('instructor.aprendices') }}" class="stat-cta">
-          Administrar Aprendices <i class="bi bi-arrow-right"></i>
-        </a>
-      </div>
+  <div class="seccion-acciones">
+    <div class="filtros" role="group" aria-label="Filtrar fichas">
+      <button type="button" class="active" data-filtro="todas">Todas ({{ fichas_data | length }})</button>
+      <button type="button" data-filtro="en_curso">En curso</button>
+      <button type="button" data-filtro="finalizada">Finalizadas</button>
     </div>
-  </div>
-
-  <div class="col-lg-4 col-md-6">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-4">
-          <div class="lib-card-title text-uppercase mb-0">Evidencias Pendientes</div>
-          <div class="shell-header-icon" style="background: var(--accent-amber-glow); border-color: rgba(245,158,11,0.28); color: var(--accent-amber);">
-            <i class="bi bi-journal-check"></i>
-          </div>
-        </div>
-        <p class="stat-num {% if evidencias_pendientes > 0 %}is-amber{% endif %}">{{ evidencias_pendientes }}</p>
-        <p class="stat-hint">Pendientes de tu revisión</p>
-        <a href="{{ url_for('instructor.revisar_evidencias') }}" class="stat-cta">
-          Revisar Evidencias <i class="bi bi-arrow-right"></i>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-lg-4 col-md-12">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-4">
-          <div class="lib-card-title text-uppercase mb-0">Progreso General</div>
-          <div class="shell-header-icon"><i class="bi bi-graph-up-arrow"></i></div>
-        </div>
-        <p class="stat-num is-acc">{{ progreso_general }}%</p>
-        <div class="progress mt-3" style="height: 8px;">
-          <div class="progress-bar" role="progressbar"
-               style="width: {{ progreso_general }}%;"
-               aria-valuenow="{{ progreso_general }}" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-        <p class="stat-hint">Promedio de tus aprendices</p>
-        <div class="d-flex justify-content-between align-items-center mt-4 pt-3"
-             style="border-top: 1px solid var(--border-subtle);">
-          <span class="text-muted" style="font-size: 0.8rem;">Fichas asignadas</span>
-          <span class="fw-bold" style="color: var(--acc); font-size: 0.85rem;">{{ total_cursos }}</span>
-        </div>
-      </div>
-    </div>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaFicha">
+      <i class="bi bi-plus-lg me-1"></i> Nueva ficha
+    </button>
   </div>
 </div>
 
-<!-- ══ Fichas asignadas ══ -->
-<div class="biblioteca-shell mb-4">
-  <div class="biblioteca-shell-header">
-    <div class="shell-header-icon"><i class="bi bi-journal-bookmark"></i></div>
-    <h4>Mis Fichas / Cursos Asignados</h4>
-  </div>
-  <div class="biblioteca-shell-body p-0">
-    {% if fichas_data %}
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead>
-          <tr>
-            <th style="width: 45%; padding-left: 1.6rem !important;">Nombre de Ficha</th>
-            <th style="width: 13%;" class="text-center">Aprendices</th>
-            <th style="width: 22%;" class="text-center">Evidencias Pendientes</th>
-            <th style="width: 20%;" class="text-end" style="padding-right: 1.6rem !important;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ficha in fichas_data %}
-          <tr>
-            <td style="padding-left: 1.6rem !important;">
-              <a href="{{ url_for('instructor.ficha_detalle', id_curso=ficha.curso.id_curso) }}"
-                 class="fw-semibold text-decoration-none" style="color: var(--accent-cyan);">
-                {{ ficha.curso.nombre }}
-              </a>
-              {% if ficha.curso.ficha %}
-              <div class="codigo-ficha">Código: {{ ficha.curso.ficha }}</div>
-              {% endif %}
-            </td>
-            <td class="text-center">
-              <span class="badge-lib badge-green">{{ ficha.aprendices_count }}</span>
-            </td>
-            <td class="text-center">
-              {% if ficha.evidencias_pendientes > 0 %}
-              <span class="badge-lib badge-amber">
-                <i class="bi bi-clock"></i> {{ ficha.evidencias_pendientes }}
-              </span>
-              {% else %}
-              <span class="badge-lib badge-green"><i class="bi bi-check2"></i> Al día</span>
-              {% endif %}
-            </td>
-            <td class="text-end" style="padding-right: 1.6rem !important;">
-              <a href="{{ url_for('instructor.ficha_detalle', id_curso=ficha.curso.id_curso) }}"
-                 class="btn btn-ghost btn-sm">
-                <i class="bi bi-eye me-1"></i> Ver Detalle
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% if fichas_data %}
+<div class="fichas-grid">
+  {% for f in fichas_data %}
+  {% set tono = ['', 'tono-cyan', 'tono-purple', 'tono-amber'][loop.index0 % 4] %}
+  <article class="ficha-card {{ tono }}" data-estado="{{ f.estado }}">
+    <div class="ficha-top">
+      <span class="ficha-estado">{{ f.etiqueta }}</span>
+      <span class="ficha-sigla">{{ f.iniciales }}</span>
+      <span class="ficha-icono"><i class="bi bi-mortarboard"></i></span>
     </div>
+
+    <h3 class="ficha-titulo">{{ f.curso.nombre }}</h3>
+
+    {% if f.curso.ficha %}
+    <span class="ficha-codigo">
+      Ficha: <strong>{{ f.curso.ficha }}</strong>
+      <button type="button" class="ficha-copiar" data-codigo="{{ f.curso.ficha }}"
+              title="Copiar código"><i class="bi bi-clipboard"></i></button>
+    </span>
     {% else %}
-    <div class="empty-state">
-      <i class="bi bi-journal-x"></i>
-      <p class="mb-0">Todavía no tienes fichas asignadas.</p>
-    </div>
+    <span class="ficha-codigo text-muted">Sin código de ficha</span>
     {% endif %}
-  </div>
-</div>
 
-<!-- ══ Perfil y acciones ══ -->
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="biblioteca-shell h-100">
-      <div class="biblioteca-shell-header">
-        <div class="shell-header-icon"><i class="bi bi-patch-check"></i></div>
-        <h4>Mi Perfil de Instructor</h4>
+    <div class="ficha-fechas">
+      <div class="ficha-fecha">
+        <i class="bi bi-calendar-event"></i> Inicio:
+        <b>{{ f.inicio.strftime('%Y-%m-%d') if f.inicio else '—' }}</b>
       </div>
-      <div class="biblioteca-shell-body">
-        <div class="dato-row">
-          <span class="dato-k">Nombre</span>
-          <span class="dato-v">{{ instructor.usuario.nombres }} {{ instructor.usuario.apellidos }}</span>
-        </div>
-        <div class="dato-row">
-          <span class="dato-k">Correo electrónico</span>
-          <span class="dato-v">{{ instructor.usuario.correo }}</span>
-        </div>
-        <div class="dato-row">
-          <span class="dato-k">Área de formación</span>
-          <span class="dato-v">{{ instructor.area_formacion if instructor and instructor.area_formacion else 'No especificada' }}</span>
-        </div>
-        <div class="dato-row">
-          <span class="dato-k">Estado en el sistema</span>
-          <span class="dato-v">
-            {% if instructor and instructor.activo %}
-              <span class="badge-lib badge-green"><i class="bi bi-check-circle"></i> Activo</span>
-            {% else %}
-              <span class="badge-lib badge-red"><i class="bi bi-x-circle"></i> Inactivo</span>
-            {% endif %}
-          </span>
-        </div>
+      <div class="ficha-fecha">
+        <i class="bi bi-calendar-check"></i> Fin:
+        <b>{{ f.fin.strftime('%Y-%m-%d') if f.fin else '—' }}</b>
       </div>
     </div>
-  </div>
 
-  <div class="col-lg-6">
-    <div class="biblioteca-shell h-100">
-      <div class="biblioteca-shell-header">
-        <div class="shell-header-icon" style="background: var(--accent-purple-glow); border-color: rgba(168,85,247,0.28); color: var(--accent-purple);">
-          <i class="bi bi-lightning-charge"></i>
-        </div>
-        <h4>Acciones Rápidas</h4>
+    <div>
+      <div class="ficha-avance-cab">
+        <span>Avance de formación</span>
+        <b>{% if f.estado == 'sin_fechas' %}—{% else %}{{ f.avance }}%{% endif %}</b>
       </div>
-      <div class="biblioteca-shell-body">
-        <div class="row g-3">
-          <div class="col-sm-6">
-            <a href="{{ url_for('instructor.fichas') }}" class="accion-card h-100">
-              <span class="accion-ico"><i class="bi bi-stack"></i></span>
-              <span>
-                <strong>Gestionar Fichas</strong>
-                <span>Crear o asociar grupos</span>
-              </span>
-            </a>
-          </div>
-          <div class="col-sm-6">
-            <a href="{{ url_for('instructor.aprendices') }}" class="accion-card h-100">
-              <span class="accion-ico"><i class="bi bi-people"></i></span>
-              <span>
-                <strong>Mis Aprendices</strong>
-                <span>Empresa, estado y fechas</span>
-              </span>
-            </a>
-          </div>
-          <div class="col-sm-6">
-            <a href="{{ url_for('instructor.revisar_evidencias') }}" class="accion-card h-100">
-              <span class="accion-ico"><i class="bi bi-check2-square"></i></span>
-              <span>
-                <strong>Calificar Pendientes</strong>
-                <span>{{ evidencias_pendientes }} entrega{{ '' if evidencias_pendientes == 1 else 's' }} por evaluar</span>
-              </span>
-            </a>
-          </div>
-          <div class="col-sm-6">
-            <a href="{{ url_for('instructor.reportes') }}" class="accion-card h-100">
-              <span class="accion-ico"><i class="bi bi-file-earmark-text"></i></span>
-              <span>
-                <strong>Ver Reportes</strong>
-                <span>Resumen de tus aprendices</span>
-              </span>
-            </a>
-          </div>
+      <div class="progress progress-fina">
+        <div class="progress-bar" role="progressbar" style="width: {{ f.avance }}%;"
+             aria-valuenow="{{ f.avance }}" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+      {% if f.dias_restantes is not none and f.estado == 'en_curso' %}
+        <div class="text-muted mt-2" style="font-size: 0.74rem;">
+          {{ f.dias_restantes }} días restantes
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="ficha-pie">
+      <div>
+        <div class="ficha-aprendices-k">Aprendices</div>
+        <div class="ficha-aprendices-v">
+          <b>{{ f.aprendices_count }}</b>
+          {% if f.evidencias_pendientes %}
+            <span style="color: var(--accent-amber);">{{ f.evidencias_pendientes }} por revisar</span>
+          {% else %}
+            <span>al día</span>
+          {% endif %}
         </div>
       </div>
+      <a class="ficha-ver" href="{{ url_for('instructor.ficha_detalle', id_curso=f.curso.id_curso) }}">
+        Ver asignados
+      </a>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="biblioteca-shell">
+  <div class="empty-state">
+    <i class="bi bi-journal-x"></i>
+    <p class="mb-3">Todavía no tienes fichas asignadas.</p>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaFicha">
+      <i class="bi bi-plus-lg me-1"></i> Crear mi primera ficha
+    </button>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+<div class="modal fade" id="modalNuevaFicha" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('instructor.crear_ficha') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i>Nueva ficha</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="ui-field">
+            <div class="ui-field-head">
+              <label for="nf_nombre">Nombre del programa</label>
+              <span class="ui-field-hint">Requerido</span>
+            </div>
+            <div class="ui-input-shell">
+              <i class="bi bi-mortarboard"></i>
+              <input type="text" id="nf_nombre" name="nombre" required
+                     placeholder="Ej. Análisis y Desarrollo de Software">
+            </div>
+          </div>
+          <div class="ui-field">
+            <div class="ui-field-head"><label for="nf_ficha">Código de ficha</label></div>
+            <div class="ui-input-shell">
+              <i class="bi bi-hash"></i>
+              <input type="text" id="nf_ficha" name="ficha" placeholder="Ej. 3235642">
+            </div>
+            <div class="form-text text-muted" style="font-size: 0.75rem;">
+              Si hay aprendices esperando este código, quedarán matriculados al crearla.
+            </div>
+          </div>
+          <div class="row gx-3">
+            <div class="col-6">
+              <div class="ui-field">
+                <div class="ui-field-head"><label for="nf_inicio">Inicio</label></div>
+                <div class="ui-input-shell"><input type="date" id="nf_inicio" name="fecha_inicio"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="ui-field">
+                <div class="ui-field-head"><label for="nf_fin">Fin</label></div>
+                <div class="ui-input-shell"><input type="date" id="nf_fin" name="fecha_fin"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i> Crear ficha</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filtro de fichas por estado, sin recargar
+  document.querySelectorAll('.filtros [data-filtro]').forEach(function (boton) {
+    boton.addEventListener('click', function () {
+      document.querySelectorAll('.filtros [data-filtro]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const filtro = this.dataset.filtro;
+      document.querySelectorAll('.ficha-card').forEach(function (tarjeta) {
+        tarjeta.hidden = !(filtro === 'todas' || tarjeta.dataset.estado === filtro);
+      });
+    });
+  });
+</script>
 {% endblock %}

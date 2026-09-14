@@ -385,3 +385,95 @@ def avisar_admins_ficha_pendiente(codigo_ficha, aprendiz_usuario):
                f'Créala para matricularlo automáticamente.')
     for ur in UsuarioRol.query.filter_by(id_rol=rol.id_rol).all():
         db.session.add(Notificacion(id_usuario=ur.id_usuario, mensaje=mensaje))
+
+
+# ─────────────────────────────────────────────
+# Resumen de una ficha para las tarjetas del panel
+# ─────────────────────────────────────────────
+PALABRAS_VACIAS = {'de', 'del', 'la', 'las', 'el', 'los', 'y', 'en', 'para', 'a'}
+
+
+def iniciales_curso(nombre: str) -> str:
+    """Sigla a partir del nombre de la ficha: "Análisis y Desarrollo de
+    Software" → "ADS". Es solo presentación; el sistema no guarda siglas."""
+    if not nombre:
+        return '—'
+    letras = [p[0] for p in nombre.split()
+              if p and p.lower() not in PALABRAS_VACIAS]
+    sigla = ''.join(letras[:4]).upper()
+    return sigla or nombre[:3].upper()
+
+
+def resumen_curso(curso):
+    """Estado y avance de una ficha, calculados desde sus fechas.
+
+    El sistema no guarda "etapa": se deduce de fecha_inicio y fecha_fin, que es
+    el único dato real disponible. Sin fechas, el estado queda indefinido y el
+    avance en cero, en vez de inventar un porcentaje.
+    """
+    hoy = hoy_local()
+    inicio = getattr(curso, 'fecha_inicio', None)
+    fin = getattr(curso, 'fecha_fin', None)
+
+    if inicio and fin and fin > inicio:
+        total = (fin - inicio).days
+        corridos = max(0, (hoy - inicio).days)
+        avance = min(100, max(0, round((corridos / total) * 100)))
+        if hoy < inicio:
+            estado, etiqueta = 'proxima', 'Por iniciar'
+        elif hoy > fin:
+            estado, etiqueta = 'finalizada', 'Finalizada'
+        else:
+            estado, etiqueta = 'en_curso', 'En curso'
+        dias_restantes = max(0, (fin - hoy).days)
+    elif inicio and fin:
+        # Hay fechas pero no son coherentes (fin anterior o igual al inicio).
+        # Decir "sin fechas" sería confuso: las muestra la propia tarjeta.
+        avance, dias_restantes = 0, None
+        estado, etiqueta = 'sin_fechas', 'Fechas por corregir'
+    else:
+        avance, dias_restantes = 0, None
+        estado, etiqueta = 'sin_fechas', 'Sin fechas'
+
+    return {
+        'iniciales': iniciales_curso(curso.nombre if curso else ''),
+        'estado': estado,
+        'etiqueta': etiqueta,
+        'avance': avance,
+        'dias_restantes': dias_restantes,
+        'inicio': inicio,
+        'fin': fin,
+    }
+
+
+def indice_aprobacion(ids_aprendices):
+    """Porcentaje de evidencias aprobadas sobre las ya calificadas.
+
+    Solo cuenta las que tienen veredicto: incluir las pendientes haría bajar el
+    índice por trabajo aún sin revisar, que no es lo que mide.
+    """
+    from app.models.evidencia import Evidencia
+    ids = list(ids_aprendices)
+    if not ids:
+        return None
+    calificadas = (db.session.query(Evidencia)
+                   .filter(Evidencia.id_aprendiz.in_(ids),
+                           Evidencia.estado.in_(['Aprobada', 'No Aprobada'])).count())
+    if not calificadas:
+        return None
+    aprobadas = (db.session.query(Evidencia)
+                 .filter(Evidencia.id_aprendiz.in_(ids),
+                         Evidencia.estado == 'Aprobada').count())
+    return round((aprobadas / calificadas) * 100, 1)
+
+
+def evidencias_entregadas_hoy(ids_aprendices):
+    """Cuántas de las evidencias pendientes llegaron hoy."""
+    from app.models.evidencia import Evidencia
+    ids = list(ids_aprendices)
+    if not ids:
+        return 0
+    inicio_dia = datetime.combine(hoy_local(), datetime.min.time())
+    return (db.session.query(Evidencia)
+            .filter(Evidencia.id_aprendiz.in_(ids),
+                    Evidencia.fecha_entrega >= inicio_dia).count())

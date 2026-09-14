@@ -28,7 +28,8 @@ from app.models.notificacion import Notificacion
 from app.utils import (role_required, log_historial, calcular_progreso,
                        progreso_de_aprendices, contar_evidencias_por_aprendiz,
                        ids_cursos_de_instructor, ids_aprendices_de_instructor,
-                       matricular_pendientes)
+                       matricular_pendientes, resumen_curso,
+                       indice_aprobacion, evidencias_entregadas_hoy)
 
 bp = Blueprint('instructor', __name__, url_prefix='/instructor')
 
@@ -64,7 +65,7 @@ def _exigir_acceso_a_curso(id_curso):
 
 
 def _datos_fichas(cursos):
-    """Arma la tarjeta de cada ficha (aprendices y evidencias pendientes).
+    """Arma la tarjeta de cada ficha (aprendices, pendientes, estado y avance).
 
     Usa consultas agregadas en lugar de un COUNT por ficha y por aprendiz.
     """
@@ -86,11 +87,13 @@ def _datos_fichas(cursos):
     datos = []
     for curso in cursos:
         ids = por_curso.get(curso.id_curso, [])
-        datos.append({
+        fila = {
             'curso': curso,
             'aprendices_count': len(ids),
             'evidencias_pendientes': sum(pendientes.get(i, 0) for i in ids),
-        })
+        }
+        fila.update(resumen_curso(curso))
+        datos.append(fila)
     return datos
 
 
@@ -115,11 +118,16 @@ def dashboard():
         progreso_general = round(
             sum(d['pct_general'] for d in datos_progreso) / len(datos_progreso), 1)
 
+    ids_aprendices = [ap.id_aprendiz for ap in aprendices]
     return render_template('instructor/dashboard.html',
                            instructor=inst,
                            total_aprendices=len(aprendices),
                            evidencias_pendientes=evidencias_pendientes,
+                           entregadas_hoy=evidencias_entregadas_hoy(ids_aprendices),
+                           indice_aprobacion=indice_aprobacion(ids_aprendices),
                            total_cursos=len(cursos),
+                           cursos_en_marcha=sum(1 for f in fichas_data
+                                                if f['estado'] == 'en_curso'),
                            fichas_data=fichas_data,
                            progreso_general=progreso_general)
 

@@ -122,6 +122,12 @@ class Config:
         _codigos.append(_encontrado.group(1) if _encontrado else _bruto)
     GOOGLE_SITE_VERIFICATION = _codigos
 
+    # Centro de formación al que pertenece el sistema. Se muestra en la barra
+    # superior; configurable por si el sistema se usa en otro centro.
+    CENTRO_FORMACION = os.getenv(
+        'CENTRO_FORMACION',
+        'Centro de Gestión Agroempresarial del Oriente de Vélez')
+
 # Comandos para descargar en instalar todas las librerias offline
 # python -m pip download -r requirements.txt -d librerias
 # pip install --no-index --find-links=librerias -r requirements.txt

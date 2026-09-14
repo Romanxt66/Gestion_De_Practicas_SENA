@@ -11,16 +11,12 @@
   <meta name="google-site-verification" content="{{ codigo }}">
   {% endfor %}
 
-  <!-- Tipografía del diseño -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 
-  <!-- Bootstrap CSS (local) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-  <!-- Sistema de diseño -->
   <link rel="stylesheet" href="{{ url_for('static', filename='biblioteca.css') }}">
   {% block extra_css %}{% endblock %}
 </head>
@@ -40,51 +36,137 @@
 {% endif %}
 
 {% if rol.nombre == 'superusuario' %}
-  {% set consola = 'AdminConsole' %}{% set consola_sub = 'Global Practice Mgmt' %}
+  {% set consola = 'Administrador' %}{% set consola_sub = 'Gestión global' %}
+  {% set rol_etiqueta = 'Administrador del sistema' %}
   {% set inicio = url_for('admin.dashboard') %}
 {% elif rol.nombre == 'instructor' %}
-  {% set consola = 'InstructorConsole' %}{% set consola_sub = 'Practice Management' %}
+  {% set consola = 'Instructor' %}{% set consola_sub = 'Practice management' %}
+  {% set rol_etiqueta = 'Instructor de prácticas' %}
   {% set inicio = url_for('instructor.dashboard') %}
 {% elif rol.nombre == 'aprendiz' %}
-  {% set consola = 'AprendizPortal' %}{% set consola_sub = 'My Practice Progress' %}
+  {% set consola = 'Aprendiz' %}{% set consola_sub = 'Mi etapa productiva' %}
+  {% set rol_etiqueta = 'Aprendiz' %}
   {% set inicio = url_for('aprendiz.dashboard') %}
 {% else %}
-  {% set consola = 'SENA Prácticas' %}{% set consola_sub = 'Gestión de Prácticas' %}
+  {% set consola = 'SENA Prácticas' %}{% set consola_sub = 'Gestión de prácticas' %}
+  {% set rol_etiqueta = '' %}
   {% set inicio = url_for('auth.landing') %}
 {% endif %}
 
-<div class="app-shell">
-
-{% if mostrar_chrome %}
-<!-- ══ BARRA SUPERIOR ═══════════════════════════════════ -->
-<header class="appbar">
-  <a class="appbar-brand" href="{{ inicio }}">
-    <span class="appbar-mark"><i class="bi bi-grid-1x2-fill"></i></span>
+{# ══ Menú lateral, compartido entre la versión fija y la deslizable ══ #}
+{% macro menu_lateral() %}
+  <a class="lateral-marca" href="{{ inicio }}">
+    <span class="lateral-mark"><i class="bi bi-grid-1x2-fill"></i></span>
     <span>
-      <span class="appbar-title">{{ consola }}</span>
-      <span class="appbar-sub">{{ consola_sub }}</span>
+      <span class="lateral-nombre">{{ consola }}</span>
+      <span class="lateral-sub">{{ consola_sub }}</span>
     </span>
   </a>
 
+  <div class="lateral-grupo">Menú principal</div>
+  <nav class="lateral-nav">
+  {% if rol.nombre == 'aprendiz' %}
+    <a class="lateral-item {% if request.endpoint == 'aprendiz.dashboard' %}active{% endif %}" href="{{ url_for('aprendiz.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
+    <a class="lateral-item {% if 'evidencias_subir' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.evidencias_subir') }}"><i class="bi bi-upload"></i> Subir evidencia</a>
+    <a class="lateral-item {% if 'mis_evidencias' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.mis_evidencias') }}"><i class="bi bi-folder2-open"></i> Mis evidencias</a>
+    <a class="lateral-item {% if 'aprendiz.progreso' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.progreso') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
+    <a class="lateral-item {% if 'notificaciones' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.notificaciones') }}">
+      <i class="bi bi-bell"></i> Alertas
+      {% if nav_notificaciones %}<span class="lateral-badge">{{ nav_notificaciones }}</span>{% endif %}
+    </a>
+    <a class="lateral-item {% if 'informacion' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.informacion') }}"><i class="bi bi-person"></i> Mi información</a>
+    <a class="lateral-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
+
+  {% elif rol.nombre == 'instructor' %}
+    <a class="lateral-item {% if request.endpoint == 'instructor.dashboard' %}active{% endif %}" href="{{ url_for('instructor.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
+    <a class="lateral-item {% if 'instructor.ficha' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.fichas') }}"><i class="bi bi-journal-bookmark"></i> Fichas</a>
+    <a class="lateral-item {% if 'instructor.aprendices' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.aprendices') }}"><i class="bi bi-people"></i> Mis aprendices</a>
+    <a class="lateral-item {% if 'revisar' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.revisar_evidencias') }}">
+      <i class="bi bi-journal-check"></i> Evidencias
+      {% if nav_pendientes %}<span class="lateral-badge">{{ nav_pendientes }}</span>{% endif %}
+    </a>
+    <a class="lateral-item {% if 'progreso_aprendices' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.progreso_aprendices') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
+    <a class="lateral-item {% if 'mis_cursos' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.mis_cursos') }}"><i class="bi bi-book"></i> Mis cursos</a>
+    <a class="lateral-item {% if 'alertas' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.alertas') }}"><i class="bi bi-exclamation-triangle"></i> Alertas</a>
+    <a class="lateral-item {% if 'reportes' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.reportes') }}"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a>
+    <a class="lateral-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
+
+  {% elif rol.nombre == 'superusuario' %}
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.dashboard') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.ficha') or 'matricular' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('admin.fichas') }}"><i class="bi bi-journal-bookmark"></i> Fichas</a>
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.usuarios') or 'cambiar_ficha' in (request.endpoint or '') or 'eliminar_usuario' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('admin.usuarios') }}"><i class="bi bi-people"></i> Usuarios</a>
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.roles') or 'rol' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('admin.roles') }}"><i class="bi bi-shield-check"></i> Roles</a>
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.instructores') %}active{% endif %}" href="{{ url_for('admin.instructores') }}"><i class="bi bi-person-badge"></i> Instructores</a>
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.empresas') %}active{% endif %}" href="{{ url_for('admin.empresas') }}"><i class="bi bi-building"></i> Empresas</a>
+    <a class="lateral-item {% if (request.endpoint or '').startswith('admin.historial') %}active{% endif %}" href="{{ url_for('admin.historial') }}"><i class="bi bi-clock-history"></i> Historial</a>
+    <a class="lateral-item {% if 'backup' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('admin.backup') }}"><i class="bi bi-cloud-download"></i> Backup</a>
+    <a class="lateral-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
+  {% endif %}
+  </nav>
+
+  <div class="lateral-pie">
+    <div class="lateral-soporte">
+      <div class="lateral-soporte-titulo"><i class="bi bi-life-preserver"></i> Soporte</div>
+      <p>¿Algo no funciona como esperas? Escribe al administrador del sistema.</p>
+      <a class="btn btn-ghost btn-sm w-100 justify-content-center"
+         href="mailto:{{ config.CONTACTO_EMAIL or config.MAIL_USERNAME or '' }}">
+        Contactar
+      </a>
+    </div>
+  </div>
+{% endmacro %}
+
+<div class="{% if mostrar_chrome %}layout{% endif %}">
+
+{% if mostrar_chrome %}
+<!-- ══ BARRA LATERAL (escritorio) ═════════════════════ -->
+<aside class="lateral lateral-fija d-none d-lg-flex">{{ menu_lateral() }}</aside>
+
+<!-- ══ BARRA LATERAL (móvil, deslizable) ══════════════ -->
+<div class="offcanvas offcanvas-start lateral d-lg-none" tabindex="-1" id="lateralMovil"
+     style="width: var(--lateral-w); max-width: 85vw;">
+  {{ menu_lateral() }}
+</div>
+{% endif %}
+
+<div class="contenido">
+
+{% if mostrar_chrome %}
+<!-- ══ BARRA SUPERIOR ═════════════════════════════════ -->
+<header class="superior">
+  <button class="btn btn-ghost d-lg-none px-2" type="button"
+          data-bs-toggle="offcanvas" data-bs-target="#lateralMovil" aria-label="Abrir menú">
+    <i class="bi bi-list" style="font-size: 1.4rem;"></i>
+  </button>
+
   {% if rol.nombre == 'instructor' %}
-  <form class="appbar-search" method="GET" action="{{ url_for('instructor.fichas') }}">
+  <form class="buscador" method="GET" action="{{ url_for('instructor.fichas') }}">
     <div class="ui-input-shell">
       <i class="bi bi-search"></i>
-      <input type="search" name="q" value="{{ request.args.get('q', '') }}"
-             placeholder="Buscar ficha..." aria-label="Buscar ficha">
+      <input type="search" name="q" id="buscadorGlobal" value="{{ request.args.get('q', '') }}"
+             placeholder="Buscar por código de ficha o nombre..." aria-label="Buscar ficha">
+      <span class="tecla">Ctrl K</span>
     </div>
   </form>
   {% elif rol.nombre == 'superusuario' %}
-  <form class="appbar-search" method="GET" action="{{ url_for('admin.usuarios') }}">
+  <form class="buscador" method="GET" action="{{ url_for('admin.usuarios') }}">
     <div class="ui-input-shell">
       <i class="bi bi-search"></i>
-      <input type="search" name="q" value="{{ request.args.get('q', '') }}"
-             placeholder="Buscar usuario..." aria-label="Buscar usuario">
+      <input type="search" name="q" id="buscadorGlobal" value="{{ request.args.get('q', '') }}"
+             placeholder="Buscar aprendiz, instructor o correo..." aria-label="Buscar usuario">
+      <span class="tecla">Ctrl K</span>
     </div>
   </form>
+  {% else %}
+  <div class="buscador"></div>
   {% endif %}
 
-  <div class="appbar-actions">
+  <span class="centro-pill" title="{{ config.CENTRO_FORMACION }}">
+    <span class="punto"></span>
+    <span>{{ config.CENTRO_FORMACION }}</span>
+  </span>
+
+  <div class="superior-acciones">
     {% if rol.nombre == 'aprendiz' %}
       <a class="appbar-icon" href="{{ url_for('aprendiz.notificaciones') }}" title="Notificaciones">
         <i class="bi bi-bell"></i>
@@ -101,15 +183,13 @@
       </a>
     {% endif %}
 
-    <span class="appbar-sep"></span>
-
     <div class="dropdown">
       <a class="nav-user-pill dropdown-toggle text-decoration-none" data-bs-toggle="dropdown"
          href="#" id="userDropdown" aria-expanded="false">
-        <span class="avatar"><i class="bi bi-person-fill"></i></span>
+        <span class="avatar">{{ current_user.nombres[0] | upper }}</span>
         <span>
-          <span class="appbar-user-name">{{ current_user.nombres }}</span>
-          <span class="appbar-user-rol">{{ rol.nombre | replace('superusuario', 'Administrador') | capitalize }}</span>
+          <span class="appbar-user-name">{{ current_user.nombres }} {{ current_user.apellidos }}</span>
+          <span class="appbar-user-rol">{{ rol_etiqueta }}</span>
         </span>
         <i class="bi bi-chevron-down ms-1 text-muted" style="font-size: 0.7rem;"></i>
       </a>
@@ -130,12 +210,11 @@
 </header>
 {% endif %}
 
-<!-- ══ CONTENIDO ════════════════════════════════════════ -->
-<main class="{% if mostrar_chrome %}app-main{% else %}flex-grow-1{% endif %} position-relative">
+<!-- ══ CONTENIDO ══════════════════════════════════════ -->
+<main class="{% if mostrar_chrome %}contenido-cuerpo{% else %}flex-grow-1{% endif %} position-relative">
 
-  <!-- Mensajes flash -->
   <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3"
-       style="z-index: 1080; width: 100%; max-width: 600px; margin-top: {% if mostrar_chrome %}var(--appbar-h){% else %}0{% endif %};">
+       style="z-index: 1080; width: 100%; max-width: 600px;">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for cat, msg in messages %}
@@ -158,51 +237,8 @@
   {% block content %}{% endblock %}
 </main>
 
-{% if mostrar_chrome %}
-<!-- ══ DOCK INFERIOR ════════════════════════════════════ -->
-<nav class="dock-wrap" aria-label="Navegación principal">
-  <div class="dock">
-    {% if rol.nombre == 'aprendiz' %}
-      <a class="dock-item {% if request.endpoint == 'aprendiz.dashboard' %}active{% endif %}" href="{{ url_for('aprendiz.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
-      <a class="dock-item {% if 'evidencias_subir' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.evidencias_subir') }}"><i class="bi bi-upload"></i> Subir</a>
-      <a class="dock-item {% if 'mis_evidencias' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.mis_evidencias') }}"><i class="bi bi-folder2-open"></i> Evidencias</a>
-      <a class="dock-item {% if 'aprendiz.progreso' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.progreso') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
-      <a class="dock-item {% if 'notificaciones' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.notificaciones') }}">
-        <i class="bi bi-bell"></i> Alertas
-        {% if nav_notificaciones %}<span class="dock-badge">{{ nav_notificaciones }}</span>{% endif %}
-      </a>
-      <a class="dock-item {% if 'informacion' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.informacion') }}"><i class="bi bi-person"></i> Mi info</a>
-      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
-
-    {% elif rol.nombre == 'instructor' %}
-      <a class="dock-item {% if request.endpoint == 'instructor.dashboard' %}active{% endif %}" href="{{ url_for('instructor.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
-      <a class="dock-item {% if 'instructor.ficha' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.fichas') }}"><i class="bi bi-mortarboard"></i> Fichas</a>
-      <a class="dock-item {% if 'instructor.aprendices' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.aprendices') }}"><i class="bi bi-people"></i> Mis aprendices</a>
-      <a class="dock-item {% if 'revisar' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.revisar_evidencias') }}">
-        <i class="bi bi-journal-check"></i> Evidencias
-        {% if nav_pendientes %}<span class="dock-badge">{{ nav_pendientes }}</span>{% endif %}
-      </a>
-      <a class="dock-item {% if 'progreso_aprendices' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.progreso_aprendices') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
-      <a class="dock-item {% if 'mis_cursos' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.mis_cursos') }}"><i class="bi bi-book"></i> Mis cursos</a>
-      <a class="dock-item {% if 'alertas' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.alertas') }}"><i class="bi bi-send"></i> Alertas</a>
-      <a class="dock-item {% if 'reportes' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.reportes') }}"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a>
-      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
-
-    {% elif rol.nombre == 'superusuario' %}
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.dashboard') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.ficha') %}active{% endif %}" href="{{ url_for('admin.fichas') }}"><i class="bi bi-mortarboard"></i> Fichas</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.usuarios') %}active{% endif %}" href="{{ url_for('admin.usuarios') }}"><i class="bi bi-people"></i> Usuarios</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.roles') %}active{% endif %}" href="{{ url_for('admin.roles') }}"><i class="bi bi-shield-check"></i> Roles</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.instructores') %}active{% endif %}" href="{{ url_for('admin.instructores') }}"><i class="bi bi-person-badge"></i> Instructores</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.empresas') %}active{% endif %}" href="{{ url_for('admin.empresas') }}"><i class="bi bi-building"></i> Empresas</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.historial') %}active{% endif %}" href="{{ url_for('admin.historial') }}"><i class="bi bi-clock-history"></i> Historial</a>
-      <a class="dock-item {% if 'backup' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('admin.backup') }}"><i class="bi bi-cloud-download"></i> Backup</a>
-    {% endif %}
-  </div>
-</nav>
-{% endif %}
-
-</div><!-- /app-shell -->
+</div><!-- /contenido -->
+</div><!-- /layout -->
 
 {% block modals %}{% endblock %}
 
@@ -213,7 +249,6 @@
     // Validar sesión por pestaña (sessionStorage)
     {% if current_user.is_authenticated %}
         const urlParams = new URLSearchParams(window.location.search);
-
         if (!sessionStorage.getItem('tabSessionActive')) {
             if (urlParams.get('login_success') === '1') {
                 sessionStorage.setItem('tabSessionActive', 'true');
@@ -228,22 +263,32 @@
         sessionStorage.removeItem('tabSessionActive');
     {% endif %}
 
-    // Si el navegador restaura la página desde su caché de retroceso (bfcache),
-    // el contenido sería el de la sesión anterior. Las cabeceras no-store ya lo
-    // evitan en los navegadores actuales; esto es el cinturón de seguridad por
-    // si alguno la restaura igualmente: se fuerza una recarga contra el servidor.
+    // Si el navegador restaura la página desde su caché de retroceso, el
+    // contenido sería el de la sesión anterior: se fuerza una recarga.
     window.addEventListener('pageshow', function (evento) {
       if (evento.persisted) window.location.reload();
     });
 
-    // El dock desplaza automáticamente hasta la sección activa en pantallas pequeñas
-    (function () {
-      const dock = document.querySelector('.dock');
-      const activo = dock && dock.querySelector('.dock-item.active');
-      if (dock && activo) {
-        dock.scrollLeft = activo.offsetLeft - (dock.clientWidth / 2) + (activo.clientWidth / 2);
+    // Ctrl/Cmd + K enfoca el buscador
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        const campo = document.getElementById('buscadorGlobal');
+        if (campo) { e.preventDefault(); campo.focus(); campo.select(); }
       }
-    })();
+    });
+
+    // Copiar el código de una ficha
+    document.querySelectorAll('.ficha-copiar').forEach(function (boton) {
+      boton.addEventListener('click', function () {
+        navigator.clipboard.writeText(this.dataset.codigo || '').then(() => {
+          const icono = this.querySelector('i');
+          if (!icono) return;
+          const antes = icono.className;
+          icono.className = 'bi bi-check2';
+          setTimeout(() => { icono.className = antes; }, 1400);
+        }).catch(() => {});
+      });
+    });
 </script>
 </body>
 </html>

@@ -35,7 +35,8 @@ from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.models.aprendiz_backup import AprendizBackup
 from app.utils import (role_required, log_historial, calcular_progreso,
                        directorio_evidencias, fichas_pendientes,
-                       matricular_pendientes, HORAS_PRACTICA_POR_DEFECTO)
+                       matricular_pendientes, resumen_curso,
+                       HORAS_PRACTICA_POR_DEFECTO)
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -125,19 +126,40 @@ def _resumen_borrado(usuarios):
 @role_required('superusuario')
 def dashboard():
     total_usuarios     = Usuario.query.count()
-    total_fichas       = Curso.query.count()
     total_aprendices   = Aprendiz.query.count()
     total_instructores = Instructor.query.count()
     total_empresas     = Empresa.query.filter_by(activa=True).count()
     cambios_recientes  = (HistorialCambios.query
                           .order_by(HistorialCambios.fecha.desc())
-                          .limit(10).all())
+                          .limit(8).all())
+
+    # Tarjetas de ficha, con su estado y cuántos aprendices e instructores tiene
+    cursos = Curso.query.order_by(Curso.nombre).all()
+    conteos = dict(
+        db.session.query(CursoAprendiz.id_curso, db.func.count(CursoAprendiz.id_aprendiz))
+        .group_by(CursoAprendiz.id_curso).all())
+    fichas_data = []
+    for curso in cursos:
+        fila = {
+            'curso': curso,
+            'aprendices_count': int(conteos.get(curso.id_curso, 0)),
+            'instructores': [ci.instructor for ci in curso.instructores if ci.instructor],
+        }
+        fila.update(resumen_curso(curso))
+        fichas_data.append(fila)
+
+    pendientes = fichas_pendientes()
     return render_template('admin/dashboard.html',
                            total_usuarios=total_usuarios,
-                           total_fichas=total_fichas,
+                           total_fichas=len(cursos),
                            total_aprendices=total_aprendices,
                            total_instructores=total_instructores,
                            total_empresas=total_empresas,
+                           fichas_data=fichas_data,
+                           pendientes=pendientes,
+                           aprendices_en_espera=sum(len(p['aprendices']) for p in pendientes),
+                           cursos_en_marcha=sum(1 for f in fichas_data
+                                                if f['estado'] == 'en_curso'),
                            cambios_recientes=cambios_recientes)
 
 

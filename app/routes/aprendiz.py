@@ -18,7 +18,7 @@ from app.models.evidencia import Evidencia
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.servicios import correo
-from app.utils import (role_required, calcular_progreso,
+from app.utils import (role_required, calcular_progreso, resumen_curso,
                        extension_permitida, nombre_archivo_seguro,
                        directorio_evidencias, EXTENSIONES_PERMITIDAS)
 
@@ -47,12 +47,31 @@ def dashboard():
                                 .order_by(Evidencia.fecha_entrega.desc())
                                 .limit(5).all())
 
+    # Fichas en las que está matriculado, con su estado y avance
+    fichas_data = []
+    if ap:
+        for ca in ap.cursos:
+            if not ca.curso:
+                continue
+            fila = {'curso': ca.curso, 'estado_matricula': ca.estado}
+            fila.update(resumen_curso(ca.curso))
+            fichas_data.append(fila)
+
+    aprobadas = 0
+    if ap:
+        aprobadas = Evidencia.query.filter_by(
+            id_aprendiz=ap.id_aprendiz, estado='Aprobada').count()
+
     return render_template('aprendiz/dashboard.html',
                            aprendiz=ap,
                            pct_tiempo=p['pct_tiempo'],
                            pct_evidencias=p['pct_evidencias'],
                            evidencias_count=p['evidencias_count'],
+                           evidencias_aprobadas=aprobadas,
+                           dias_restantes=p['dias_restantes'],
+                           periodo_definido=p['periodo_definido'],
                            notifs_sin_leer=notifs_sin_leer,
+                           fichas_data=fichas_data,
                            evidencias_recientes=evidencias_recientes)
 
 

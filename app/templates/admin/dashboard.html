@@ -2,117 +2,231 @@
 {% block title %}Panel de Administración — SENA Prácticas{% endblock %}
 
 {% block content %}
-<div class="page-toolbar">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-shield-lock text-primary me-2"></i>Panel de Administración Global</h2>
-</div>
-
-<div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-4 mb-4">
-  <div class="col">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Total Usuarios</div>
-          <div class="shell-header-icon" style="color: var(--accent-purple); background: rgba(188,140,255,0.15); border-color: rgba(188,140,255,0.3); border-radius: 12px;"><i class="bi bi-people"></i></div>
-        </div>
-        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_usuarios }}</h3>
-        <a href="{{ url_for('admin.usuarios') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Usuarios</a>
-      </div>
+<!-- ══ Indicadores ══ -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Fichas registradas</span>
+      <span class="kpi-icono"><i class="bi bi-journal-bookmark"></i></span>
     </div>
-  </div>
-  
-  <div class="col">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Aprendices</div>
-          <div class="shell-header-icon" style="color: var(--accent-cyan); background: var(--accent-cyan-glow); border-color: var(--accent-cyan); border-radius: 12px;"><i class="bi bi-person-video2"></i></div>
-        </div>
-        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_aprendices }}</h3>
-        <a href="{{ url_for('admin.usuarios') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Usuarios</a>
-      </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ total_fichas }}</span>
+      <span class="kpi-nota">
+        {% if cursos_en_marcha %}{{ cursos_en_marcha }} en curso{% else %}sin fechas activas{% endif %}
+      </span>
     </div>
   </div>
 
-  <div class="col">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Instructores</div>
-          <div class="shell-header-icon" style="color: var(--accent-green); background: var(--accent-green-glow); border-color: var(--accent-green); border-radius: 12px;"><i class="bi bi-person-badge"></i></div>
-        </div>
-        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_instructores }}</h3>
-        <a href="{{ url_for('admin.instructores') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Instructores</a>
-      </div>
+  <div class="kpi is-cyan">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Usuarios del sistema</span>
+      <span class="kpi-icono"><i class="bi bi-people"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ total_usuarios }}</span>
+      <span class="kpi-nota">{{ total_aprendices }} aprendices · {{ total_instructores }} instructores</span>
     </div>
   </div>
 
-  <div class="col">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Empresas</div>
-          <div class="shell-header-icon" style="color: var(--sena-orange); background: rgba(252,115,35,0.15); border-color: rgba(252,115,35,0.3); border-radius: 12px;"><i class="bi bi-building"></i></div>
-        </div>
-        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_empresas }}</h3>
-        <a href="{{ url_for('admin.empresas') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver Empresas</a>
-      </div>
+  <div class="kpi {% if aprendices_en_espera %}is-amber{% endif %}">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Aprendices sin ficha</span>
+      <span class="kpi-icono"><i class="bi bi-person-exclamation"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ aprendices_en_espera }}</span>
+      <span class="kpi-nota">
+        {% if aprendices_en_espera %}requieren tu atención{% else %}todo asignado{% endif %}
+      </span>
     </div>
   </div>
 
-  <div class="col">
-    <div class="lib-card h-100">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="lib-card-title text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 1px;">Fichas</div>
-          <div class="shell-header-icon" style="color: var(--sena-green); background: rgba(57,169,0,0.15); border-color: rgba(57,169,0,0.3); border-radius: 12px;"><i class="bi bi-journal-code"></i></div>
-        </div>
-        <h3 style="font-size: 2.2rem; font-weight: 700; margin: 0; color: var(--text-primary);">{{ total_fichas }}</h3>
-        <a href="{{ url_for('admin.fichas') }}" class="btn btn-ghost btn-sm mt-3 w-100">Gestionar Fichas</a>
-      </div>
+  <div class="kpi is-purple">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Empresas activas</span>
+      <span class="kpi-icono"><i class="bi bi-building"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ total_empresas }}</span>
+      <span class="kpi-nota">receptoras de práctica</span>
     </div>
   </div>
 </div>
 
+<!-- ══ Aprendices en espera ══ -->
+{% if pendientes %}
+<div class="biblioteca-shell mb-4" style="border-color: rgba(245,158,11,.3) !important;">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon" style="background: var(--accent-amber-glow); border-color: rgba(245,158,11,.28); color: var(--accent-amber);">
+      <i class="bi bi-exclamation-triangle"></i>
+    </div>
+    <h4>Aprendices esperando ficha</h4>
+    <a href="{{ url_for('admin.fichas') }}" class="btn btn-ghost btn-sm ms-auto">Gestionar</a>
+  </div>
+  <div class="biblioteca-shell-body">
+    {% for p in pendientes %}
+    <div class="dato-row">
+      <span class="dato-k">
+        {{ p.codigo }}
+        {% if not p.curso %}<span class="badge-lib badge-amber ms-2">La ficha no existe</span>{% endif %}
+      </span>
+      <span class="dato-v">{{ p.aprendices | length }} aprendiz{{ '' if p.aprendices | length == 1 else 'es' }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ══ Fichas ══ -->
+<div class="seccion">
+  <span class="seccion-icono"><i class="bi bi-book"></i></span>
+  <div>
+    <h2>Fichas del centro</h2>
+    <p>Todas las fichas registradas, con sus instructores asignados y su avance.</p>
+  </div>
+  <div class="seccion-acciones">
+    <div class="filtros" role="group" aria-label="Filtrar fichas">
+      <button type="button" class="active" data-filtro="todas">Todas ({{ fichas_data | length }})</button>
+      <button type="button" data-filtro="en_curso">En curso</button>
+      <button type="button" data-filtro="finalizada">Finalizadas</button>
+    </div>
+    <a class="btn btn-success" href="{{ url_for('admin.fichas') }}">
+      <i class="bi bi-plus-lg me-1"></i> Nueva ficha
+    </a>
+  </div>
+</div>
+
+{% if fichas_data %}
+<div class="fichas-grid mb-4">
+  {% for f in fichas_data %}
+  {% set tono = ['', 'tono-cyan', 'tono-purple', 'tono-amber'][loop.index0 % 4] %}
+  <article class="ficha-card {{ tono }}" data-estado="{{ f.estado }}">
+    <div class="ficha-top">
+      <span class="ficha-estado">{{ f.etiqueta }}</span>
+      <span class="ficha-sigla">{{ f.iniciales }}</span>
+      <span class="ficha-icono"><i class="bi bi-mortarboard"></i></span>
+    </div>
+
+    <h3 class="ficha-titulo">{{ f.curso.nombre }}</h3>
+
+    {% if f.curso.ficha %}
+    <span class="ficha-codigo">
+      Ficha: <strong>{{ f.curso.ficha }}</strong>
+      <button type="button" class="ficha-copiar" data-codigo="{{ f.curso.ficha }}"
+              title="Copiar código"><i class="bi bi-clipboard"></i></button>
+    </span>
+    {% else %}
+    <span class="ficha-codigo text-muted">Sin código de ficha</span>
+    {% endif %}
+
+    <div class="ficha-fechas">
+      <div class="ficha-fecha">
+        <i class="bi bi-calendar-event"></i> Inicio:
+        <b>{{ f.inicio.strftime('%Y-%m-%d') if f.inicio else '—' }}</b>
+      </div>
+      <div class="ficha-fecha">
+        <i class="bi bi-person-badge"></i> Instructores:
+        <b>{{ f.instructores | length }}</b>
+      </div>
+    </div>
+
+    <div>
+      <div class="ficha-avance-cab">
+        <span>Avance de formación</span>
+        <b>{% if f.estado == 'sin_fechas' %}—{% else %}{{ f.avance }}%{% endif %}</b>
+      </div>
+      <div class="progress progress-fina">
+        <div class="progress-bar" role="progressbar" style="width: {{ f.avance }}%;"></div>
+      </div>
+    </div>
+
+    <div class="ficha-pie">
+      <div>
+        <div class="ficha-aprendices-k">Aprendices</div>
+        <div class="ficha-aprendices-v">
+          <b>{{ f.aprendices_count }}</b>
+          <span>matriculados</span>
+        </div>
+      </div>
+      <a class="ficha-ver" href="{{ url_for('admin.ficha_detalle', id_curso=f.curso.id_curso) }}">
+        Ver detalle
+      </a>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="biblioteca-shell mb-4">
+  <div class="empty-state">
+    <i class="bi bi-journal-x"></i>
+    <p class="mb-3">Todavía no hay fichas registradas.</p>
+    <a class="btn btn-success" href="{{ url_for('admin.fichas') }}">
+      <i class="bi bi-plus-lg me-1"></i> Crear la primera
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ══ Auditoría ══ -->
 <div class="biblioteca-shell">
-  <div class="biblioteca-shell-header d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center gap-2">
-      <div class="shell-header-icon"><i class="bi bi-clock-history"></i></div>
-      <h4 class="m-0">Actividad Reciente del Sistema (Auditoría)</h4>
-    </div>
-    <a href="{{ url_for('admin.historial') }}" class="btn btn-sm btn-outline-secondary">Ver historial completo</a>
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-clock-history"></i></div>
+    <h4>Actividad reciente</h4>
+    <a href="{{ url_for('admin.historial') }}" class="btn btn-ghost btn-sm ms-auto">Ver historial</a>
   </div>
   <div class="biblioteca-shell-body p-0">
+    {% if cambios_recientes %}
     <div class="table-responsive">
-      <table class="biblioteca-table mb-0">
+      <table class="table table-hover mb-0">
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Usuario Responsable</th>
+            <th style="padding-left: 1.6rem !important;">Fecha</th>
+            <th>Usuario</th>
             <th>Módulo</th>
             <th>Acción</th>
-            <th>Descripción</th>
+            <th style="padding-right: 1.6rem !important;">Descripción</th>
           </tr>
         </thead>
         <tbody>
-          {% for r in cambios_recientes %}
-           <tr>
-             <td><span class="ts-label">{{ r.fecha.strftime('%Y-%m-%d %H:%M:%S') if r.fecha else '--' }}</span></td>
-             <td class="text-primary fw-medium">{{ r.usuario.nombres }} {{ r.usuario.apellidos }}</td>
-             <td><span class="badge-lib badge-gray"><i class="bi bi-puzzle me-1"></i> {{ r.modulo }}</span></td>
-             <td>
-               {% if r.accion == 'CREAR' %}<span class="badge-lib badge-green"><i class="bi bi-plus-lg me-1"></i> CREAR</span>
-               {% elif r.accion == 'MODIFICAR' %}<span class="badge-lib badge-cyan"><i class="bi bi-pencil me-1"></i> MODIFICAR</span>
-               {% elif r.accion == 'ELIMINAR' %}<span class="badge-lib badge-red"><i class="bi bi-trash me-1"></i> ELIMINAR</span>
-               {% else %}{{ r.accion }}{% endif %}
-             </td>
-             <td class="text-muted small text-truncate" style="max-width: 300px;" title="{{ r.descripcion }}">{{ r.descripcion }}</td>
-           </tr>
-          {% else %}
-           <tr><td colspan="5" class="text-center py-4 text-muted fst-italic">No se registran eventos recientes.</td></tr>
+          {% for h in cambios_recientes %}
+          <tr>
+            <td style="padding-left: 1.6rem !important;">
+              <span class="codigo-ficha">{{ h.fecha.strftime('%Y-%m-%d %H:%M') if h.fecha else '—' }}</span>
+            </td>
+            <td>
+              {% if h.usuario %}{{ h.usuario.nombres }} {{ h.usuario.apellidos }}
+              {% else %}<span class="text-muted fst-italic">Usuario eliminado</span>{% endif %}
+            </td>
+            <td><span class="badge-lib badge-gray">{{ h.modulo }}</span></td>
+            <td>
+              {% if h.accion == 'ELIMINAR' %}<span class="badge-lib badge-red">{{ h.accion }}</span>
+              {% elif h.accion == 'CREAR' %}<span class="badge-lib badge-green">{{ h.accion }}</span>
+              {% else %}<span class="badge-lib badge-blue">{{ h.accion }}</span>{% endif %}
+            </td>
+            <td class="text-secondary" style="padding-right: 1.6rem !important;">{{ h.descripcion }}</td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% else %}
+    <div class="empty-state"><i class="bi bi-clock"></i><p class="mb-0">Sin actividad registrada.</p></div>
+    {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.filtros [data-filtro]').forEach(function (boton) {
+    boton.addEventListener('click', function () {
+      document.querySelectorAll('.filtros [data-filtro]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const filtro = this.dataset.filtro;
+      document.querySelectorAll('.ficha-card').forEach(function (t) {
+        t.hidden = !(filtro === 'todas' || t.dataset.estado === filtro);
+      });
+    });
+  });
+</script>
 {% endblock %}

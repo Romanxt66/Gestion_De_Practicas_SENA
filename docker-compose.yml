@@ -49,6 +49,7 @@ services:
       - CONTACTO_EMAIL=${CONTACTO_EMAIL:-}
       - ENTIDAD_RESPONSABLE=${ENTIDAD_RESPONSABLE:-}
       - GOOGLE_SITE_VERIFICATION=${GOOGLE_SITE_VERIFICATION:-}
+      - CENTRO_FORMACION=${CENTRO_FORMACION:-}
 
       # ── Superusuario inicial (opcional) ──
       # Con ADMIN_PASSWORD definida, cada arranque fija esa contraseña.

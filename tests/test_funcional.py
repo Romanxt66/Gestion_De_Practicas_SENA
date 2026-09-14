@@ -769,6 +769,33 @@ with app.app_context():
     check('el aprendiz NO puede cambiarse la ficha',
           db.session.get(Usuario, ap.id_usuario).aprendiz.ficha == ficha_antes)
 
+print('\n── Armazón y paneles v2 ──')
+for etiqueta, cli, ruta, marca in (
+    ('aprendiz', c_ap, '/aprendiz/dashboard', 'Mi formación'),
+    ('instructor', c_inst, '/instructor/dashboard', 'Cursos y fichas asignadas'),
+    ('admin', c_admin, '/admin/dashboard', 'Fichas del centro')):
+    html = cli.get(ruta).get_data(as_text=True)
+    check(f'panel de {etiqueta} con el diseño nuevo', 'kpi-grid' in html and marca in html)
+    check(f'  · {etiqueta} tiene barra lateral', 'lateral-nav' in html)
+    check(f'  · {etiqueta} muestra el centro de formación', 'Oriente de Vélez' in html)
+
+html = c_inst.get('/instructor/dashboard').get_data(as_text=True)
+check('el rol se muestra como "Instructor", no "InstructorConsole"',
+      'InstructorConsole' not in html and '>Instructor<' in html)
+html = c_admin.get('/admin/dashboard').get_data(as_text=True)
+check('y como "Administrador", no "AdminConsole"',
+      'AdminConsole' not in html and 'Administrador' in html)
+
+from app.utils import resumen_curso, iniciales_curso
+check('la sigla sale del nombre de la ficha',
+      iniciales_curso('Análisis y Desarrollo de Software') == 'ADS',
+      iniciales_curso('Análisis y Desarrollo de Software'))
+with app.app_context():
+    c = db.session.get(Curso, id_curso)
+    r = resumen_curso(c)
+    check('el resumen de ficha trae estado y avance',
+          'estado' in r and 'avance' in r and 0 <= r['avance'] <= 100)
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

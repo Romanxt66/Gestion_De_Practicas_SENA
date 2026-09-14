@@ -1,127 +1,186 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard Aprendiz — SENA Prácticas{% endblock %}
+{% block title %}Panel Aprendiz — SENA Prácticas{% endblock %}
 
 {% block content %}
-<div class="page-toolbar">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">Panel Central — Aprendiz</h2>
-  <div class="toolbar-actions">
-    <a href="{{ url_for('aprendiz.evidencias_subir') }}" class="btn btn-primary">
-      <i class="bi bi-cloud-arrow-up"></i> Nueva Evidencia
+<!-- ══ Indicadores ══ -->
+<div class="kpi-grid">
+  <div class="kpi is-acc">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Avance de mi práctica</span>
+      <span class="kpi-icono"><i class="bi bi-hourglass-split"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ pct_tiempo }}%</span>
+      <span class="kpi-nota">
+        {% if periodo_definido and dias_restantes is not none %}{{ dias_restantes }} días restantes
+        {% else %}estimado a 6 meses{% endif %}
+      </span>
+    </div>
+    <div class="progress progress-fina mt-3">
+      <div class="progress-bar" role="progressbar" style="width: {{ pct_tiempo }}%;"></div>
+    </div>
+  </div>
+
+  <div class="kpi is-purple">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Evidencias entregadas</span>
+      <span class="kpi-icono"><i class="bi bi-folder2-open"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ evidencias_count }}</span>
+      <span class="kpi-nota">de 12 esperadas</span>
+    </div>
+    <div class="progress progress-fina mt-3">
+      <div class="progress-bar is-purple" role="progressbar" style="width: {{ pct_evidencias }}%;"></div>
+    </div>
+  </div>
+
+  <div class="kpi is-cyan">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Evidencias aprobadas</span>
+      <span class="kpi-icono"><i class="bi bi-patch-check"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ evidencias_aprobadas }}</span>
+      <span class="kpi-nota">
+        {% if evidencias_count %}de {{ evidencias_count }} entregadas{% else %}aún sin entregas{% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="kpi {% if notifs_sin_leer %}is-amber{% endif %}">
+    <div class="kpi-cabecera">
+      <span class="kpi-titulo">Alertas sin leer</span>
+      <span class="kpi-icono"><i class="bi bi-bell"></i></span>
+    </div>
+    <div class="kpi-valor">
+      <span class="kpi-numero">{{ notifs_sin_leer }}</span>
+      <span class="kpi-nota">
+        {% if aprendiz %}{{ aprendiz.estado_practica or 'Sin estado' }}{% else %}—{% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Mis fichas ══ -->
+<div class="seccion">
+  <span class="seccion-icono"><i class="bi bi-book"></i></span>
+  <div>
+    <h2>Mi formación</h2>
+    <p>Las fichas en las que estás matriculado y el avance de cada una.</p>
+  </div>
+  <div class="seccion-acciones">
+    <a class="btn btn-success" href="{{ url_for('aprendiz.evidencias_subir') }}">
+      <i class="bi bi-upload me-1"></i> Subir evidencia
     </a>
   </div>
 </div>
 
-<div class="row g-4 mb-4">
-  <!-- Tarjeta Progreso Semestre -->
-  <div class="col-md-3">
-    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-cyan);">
-      <div class="lib-card-body d-flex flex-column justify-content-between">
-        <div>
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="lib-card-title text-muted text-uppercase mb-0">Progreso Tiempo</div>
-            <div class="shell-header-icon" style="color: var(--accent-cyan); background: var(--accent-cyan-glow); border-color: rgba(56, 189, 248, 0.3);"><i class="bi bi-calendar-check"></i></div>
-          </div>
-          <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">{{ pct_tiempo }}%</h3>
-          <p class="text-secondary small mt-1">De 6 meses proyectados</p>
-        </div>
-        <div class="progress mt-3" style="height: 8px; background: var(--bg-hover);">
-          <div class="progress-bar" id="progreso-tiempo-bar" role="progressbar" style="background: linear-gradient(90deg, #1a73e8, var(--accent-cyan)); width: {{ pct_tiempo }}%;" aria-valuenow="{{ pct_tiempo }}" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-      </div>
+{% if fichas_data %}
+<div class="fichas-grid mb-4">
+  {% for f in fichas_data %}
+  {% set tono = ['', 'tono-cyan', 'tono-purple', 'tono-amber'][loop.index0 % 4] %}
+  <article class="ficha-card {{ tono }}">
+    <div class="ficha-top">
+      <span class="ficha-estado">{{ f.etiqueta }}</span>
+      <span class="ficha-sigla">{{ f.iniciales }}</span>
+      <span class="ficha-icono"><i class="bi bi-mortarboard"></i></span>
     </div>
-  </div>
 
-  <!-- Tarjeta Progreso Evidencias -->
-  <div class="col-md-3">
-    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-purple);">
-      <div class="lib-card-body d-flex flex-column justify-content-between">
-        <div>
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="lib-card-title text-muted text-uppercase mb-0">Evidencias</div>
-            <div class="shell-header-icon" style="color: var(--accent-purple); background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3);"><i class="bi bi-file-earmark-check"></i></div>
-          </div>
-          <h3 style="font-size: 2rem; font-weight: 700; margin: 0;">{{ evidencias_count }} / 12</h3>
-          <p class="text-secondary small mt-1">Avance: {{ pct_evidencias }}%</p>
-        </div>
-        <div class="progress mt-3" style="height: 8px; background: var(--bg-hover);">
-          <div class="progress-bar" id="progreso-evi-bar" role="progressbar" style="background: linear-gradient(90deg, #7c3aed, var(--accent-purple)); width: {{ pct_evidencias }}%;" aria-valuenow="{{ pct_evidencias }}" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <h3 class="ficha-titulo">{{ f.curso.nombre }}</h3>
 
-  <!-- Tarjeta Notificaciones -->
-  <div class="col-md-3">
-    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-amber);">
-      <div class="lib-card-body d-flex flex-column justify-content-between">
-        <div>
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="lib-card-title text-muted text-uppercase mb-0">Alertas</div>
-            <div class="shell-header-icon" style="color: var(--accent-amber); background: rgba(210,153,34,0.15); border-color: rgba(210,153,34,0.3);"><i class="bi bi-bell"></i></div>
-          </div>
-          <h3 style="font-size: 2rem; font-weight: 700; margin: 0; color: {{ 'var(--accent-amber)' if notifs_sin_leer > 0 else 'var(--text-primary)' }};">{{ notifs_sin_leer }}</h3>
-          <p class="text-secondary small mt-1">Mensajes sin leer</p>
-        </div>
-        <a href="{{ url_for('aprendiz.notificaciones') }}" class="btn btn-ghost btn-sm mt-3 w-100">Ver alertas</a>
-      </div>
-    </div>
-  </div>
+    {% if f.curso.ficha %}
+    <span class="ficha-codigo">
+      Ficha: <strong>{{ f.curso.ficha }}</strong>
+      <button type="button" class="ficha-copiar" data-codigo="{{ f.curso.ficha }}"
+              title="Copiar código"><i class="bi bi-clipboard"></i></button>
+    </span>
+    {% endif %}
 
-  <!-- Tarjeta Estado -->
-  <div class="col-md-3">
-    <div class="lib-card h-100" style="border-left: 4px solid var(--accent-green);">
-      <div class="lib-card-body d-flex flex-column justify-content-between">
-        <div>
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div class="lib-card-title text-muted text-uppercase mb-0">Estado</div>
-            <div class="shell-header-icon" style="color: var(--accent-green); background: var(--accent-green-glow); border-color: rgba(63,185,80,0.3);"><i class="bi bi-check2-circle"></i></div>
-          </div>
-          <h4 style="font-size: 1.25rem; font-weight: 600; margin-top: 1rem;" class="text-success">{{ aprendiz.estado_practica if aprendiz else 'Sin Registro' }}</h4>
-          <p class="text-secondary small mt-1">Ficha: {{ aprendiz.ficha if aprendiz and aprendiz.ficha else 'N/A' }}</p>
-        </div>
+    <div class="ficha-fechas">
+      <div class="ficha-fecha">
+        <i class="bi bi-calendar-event"></i> Inicio:
+        <b>{{ f.inicio.strftime('%Y-%m-%d') if f.inicio else '—' }}</b>
+      </div>
+      <div class="ficha-fecha">
+        <i class="bi bi-calendar-check"></i> Fin:
+        <b>{{ f.fin.strftime('%Y-%m-%d') if f.fin else '—' }}</b>
       </div>
     </div>
+
+    <div>
+      <div class="ficha-avance-cab">
+        <span>Avance de formación</span>
+        <b>{% if f.estado == 'sin_fechas' %}—{% else %}{{ f.avance }}%{% endif %}</b>
+      </div>
+      <div class="progress progress-fina">
+        <div class="progress-bar" role="progressbar" style="width: {{ f.avance }}%;"></div>
+      </div>
+    </div>
+
+    <div class="ficha-pie">
+      <div>
+        <div class="ficha-aprendices-k">Mi estado</div>
+        <div class="ficha-aprendices-v">
+          <span style="font-size: 0.95rem; color: var(--text-primary);">
+            {{ aprendiz.estado_practica or 'En proceso' }}
+          </span>
+        </div>
+      </div>
+      <a class="ficha-ver" href="{{ url_for('aprendiz.progreso') }}">Ver progreso</a>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="biblioteca-shell mb-4">
+  <div class="empty-state">
+    <i class="bi bi-hourglass-split"></i>
+    {% if aprendiz and aprendiz.ficha %}
+      <p class="mb-1">Tu ficha <strong class="text-white">{{ aprendiz.ficha }}</strong> todavía no está registrada.</p>
+      <p class="mb-0" style="font-size: 0.85rem;">
+        Un administrador la creará y quedarás matriculado automáticamente.
+      </p>
+    {% else %}
+      <p class="mb-0">Todavía no estás matriculado en ninguna ficha.</p>
+    {% endif %}
   </div>
 </div>
+{% endif %}
 
-<!-- Tabla Evidencias Recientes -->
+<!-- ══ Últimas entregas ══ -->
 <div class="biblioteca-shell">
   <div class="biblioteca-shell-header">
-    <div class="shell-header-icon" style="color: var(--text-muted); background: var(--bg-hover); border-color: var(--border-muted);"><i class="bi bi-file-earmark-text"></i></div>
-    <h4>Evidencias Subidas Recientemente</h4>
+    <div class="shell-header-icon"><i class="bi bi-clock-history"></i></div>
+    <h4>Mis últimas entregas</h4>
+    <a href="{{ url_for('aprendiz.mis_evidencias') }}" class="btn btn-ghost btn-sm ms-auto">Ver todas</a>
   </div>
   <div class="biblioteca-shell-body p-0">
     {% if evidencias_recientes %}
     <div class="table-responsive">
-      <table class="biblioteca-table mb-0">
+      <table class="table table-hover mb-0">
         <thead>
           <tr>
-            <th>ID</th>
+            <th style="padding-left: 1.6rem !important;">Fecha</th>
             <th>Tipo</th>
-            <th>Fecha Entrega</th>
             <th>Estado</th>
-            <th>Acciones</th>
+            <th style="padding-right: 1.6rem !important;">Observaciones</th>
           </tr>
         </thead>
         <tbody>
           {% for ev in evidencias_recientes %}
           <tr>
-            <td>#{{ ev.id_evidencia }}</td>
-            <td>
-              {% if ev.tipo == 'archivo' %}<i class="bi bi-file-earmark-pdf me-1 text-danger"></i>
-              {% elif ev.tipo == 'enlace' %}<i class="bi bi-link-45deg me-1 text-info"></i>
-              {% else %}<i class="bi bi-text-paragraph me-1 text-muted"></i>{% endif %}
-              {{ ev.tipo | capitalize }}
+            <td style="padding-left: 1.6rem !important;">
+              <span class="codigo-ficha">{{ ev.fecha_entrega.strftime('%Y-%m-%d %H:%M') if ev.fecha_entrega else '—' }}</span>
             </td>
-            <td><span class="ts-label">{{ ev.fecha_entrega.strftime('%Y-%m-%d %H:%M') if ev.fecha_entrega else 'N/A' }}</span></td>
+            <td><span class="badge-lib badge-gray">{{ ev.tipo | capitalize }}</span></td>
             <td>
-              {% if ev.estado == 'Entregada' %}<span class="badge-lib badge-cyan">Entregada</span>
-              {% elif ev.estado == 'Aprobada' %}<span class="badge-lib badge-green">Aprobada</span>
-              {% elif ev.estado == 'No Aprobada' %}<span class="badge-lib badge-red">Rechazada</span>
-              {% else %}<span class="badge-lib badge-gray">{{ ev.estado }}</span>{% endif %}
+              {% if ev.estado == 'Aprobada' %}<span class="badge-lib badge-green"><i class="bi bi-check2"></i> Aprobada</span>
+              {% elif ev.estado == 'No Aprobada' %}<span class="badge-lib badge-red"><i class="bi bi-x"></i> No aprobada</span>
+              {% else %}<span class="badge-lib badge-amber"><i class="bi bi-clock"></i> {{ ev.estado }}</span>{% endif %}
             </td>
-            <td>
-              <a href="{{ url_for('aprendiz.mis_evidencias') }}" class="btn btn-secondary btn-sm" title="Ver detalles"><i class="bi bi-eye"></i></a>
+            <td class="text-secondary" style="padding-right: 1.6rem !important;">
+              {{ ev.observaciones or '—' }}
             </td>
           </tr>
           {% endfor %}
@@ -131,7 +190,10 @@
     {% else %}
     <div class="empty-state">
       <i class="bi bi-folder2-open"></i>
-      <p>No tienes evidencias recientes.</p>
+      <p class="mb-3">Aún no has subido ninguna evidencia.</p>
+      <a class="btn btn-success" href="{{ url_for('aprendiz.evidencias_subir') }}">
+        <i class="bi bi-upload me-1"></i> Subir la primera
+      </a>
     </div>
     {% endif %}
   </div>
