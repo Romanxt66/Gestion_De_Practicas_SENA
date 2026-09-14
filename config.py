@@ -104,6 +104,11 @@ class Config:
     ENTIDAD_RESPONSABLE = os.getenv('ENTIDAD_RESPONSABLE',
                                     'Sistema de Gestión de Prácticas SENA')
 
+    # Código de Google Search Console para demostrar la propiedad del sitio por
+    # el método de "etiqueta HTML". Solo el valor del atributo content, sin la
+    # etiqueta entera. Alternativa a poner un registro TXT en el DNS.
+    GOOGLE_SITE_VERIFICATION = os.getenv('GOOGLE_SITE_VERIFICATION', '')
+
 # Comandos para descargar en instalar todas las librerias offline
 # python -m pip download -r requirements.txt -d librerias
 # pip install --no-index --find-links=librerias -r requirements.txt

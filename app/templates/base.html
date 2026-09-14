@@ -7,6 +7,9 @@
   <meta name="description" content="{% block meta_desc %}Sistema de Gestión de Prácticas SENA{% endblock %}">
   <meta name="theme-color" content="#000000">
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  {% if config.GOOGLE_SITE_VERIFICATION %}
+  <meta name="google-site-verification" content="{{ config.GOOGLE_SITE_VERIFICATION }}">
+  {% endif %}
 
   <!-- Tipografía del diseño -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
