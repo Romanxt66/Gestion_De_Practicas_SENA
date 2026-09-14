@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -105,9 +106,15 @@ class Config:
                                     'Sistema de Gestión de Prácticas SENA')
 
     # Código de Google Search Console para demostrar la propiedad del sitio por
-    # el método de "etiqueta HTML". Solo el valor del atributo content, sin la
-    # etiqueta entera. Alternativa a poner un registro TXT en el DNS.
-    GOOGLE_SITE_VERIFICATION = os.getenv('GOOGLE_SITE_VERIFICATION', '')
+    # el método de "etiqueta HTML". Alternativa a poner un registro TXT en el DNS.
+    # Se admite tanto el código suelto como la etiqueta entera: el botón "Copy"
+    # de Search Console copia la etiqueta completa, y pegarla tal cual es el
+    # error más fácil de cometer aquí.
+    _verificacion = os.getenv('GOOGLE_SITE_VERIFICATION', '').strip()
+    if 'content=' in _verificacion:
+        _encontrado = re.search(r'content=["\']([^"\']+)["\']', _verificacion)
+        _verificacion = _encontrado.group(1) if _encontrado else ''
+    GOOGLE_SITE_VERIFICATION = _verificacion
 
 # Comandos para descargar en instalar todas las librerias offline
 # python -m pip download -r requirements.txt -d librerias
