@@ -97,6 +97,13 @@ class Config:
     # SECRET_KEY, pero entonces cambiar SECRET_KEY obliga a reconectar.
     TOKEN_ENCRYPTION_KEY = os.getenv('TOKEN_ENCRYPTION_KEY', '')
 
+    # ─── Páginas legales ────────────────────────────────
+    # Correo de contacto que se publica en la política de privacidad. Google
+    # exige un responsable localizable para verificar la aplicación.
+    CONTACTO_EMAIL = os.getenv('CONTACTO_EMAIL', '') or os.getenv('MAIL_USERNAME', '')
+    ENTIDAD_RESPONSABLE = os.getenv('ENTIDAD_RESPONSABLE',
+                                    'Sistema de Gestión de Prácticas SENA')
+
 # Comandos para descargar en instalar todas las librerias offline
 # python -m pip download -r requirements.txt -d librerias
 # pip install --no-index --find-links=librerias -r requirements.txt

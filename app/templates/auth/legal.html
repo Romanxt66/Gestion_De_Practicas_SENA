@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% set titulo = 'Política de privacidad' if documento == 'privacidad' else 'Términos de uso' %}
+{% block title %}{{ titulo }} — SENA Prácticas{% endblock %}
+
+{% block extra_css %}
+<style>
+  main { display: flex; flex-direction: column; padding: 0 !important; overflow: visible !important; }
+  .legal-shell {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #0c0d0c 0%, #000 45%);
+  }
+  .legal-main { flex: 1; display: flex; justify-content: center; padding: 2.5rem 1rem 3rem; }
+  .legal-caja { width: 100%; max-width: 720px; }
+  .legal-marca {
+    display: flex; align-items: center; gap: 0.6rem; margin-bottom: 2rem;
+    color: var(--text-secondary); font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase; text-decoration: none;
+  }
+  .legal-marca i { color: var(--acc); font-size: 1.1rem; }
+  .legal-caja h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; margin: 0 0 0.4rem; }
+  .legal-fecha { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 2.25rem; }
+  .legal-caja h2 {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--acc); margin: 2.25rem 0 0.75rem;
+  }
+  .legal-caja p, .legal-caja li { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.7; }
+  .legal-caja ul { padding-left: 1.1rem; }
+  .legal-caja li { margin-bottom: 0.4rem; }
+  .legal-caja strong { color: var(--text-primary); }
+  .legal-caja code {
+    color: var(--acc); background: rgba(255,255,255,.04);
+    padding: 0.1rem 0.4rem; border-radius: 5px; font-size: 0.85rem;
+  }
+  .legal-caja a { color: var(--acc); }
+  .legal-pie {
+    margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);
+    display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.82rem;
+  }
+  .legal-pie a { color: var(--text-secondary); text-decoration: none; }
+  .legal-pie a:hover { color: var(--text-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-shell">
+  <main class="legal-main">
+    <div class="legal-caja">
+
+      <a class="legal-marca" href="{{ url_for('auth.landing') }}">
+        <i class="bi bi-mortarboard-fill"></i> SENA Prácticas
+      </a>
+
+      <h1>{{ titulo }}</h1>
+      <p class="legal-fecha">Última actualización: {{ anio_actual }}</p>
+
+      {% if documento == 'privacidad' %}
+
+        <p>
+          Esta política describe qué datos trata el <strong>Sistema de Gestión de
+          Prácticas</strong>, con qué finalidad y durante cuánto tiempo. Responsable
+          del tratamiento: <strong>{{ entidad }}</strong>.
+        </p>
+
+        <h2>Qué datos se recogen</h2>
+        <ul>
+          <li><strong>De identificación:</strong> nombres, apellidos, tipo y número de documento, correo electrónico y teléfono, aportados al registrarse o por el administrador.</li>
+          <li><strong>De la práctica:</strong> ficha o curso, estado de la etapa productiva, fechas de inicio y fin, y empresa asignada.</li>
+          <li><strong>Evidencias:</strong> los archivos, enlaces o textos que el aprendiz sube, junto con su calificación y las observaciones del instructor.</li>
+          <li><strong>De auditoría:</strong> registro de las acciones realizadas en el sistema, con fecha y usuario, para poder rastrear cambios.</li>
+        </ul>
+
+        <h2>Para qué se usan</h2>
+        <p>
+          Únicamente para gestionar el seguimiento de la etapa productiva: matricular
+          aprendices en fichas, registrar y calificar evidencias, y avisar por correo
+          a las personas implicadas. <strong>No se ceden a terceros, no se venden y no
+          se usan con fines publicitarios.</strong>
+        </p>
+
+        <h2>Conexión con Google</h2>
+        <p>
+          De forma <strong>opcional</strong>, un usuario puede vincular su cuenta de
+          Google para que los avisos que genere el sistema salgan desde su propia
+          dirección. Al hacerlo se solicita un único permiso:
+        </p>
+        <p><code>https://www.googleapis.com/auth/gmail.send</code></p>
+        <p>
+          Ese permiso <strong>solo autoriza a enviar correos</strong> en nombre del
+          usuario. El sistema <strong>no puede leer el buzón</strong>, ni los contactos,
+          ni ningún otro dato de la cuenta de Google, porque no solicita ningún permiso
+          de lectura.
+        </p>
+        <p>
+          Del proceso se guarda el correo de la cuenta vinculada y un
+          <em>token de actualización</em>, que se almacena <strong>cifrado</strong> en la
+          base de datos. Ese token permite enviar los avisos sin volver a pedir permiso.
+          No se guarda la contraseña de Google: el sistema nunca la conoce.
+        </p>
+        <p>
+          El uso de los datos obtenidos de las API de Google se ajusta a la
+          <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">
+          Política de Datos de Usuario de los Servicios de API de Google</a>, incluidos
+          sus requisitos de uso limitado.
+        </p>
+
+        <h2>Cómo retirar el permiso</h2>
+        <p>
+          Desde <strong>Conexiones</strong>, dentro del sistema, con el botón
+          <em>Desconectar</em>: se revoca el permiso ante Google y se borra el token
+          guardado. También puede hacerse directamente en
+          <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">
+          la página de permisos de la cuenta de Google</a>.
+        </p>
+        <p>
+          Al desvincular la cuenta, los avisos siguen enviándose desde la dirección
+          institucional del sistema.
+        </p>
+
+        <h2>Conservación y eliminación</h2>
+        <p>
+          Los datos se conservan mientras la cuenta esté activa. El administrador puede
+          eliminar una cuenta, lo que borra definitivamente sus datos personales, sus
+          evidencias y los archivos asociados. Los registros de auditoría se conservan
+          desvinculados de la persona, sin datos identificativos.
+        </p>
+
+        <h2>Seguridad</h2>
+        <ul>
+          <li>Las contraseñas se guardan cifradas con una función de derivación, nunca en texto plano.</li>
+          <li>Los tokens de Google se guardan cifrados.</li>
+          <li>Las evidencias solo son accesibles para su autor, el instructor de su ficha y el administrador.</li>
+          <li>El acceso al sistema requiere autenticación y está limitado según el rol.</li>
+        </ul>
+
+        <h2>Contacto</h2>
+        <p>
+          Para ejercer los derechos de acceso, rectificación o eliminación, o para
+          cualquier consulta sobre esta política, escribe a
+          {% if contacto %}<strong>{{ contacto }}</strong>{% else %}
+          <strong>el administrador del sistema</strong>{% endif %}.
+        </p>
+
+      {% else %}
+
+        <p>
+          El uso del <strong>Sistema de Gestión de Prácticas</strong> implica la
+          aceptación de estos términos. El sistema lo administra
+          <strong>{{ entidad }}</strong>.
+        </p>
+
+        <h2>Objeto</h2>
+        <p>
+          El sistema sirve para el seguimiento de la etapa productiva: los aprendices
+          suben evidencias de su práctica y los instructores las revisan y califican.
+          Es una herramienta de gestión académica y no sustituye ningún trámite oficial.
+        </p>
+
+        <h2>Cuentas y acceso</h2>
+        <ul>
+          <li>Los aprendices se registran con el código de su ficha; las cuentas de instructor y administrador las crea el administrador.</li>
+          <li>Cada persona es responsable de su contraseña y de la actividad de su cuenta.</li>
+          <li>El acceso está limitado según el rol: nadie puede ver ni modificar datos fuera del ámbito que le corresponde.</li>
+        </ul>
+
+        <h2>Uso aceptable</h2>
+        <ul>
+          <li>Las evidencias deben corresponder a la práctica del propio aprendiz.</li>
+          <li>No se permite subir contenido ilícito, ofensivo, ni material sobre el que no se tengan derechos.</li>
+          <li>No se permite intentar acceder a datos de otras personas ni interferir en el funcionamiento del sistema.</li>
+        </ul>
+        <p>
+          El incumplimiento puede conllevar la desactivación o eliminación de la cuenta.
+        </p>
+
+        <h2>Disponibilidad</h2>
+        <p>
+          El servicio se ofrece tal cual, sin garantía de disponibilidad ininterrumpida.
+          Puede haber interrupciones por mantenimiento o causas ajenas. Se recomienda
+          conservar una copia propia de las evidencias que se suban.
+        </p>
+
+        <h2>Datos personales</h2>
+        <p>
+          El tratamiento de los datos se describe en la
+          <a href="{{ url_for('auth.privacidad') }}">política de privacidad</a>,
+          que forma parte de estos términos.
+        </p>
+
+        <h2>Cambios</h2>
+        <p>
+          Estos términos pueden actualizarse. La fecha de la última revisión figura al
+          comienzo de esta página.
+        </p>
+
+        <h2>Contacto</h2>
+        <p>
+          Para cualquier consulta, escribe a
+          {% if contacto %}<strong>{{ contacto }}</strong>{% else %}
+          <strong>el administrador del sistema</strong>{% endif %}.
+        </p>
+
+      {% endif %}
+
+      <div class="legal-pie">
+        <a href="{{ url_for('auth.landing') }}"><i class="bi bi-arrow-left me-1"></i> Inicio</a>
+        {% if documento == 'privacidad' %}
+          <a href="{{ url_for('auth.terminos') }}">Términos de uso</a>
+        {% else %}
+          <a href="{{ url_for('auth.privacidad') }}">Política de privacidad</a>
+        {% endif %}
+        <span class="text-muted ms-auto">&copy; {{ anio_actual }} · {{ entidad }}</span>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

@@ -599,6 +599,18 @@ if otro_ap:
           ap.correo in html_a and otro_ap.correo in html_b
           and otro_ap.correo not in html_a)
 
+print('\n── Páginas legales (públicas) ──')
+anon_legal = app.test_client()
+for ruta, marca in (('/privacidad', 'gmail.send'), ('/terminos', 'Uso aceptable')):
+    r = anon_legal.get(ruta)
+    check(f'{ruta} es pública y carga', r.status_code == 200, str(r.status_code))
+    check(f'{ruta} tiene el contenido esperado', marca in r.get_data(as_text=True))
+html = anon_legal.get('/privacidad').get_data(as_text=True)
+check('la privacidad explica que no se lee el buzón', 'no puede leer el buzón' in html)
+check('y cómo revocar el permiso', 'myaccount.google.com/permissions' in html)
+check('el login enlaza a las páginas legales',
+      '/privacidad' in anon_legal.get('/login').get_data(as_text=True))
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

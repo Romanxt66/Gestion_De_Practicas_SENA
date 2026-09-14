@@ -215,3 +215,29 @@ def _redirect_by_role(usuario, login_success=False):
     if rol == 'instructor':
         return redirect(url_for('instructor.dashboard', **kwargs))
     return redirect(url_for('aprendiz.dashboard', **kwargs))
+
+
+# ─── Páginas legales (públicas) ───────────────
+@bp.route('/privacidad')
+def privacidad():
+    """Política de privacidad. Debe ser accesible sin iniciar sesión:
+    Google la exige para publicar la aplicación y para verificarla."""
+    from flask import current_app
+    return render_template(
+        'auth/legal.html',
+        documento='privacidad',
+        contacto=current_app.config.get('CONTACTO_EMAIL'),
+        entidad=current_app.config.get('ENTIDAD_RESPONSABLE'),
+    )
+
+
+@bp.route('/terminos')
+def terminos():
+    """Términos de uso. También pública, por el mismo motivo."""
+    from flask import current_app
+    return render_template(
+        'auth/legal.html',
+        documento='terminos',
+        contacto=current_app.config.get('CONTACTO_EMAIL'),
+        entidad=current_app.config.get('ENTIDAD_RESPONSABLE'),
+    )

@@ -46,6 +46,8 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-}
       - TOKEN_ENCRYPTION_KEY=${TOKEN_ENCRYPTION_KEY:-}
+      - CONTACTO_EMAIL=${CONTACTO_EMAIL:-}
+      - ENTIDAD_RESPONSABLE=${ENTIDAD_RESPONSABLE:-}
 
       # ── Superusuario inicial (opcional) ──
       # Con ADMIN_PASSWORD definida, cada arranque fija esa contraseña.
