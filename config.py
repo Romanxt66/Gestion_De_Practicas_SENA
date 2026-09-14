@@ -105,16 +105,22 @@ class Config:
     ENTIDAD_RESPONSABLE = os.getenv('ENTIDAD_RESPONSABLE',
                                     'Sistema de Gestión de Prácticas SENA')
 
-    # Código de Google Search Console para demostrar la propiedad del sitio por
-    # el método de "etiqueta HTML". Alternativa a poner un registro TXT en el DNS.
-    # Se admite tanto el código suelto como la etiqueta entera: el botón "Copy"
-    # de Search Console copia la etiqueta completa, y pegarla tal cual es el
-    # error más fácil de cometer aquí.
-    _verificacion = os.getenv('GOOGLE_SITE_VERIFICATION', '').strip()
-    if 'content=' in _verificacion:
-        _encontrado = re.search(r'content=["\']([^"\']+)["\']', _verificacion)
-        _verificacion = _encontrado.group(1) if _encontrado else ''
-    GOOGLE_SITE_VERIFICATION = _verificacion
+    # Códigos de Google Search Console (método "etiqueta HTML"), alternativa a
+    # verificar el dominio con un registro TXT en el DNS.
+    #
+    # Admite varios separados por comas: cada cuenta de Google recibe un código
+    # distinto para la misma propiedad, así que si el sitio debe quedar
+    # verificado por más de una cuenta hacen falta todas las etiquetas.
+    # Se acepta tanto el código suelto como la etiqueta completa, porque el
+    # botón "Copy" de Search Console copia la etiqueta entera.
+    _codigos = []
+    for _bruto in os.getenv('GOOGLE_SITE_VERIFICATION', '').split(','):
+        _bruto = _bruto.strip()
+        if not _bruto:
+            continue
+        _encontrado = re.search(r'content=["\']([^"\']+)["\']', _bruto)
+        _codigos.append(_encontrado.group(1) if _encontrado else _bruto)
+    GOOGLE_SITE_VERIFICATION = _codigos
 
 # Comandos para descargar en instalar todas las librerias offline
 # python -m pip download -r requirements.txt -d librerias
