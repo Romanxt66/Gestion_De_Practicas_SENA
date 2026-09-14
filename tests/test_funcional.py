@@ -560,6 +560,15 @@ with app.app_context():
               HistorialCambios.descripcion.like('%borrar.me@test.com%'),
               HistorialCambios.accion == 'ELIMINAR').first() is not None)
 
+# Volver a enviar el borrado del mismo usuario no da 404, informa y redirige
+t = token(c_admin, '/admin/usuarios')
+r = c_admin.post(f'/admin/usuarios/{id_victima}/eliminar',
+                 data={'csrf_token': t, 'confirmacion': 'borrar.me@test.com'},
+                 follow_redirects=True)
+check('reenviar el borrado no devuelve 404',
+      r.status_code == 200 and 'ya no existe' in r.get_data(as_text=True),
+      str(r.status_code))
+
 # El historial se sigue pudiendo abrir y exportar con entradas huérfanas
 check('el historial se muestra con entradas sin usuario',
       c_admin.get('/admin/historial').status_code == 200)

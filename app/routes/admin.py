@@ -280,7 +280,13 @@ def eliminar_usuario(id_usuario):
     Las entradas de auditoría NO se borran: se desligan del usuario y quedan
     como "usuario eliminado", y el borrado en sí se registra en el historial.
     """
-    u = Usuario.query.get_or_404(id_usuario)
+    # Sin get_or_404: si el usuario ya no está (doble envío del formulario, o
+    # la pestaña llevaba abierta desde antes), un 404 seco desconcierta. Se
+    # informa y se vuelve al listado, que es lo que la persona espera ver.
+    u = db.session.get(Usuario, id_usuario)
+    if u is None:
+        flash('Ese usuario ya no existe; es posible que se eliminara antes.', 'info')
+        return redirect(url_for('admin.usuarios'))
 
     if u.id_usuario == current_user.id_usuario:
         flash('No puedes eliminar tu propia cuenta.', 'warning')
