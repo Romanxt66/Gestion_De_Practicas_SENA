@@ -17,35 +17,109 @@
         
         <form method="POST" action="{{ url_for('aprendiz.informacion') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <!-- Static fields -->
-          <div class="row mb-3">
-            <div class="col-md-6 mb-3 mb-md-0">
-              <label class="form-label text-muted">Nombre Completo</label>
-              <input type="text" class="form-control bg-dark text-muted" value="{{ usuario.nombres }} {{ usuario.apellidos }}" disabled>
+
+          <div class="row gx-3">
+            <div class="col-md-6">
+              <div class="ui-field">
+                <div class="ui-field-head">
+                  <label for="nombres">Nombres</label>
+                  <span class="ui-field-hint">Requerido</span>
+                </div>
+                <div class="ui-input-shell">
+                  <i class="bi bi-person"></i>
+                  <input type="text" id="nombres" name="nombres"
+                         value="{{ usuario.nombres or '' }}" required>
+                </div>
+              </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label text-muted">Documento</label>
-              <input type="text" class="form-control bg-dark text-muted" value="{{ usuario.tipo_documento }} {{ usuario.numero_documento }}" disabled>
+              <div class="ui-field">
+                <div class="ui-field-head">
+                  <label for="apellidos">Apellidos</label>
+                  <span class="ui-field-hint">Requerido</span>
+                </div>
+                <div class="ui-input-shell">
+                  <i class="bi bi-person"></i>
+                  <input type="text" id="apellidos" name="apellidos"
+                         value="{{ usuario.apellidos or '' }}" required>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-             <label class="form-label text-muted">Correo Electrónico (SENA)</label>
-             <input type="email" class="form-control bg-dark text-muted" value="{{ usuario.correo }}" disabled>
-          </div>
 
-          <div class="lib-divider"></div>
-          <h5 class="fs-6 fw-bold mb-3">Datos Actualizables</h5>
-
-          <!-- Editable fields -->
-          <div class="row mb-3">
-            <div class="col-md-6 mb-3 mb-md-0">
-              <label class="form-label" for="telefono">Teléfono <i class="bi bi-pencil-fill text-muted ms-1" style="font-size: 0.75rem;"></i></label>
-              <input type="text" class="form-control" id="telefono" name="telefono" value="{{ usuario.telefono or '' }}">
+          <div class="row gx-3">
+            <div class="col-md-6">
+              <div class="ui-field">
+                <div class="ui-field-head"><label for="tipo_documento">Tipo de documento</label></div>
+                <div class="ui-input-shell">
+                  <i class="bi bi-card-text"></i>
+                  <select class="form-select border-0 bg-transparent p-0 shadow-none"
+                          id="tipo_documento" name="tipo_documento"
+                          style="color: var(--text-primary); height: auto; padding: 0.85rem 0 !important;">
+                    {% for cod, etiqueta in [('CC','Cédula de Ciudadanía'), ('TI','Tarjeta de Identidad'),
+                                             ('CE','Cédula de Extranjería'), ('PEP','PEP')] %}
+                      <option value="{{ cod }}" {% if usuario.tipo_documento == cod %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="ficha">Número de Ficha <i class="bi bi-lock-fill text-muted ms-1" style="font-size: 0.75rem;"></i></label>
-              <input type="text" class="form-control" id="ficha" value="{{ aprendiz.ficha if aprendiz and aprendiz.ficha else 'Sin asignar' }}" disabled>
-              <div class="form-text text-muted" style="font-size: 0.75rem;">La ficha la asigna tu instructor o el administrador.</div>
+              <div class="ui-field">
+                <div class="ui-field-head"><label for="numero_documento">Nº de documento</label></div>
+                <div class="ui-input-shell">
+                  <i class="bi bi-hash"></i>
+                  <input type="text" id="numero_documento" name="numero_documento"
+                         value="{{ usuario.numero_documento or '' }}">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row gx-3">
+            <div class="col-md-6">
+              <div class="ui-field">
+                <div class="ui-field-head">
+                  <label for="correo">Correo electrónico</label>
+                  <span class="ui-field-hint">También es tu usuario</span>
+                </div>
+                <div class="ui-input-shell">
+                  <i class="bi bi-envelope"></i>
+                  <input type="email" id="correo" name="correo"
+                         value="{{ usuario.correo or '' }}" required>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="ui-field">
+                <div class="ui-field-head"><label for="telefono">Teléfono</label></div>
+                <div class="ui-input-shell">
+                  <i class="bi bi-telephone"></i>
+                  <input type="text" id="telefono" name="telefono"
+                         value="{{ usuario.telefono or '' }}">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ui-field">
+            <div class="ui-field-head">
+              <label for="ficha">Ficha</label>
+              <span class="ui-field-hint"><i class="bi bi-lock-fill"></i> La asigna tu instructor</span>
+            </div>
+            <div class="ui-input-shell" style="opacity: .6;">
+              <i class="bi bi-mortarboard"></i>
+              <input type="text" id="ficha" disabled
+                     value="{{ aprendiz.ficha if aprendiz and aprendiz.ficha else 'Sin asignar' }}">
+            </div>
+            {% if aprendiz and aprendiz.ficha and not aprendiz.cursos %}
+            <div class="form-text" style="color: var(--accent-amber); font-size: 0.78rem;">
+              <i class="bi bi-hourglass-split me-1"></i>
+              Esta ficha aún no está registrada. Un administrador la creará y quedarás
+              matriculado automáticamente.
+            </div>
+            {% endif %}
+          </div>
             </div>
           </div>
 

@@ -293,3 +293,95 @@ def log_historial(usuario, modulo: str, accion: str, descripcion: str = ''):
 # Nota: el envío de correo vive en app/servicios/correo.py, que además elige
 # el remitente (cuenta de Google del usuario o cuenta institucional).
 # ─────────────────────────────────────────────
+
+
+# ─────────────────────────────────────────────
+# Fichas pendientes de crear
+#
+# Un aprendiz guarda el código de su ficha en `Aprendiz.ficha` y, aparte, su
+# matrícula en `curso_aprendiz`. Si al registrarse la ficha todavía no existe
+# como curso, se queda con el código pero sin matrícula: eso es una "ficha no
+# asignada". Cuando el administrador crea el curso con ese código, los
+# aprendices que lo esperaban se matriculan solos.
+# ─────────────────────────────────────────────
+def aprendices_sin_matricula(codigo_ficha=None):
+    """Aprendices que no están matriculados en ningún curso.
+
+    Con `codigo_ficha`, solo los que esperan esa ficha concreta.
+    """
+    from app.models.aprendiz import Aprendiz
+    from app.models.curso_aprendiz import CursoAprendiz
+
+    matriculados = db.session.query(CursoAprendiz.id_aprendiz).distinct()
+    consulta = Aprendiz.query.filter(~Aprendiz.id_aprendiz.in_(matriculados))
+    if codigo_ficha is not None:
+        consulta = consulta.filter(Aprendiz.ficha == codigo_ficha)
+    else:
+        consulta = consulta.filter(Aprendiz.ficha.isnot(None), Aprendiz.ficha != '')
+    return consulta.all()
+
+
+def fichas_pendientes():
+    """Aprendices sin matricular, agrupados por el código de ficha que esperan.
+
+    Cada grupo indica si ese código ya existe como curso (`curso`), porque la
+    acción correcta es distinta: si no existe hay que crear la ficha; si existe,
+    basta con matricularlos. Sin esa distinción se le pediría al administrador
+    crear una ficha que ya tiene.
+
+    Devuelve [{'codigo', 'curso', 'aprendices', 'desde'}], de más antiguo a más
+    reciente.
+    """
+    from app.models.curso import Curso
+
+    pendientes = {}
+    for ap in aprendices_sin_matricula():
+        fila = pendientes.setdefault(ap.ficha, {'codigo': ap.ficha, 'curso': None,
+                                                'aprendices': [], 'desde': None})
+        fila['aprendices'].append(ap)
+        creado = ap.usuario.fecha_creacion if ap.usuario else None
+        if creado and (fila['desde'] is None or creado < fila['desde']):
+            fila['desde'] = creado
+
+    if pendientes:
+        existentes = {c.ficha: c for c in
+                      Curso.query.filter(Curso.ficha.in_(list(pendientes.keys()))).all()}
+        for codigo, fila in pendientes.items():
+            fila['curso'] = existentes.get(codigo)
+
+    return sorted(pendientes.values(),
+                  key=lambda f: f['desde'] or datetime.now(timezone.utc))
+
+
+def matricular_pendientes(curso):
+    """Matricula en `curso` a los aprendices que esperaban ese código de ficha.
+
+    Se llama al crear o editar un curso. No hace commit: lo hace quien llama,
+    junto con su propia transacción.
+    """
+    from app.models.curso_aprendiz import CursoAprendiz
+
+    if not curso or not curso.ficha:
+        return []
+
+    pendientes = aprendices_sin_matricula(curso.ficha)
+    for ap in pendientes:
+        db.session.add(CursoAprendiz(id_curso=curso.id_curso,
+                                     id_aprendiz=ap.id_aprendiz))
+    return pendientes
+
+
+def avisar_admins_ficha_pendiente(codigo_ficha, aprendiz_usuario):
+    """Notifica a los superusuarios que hay una ficha por crear."""
+    from app.models.notificacion import Notificacion
+    from app.models.rol import Rol
+    from app.models.usuario_rol import UsuarioRol
+
+    rol = Rol.query.filter_by(nombre='superusuario').first()
+    if not rol:
+        return
+    mensaje = (f'{aprendiz_usuario.nombres} {aprendiz_usuario.apellidos} se registró '
+               f'con la ficha "{codigo_ficha}", que aún no existe en el sistema. '
+               f'Créala para matricularlo automáticamente.')
+    for ur in UsuarioRol.query.filter_by(id_rol=rol.id_rol).all():
+        db.session.add(Notificacion(id_usuario=ur.id_usuario, mensaje=mensaje))

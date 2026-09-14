@@ -27,7 +27,8 @@ from app.models.evidencia import Evidencia
 from app.models.notificacion import Notificacion
 from app.utils import (role_required, log_historial, calcular_progreso,
                        progreso_de_aprendices, contar_evidencias_por_aprendiz,
-                       ids_cursos_de_instructor, ids_aprendices_de_instructor)
+                       ids_cursos_de_instructor, ids_aprendices_de_instructor,
+                       matricular_pendientes)
 
 bp = Blueprint('instructor', __name__, url_prefix='/instructor')
 
@@ -187,11 +188,18 @@ def crear_ficha():
 
     db.session.add(CursoInstructor(id_curso=curso.id_curso,
                                    id_instructor=inst.id_instructor))
+    esperando = matricular_pendientes(curso)
+
     log_historial(current_user, 'Fichas Instructor', 'CREAR',
                   f'Ficha {nombre} creada por instructor')
     db.session.commit()
 
-    flash('Ficha creada y asignada correctamente.', 'success')
+    if esperando:
+        flash(f'Ficha creada y asignada. Se matricularon {len(esperando)} '
+              f'aprendiz{"" if len(esperando) == 1 else "es"} que la esperaban.',
+              'success')
+    else:
+        flash('Ficha creada y asignada correctamente.', 'success')
     if request.args.get('next') == 'instructor.mis_cursos':
         return redirect(url_for('instructor.mis_cursos'))
     return redirect(url_for('instructor.fichas'))

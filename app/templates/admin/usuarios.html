@@ -112,6 +112,13 @@
                         <button type="button" class="btn btn-sm btn-secondary" disabled title="No puedes bloquearte a ti mismo">Tú</button>
                      {% endif %}
                    </form>
+                   {% if u.aprendiz %}
+                   <button type="button" class="btn btn-sm btn-ghost"
+                           data-bs-toggle="modal" data-bs-target="#modalFicha{{ u.id_usuario }}"
+                           title="Gestionar ficha del aprendiz">
+                     <i class="bi bi-mortarboard"></i>
+                   </button>
+                   {% endif %}
                    {% if current_user.id_usuario != u.id_usuario %}
                    <button type="button" class="btn btn-sm btn-ghost text-danger border-danger"
                            data-bs-toggle="modal" data-bs-target="#modalEliminarUsuario{{ u.id_usuario }}"
@@ -297,6 +304,72 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+{# ── Ficha del aprendiz ── #}
+{% for u in usuarios %}
+{% if u.aprendiz %}
+{% set matriculado = u.aprendiz.cursos[0].curso if u.aprendiz.cursos else None %}
+<div class="modal fade" id="modalFicha{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.cambiar_ficha_aprendiz', id_usuario=u.id_usuario) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-mortarboard me-2"></i>Ficha de {{ u.nombres }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="dato-row">
+            <span class="dato-k">Ficha actual</span>
+            <span class="dato-v">
+              {% if matriculado %}
+                {{ matriculado.nombre }}
+                <span class="codigo-ficha d-block">{{ matriculado.ficha or 'sin código' }}</span>
+              {% elif u.aprendiz.ficha %}
+                <span class="badge-lib badge-amber">En espera: {{ u.aprendiz.ficha }}</span>
+              {% else %}
+                <span class="text-muted fst-italic">Sin asignar</span>
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="ui-field mt-3">
+            <div class="ui-field-head"><label for="curso{{ u.id_usuario }}">Mover a</label></div>
+            <select class="form-select" id="curso{{ u.id_usuario }}" name="id_curso">
+              <option value="">— Sin asignar —</option>
+              {% for c in cursos %}
+                <option value="{{ c.id_curso }}"
+                  {% if matriculado and matriculado.id_curso == c.id_curso %}selected{% endif %}>
+                  {{ c.nombre }}{% if c.ficha %} · {{ c.ficha }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {% if u.aprendiz.ficha and not matriculado %}
+          <div class="ui-note mt-3">
+            <i class="bi bi-info-circle ui-note-icon"></i>
+            <div>
+              <span class="ui-note-title">Esperando su ficha</span>
+              <p class="ui-note-text">
+                Se registró con el código <strong>{{ u.aprendiz.ficha }}</strong>, que
+                aún no existe. Si creas esa ficha, se matricula solo.
+              </p>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
 
 {# ── Eliminar usuario: irreversible, exige reescribir el correo ── #}
 {% for u in usuarios %}

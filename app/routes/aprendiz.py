@@ -170,15 +170,46 @@ def progreso():
 def informacion():
     ap = _get_aprendiz()
     if request.method == 'POST':
+        nombres = request.form.get('nombres', '').strip()
+        apellidos = request.form.get('apellidos', '').strip()
+        correo = request.form.get('correo', '').strip().lower()
         telefono = request.form.get('telefono', '').strip()
+        tipo_documento = request.form.get('tipo_documento', '').strip()
+        numero_documento = request.form.get('numero_documento', '').strip()
+
+        if not nombres or not apellidos:
+            flash('Nombres y apellidos son obligatorios.', 'danger')
+            return redirect(url_for('aprendiz.informacion'))
+
+        if '@' not in correo or '.' not in correo.split('@')[-1]:
+            flash('Ingresa un correo electrónico válido.', 'danger')
+            return redirect(url_for('aprendiz.informacion'))
+
+        # El correo es además la credencial de acceso: no puede repetirse
+        if correo != current_user.correo:
+            from app.models.usuario import Usuario
+            if Usuario.query.filter_by(correo=correo).first():
+                flash('Ya existe una cuenta con ese correo.', 'warning')
+                return redirect(url_for('aprendiz.informacion'))
+
         if telefono and not telefono.replace(' ', '').replace('-', '').replace('+', '').isdigit():
             flash('El teléfono solo puede contener números.', 'danger')
             return redirect(url_for('aprendiz.informacion'))
+
+        cambio_correo = correo != current_user.correo
+        current_user.nombres = nombres
+        current_user.apellidos = apellidos
+        current_user.correo = correo
         current_user.telefono = telefono
-        # La ficha la asigna el instructor/administrador: el aprendiz no puede
-        # cambiarla por su cuenta porque dejaría de coincidir con su curso.
+        current_user.tipo_documento = tipo_documento or None
+        current_user.numero_documento = numero_documento or None
+        # La ficha la gestiona el instructor o el administrador: si el aprendiz
+        # pudiera cambiarla, dejaría de coincidir con el curso en el que está
+        # matriculado.
         db.session.commit()
-        flash('Información actualizada.', 'success')
+
+        flash('Datos actualizados.' + (' A partir de ahora entra con tu nuevo correo.'
+                                       if cambio_correo else ''), 'success')
         return redirect(url_for('aprendiz.informacion'))
     return render_template('aprendiz/informacion.html',
                            aprendiz=ap, usuario=current_user)

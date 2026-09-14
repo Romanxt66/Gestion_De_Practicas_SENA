@@ -15,7 +15,8 @@ from app.models.usuario_rol import UsuarioRol
 from app.models.aprendiz import Aprendiz
 from app.models.curso import Curso
 from app.models.curso_aprendiz import CursoAprendiz
-from app.utils import get_user_role, HORAS_PRACTICA_POR_DEFECTO
+from app.utils import (get_user_role, HORAS_PRACTICA_POR_DEFECTO,
+                       avisar_admins_ficha_pendiente)
 
 bp = Blueprint('auth', __name__)
 
@@ -139,10 +140,10 @@ def registro():
             flash('Ya existe una cuenta con ese correo.', 'warning')
             return render_template('auth/registro.html')
             
+        # Si la ficha todavía no existe como curso, el registro NO se rechaza:
+        # el aprendiz queda en espera y se avisa a los administradores para que
+        # la creen. Al crearla, se matricula solo (ver utils.matricular_pendientes).
         curso_asignar = Curso.query.filter_by(ficha=datos['codigo_ficha']).first()
-        if not curso_asignar:
-            flash(f"El código de curso/ficha '{datos['codigo_ficha']}' no existe.", 'danger')
-            return render_template('auth/registro.html')
 
         # Crear usuario
         nuevo_usuario = Usuario(
@@ -173,14 +174,21 @@ def registro():
         )
         db.session.add(aprendiz)
         db.session.flush()
-        
-        # Asignar a la ficha encontrada
-        curso_aprendiz = CursoAprendiz(id_curso=curso_asignar.id_curso, id_aprendiz=aprendiz.id_aprendiz)
-        db.session.add(curso_aprendiz)
-        
+
+        if curso_asignar:
+            db.session.add(CursoAprendiz(id_curso=curso_asignar.id_curso,
+                                         id_aprendiz=aprendiz.id_aprendiz))
+        else:
+            avisar_admins_ficha_pendiente(datos['codigo_ficha'], nuevo_usuario)
+
         db.session.commit()
 
-        flash('Cuenta creada correctamente. Inicia sesión.', 'success')
+        if curso_asignar:
+            flash('Cuenta creada correctamente. Inicia sesión.', 'success')
+        else:
+            flash(f"Cuenta creada. La ficha {datos['codigo_ficha']} todavía no está "
+                  "registrada: un administrador la creará y quedarás matriculado "
+                  "automáticamente. Ya puedes iniciar sesión.", 'info')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/registro.html')

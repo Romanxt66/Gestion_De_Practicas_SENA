@@ -642,6 +642,133 @@ if capturados:
           m['Auto-Submitted'] == 'auto-generated', str(m['Auto-Submitted']))
     check('lleva versión en texto plano y en HTML', m.is_multipart())
 
+print('\n── Fichas no asignadas y auto-matrícula ──')
+from app.utils import fichas_pendientes, aprendices_sin_matricula
+from app.models.notificacion import Notificacion as Notif3
+
+CODIGO_NUEVO = 'ZZ-PENDIENTE-1'
+reg = app.test_client()
+t = token(reg, '/registro')
+r = reg.post('/registro', data={
+    'tipo_documento': 'CC', 'numero_documento': '999', 'nombres': 'Ana',
+    'apellidos': 'Pendiente', 'correo': 'ana.pendiente@test.com', 'telefono': '300',
+    'password': 'clave123', 'confirm_password': 'clave123',
+    'codigo_ficha': CODIGO_NUEVO, 'csrf_token': t}, follow_redirects=True)
+check('el registro con ficha inexistente ya NO se rechaza',
+      'no existe' not in r.get_data(as_text=True))
+check('y avisa de que quedará en espera',
+      'todav' in r.get_data(as_text=True).lower() or 'espera' in r.get_data(as_text=True).lower())
+
+with app.app_context():
+    creada = Usuario.query.filter_by(correo='ana.pendiente@test.com').first()
+    check('la cuenta se crea igual', creada is not None and creada.aprendiz is not None)
+    check('con el código guardado', creada and creada.aprendiz.ficha == CODIGO_NUEVO)
+    check('pero sin matrícula en ningún curso', creada and len(creada.aprendiz.cursos) == 0)
+    pend = [f['codigo'] for f in fichas_pendientes()]
+    check('aparece como ficha pendiente', CODIGO_NUEVO in pend, str(pend))
+    avisos = Notif3.query.filter(Notif3.mensaje.like(f'%{CODIGO_NUEVO}%')).count()
+    check('se avisó al administrador', avisos >= 1, str(avisos))
+
+check('el panel de fichas muestra las pendientes',
+      CODIGO_NUEVO in c_admin.get('/admin/fichas').get_data(as_text=True))
+
+# Al crear la ficha con ese código, se matricula solo
+t = token(c_admin, '/admin/fichas')
+r = c_admin.post('/admin/fichas/crear', data={
+    'nombre': 'Ficha Recien Creada', 'ficha': CODIGO_NUEVO, 'csrf_token': t},
+    follow_redirects=True)
+check('al crear la ficha avisa de la matrícula automática',
+      'matricularon' in r.get_data(as_text=True))
+with app.app_context():
+    creada = Usuario.query.filter_by(correo='ana.pendiente@test.com').first()
+    check('el aprendiz quedó matriculado solo', len(creada.aprendiz.cursos) == 1)
+    check('y ya no figura como pendiente',
+          CODIGO_NUEVO not in [f['codigo'] for f in fichas_pendientes()])
+    id_ana = creada.id_usuario
+
+# Caso distinto: el código SÍ existe como ficha pero falta la matrícula
+with app.app_context():
+    curso_real = db.session.get(Curso, id_curso)
+    huerfano = Usuario(nombres='Sin', apellidos='Matricula',
+                       correo='sin.matricula@test.com',
+                       password_hash=generate_password_hash('x'), estado=True)
+    db.session.add(huerfano); db.session.flush()
+    db.session.add(Aprendiz(id_usuario=huerfano.id_usuario, ficha=curso_real.ficha,
+                            estado_practica='En proceso'))
+    db.session.commit()
+    id_huerfano = huerfano.id_usuario
+    grupo = next((f for f in fichas_pendientes() if f['codigo'] == curso_real.ficha), None)
+    check('detecta al aprendiz sin matrícula', grupo is not None)
+    check('y sabe que esa ficha SÍ existe', grupo and grupo['curso'] is not None)
+
+t = token(c_admin, '/admin/fichas')
+r = c_admin.post('/admin/fichas/matricular-pendientes',
+                 data={'codigo': curso_real.ficha, 'csrf_token': t}, follow_redirects=True)
+check('los matricula sin crear otra ficha', 'matricularon' in r.get_data(as_text=True))
+with app.app_context():
+    h = db.session.get(Usuario, id_huerfano)
+    check('el aprendiz quedó matriculado', len(h.aprendiz.cursos) == 1)
+    check('y no se duplicó la ficha',
+          Curso.query.filter_by(ficha=curso_real.ficha).count() == 1)
+
+print('\n── El administrador gestiona la ficha del aprendiz ──')
+with app.app_context():
+    otro_curso = Curso.query.filter(Curso.id_curso != id_curso).first()
+t = token(c_admin, '/admin/usuarios')
+if otro_curso:
+    r = c_admin.post(f'/admin/usuarios/{id_ana}/ficha',
+                     data={'id_curso': otro_curso.id_curso, 'csrf_token': t},
+                     follow_redirects=True)
+    with app.app_context():
+        a = db.session.get(Usuario, id_ana)
+        check('mueve al aprendiz de ficha',
+              len(a.aprendiz.cursos) == 1 and a.aprendiz.cursos[0].id_curso == otro_curso.id_curso)
+        check('y sincroniza el código de ficha', a.aprendiz.ficha == otro_curso.ficha)
+
+t = token(c_admin, '/admin/usuarios')
+r = c_admin.post(f'/admin/usuarios/{id_ana}/ficha',
+                 data={'id_curso': '', 'csrf_token': t}, follow_redirects=True)
+with app.app_context():
+    a = db.session.get(Usuario, id_ana)
+    check('puede dejarlo sin ficha', len(a.aprendiz.cursos) == 0 and a.aprendiz.ficha is None)
+
+t2 = token(c_inst, '/instructor/aprendices')
+r = c_inst.post(f'/admin/usuarios/{id_ana}/ficha', data={'id_curso': '', 'csrf_token': t2})
+check('un instructor no puede cambiar fichas de usuarios', r.status_code == 403, str(r.status_code))
+
+print('\n── El aprendiz edita sus datos ──')
+t = token(c_ap, '/aprendiz/informacion')
+r = c_ap.post('/aprendiz/informacion', data={
+    'nombres': 'NombreNuevo', 'apellidos': 'ApellidoNuevo', 'correo': ap.correo,
+    'telefono': '3001234567', 'tipo_documento': 'TI', 'numero_documento': '55512345',
+    'csrf_token': t}, follow_redirects=True)
+with app.app_context():
+    a = db.session.get(Usuario, ap.id_usuario)
+    check('guarda nombres y apellidos', a.nombres == 'NombreNuevo' and a.apellidos == 'ApellidoNuevo')
+    check('guarda el documento', a.tipo_documento == 'TI' and a.numero_documento == '55512345')
+    ficha_antes = a.aprendiz.ficha
+
+t = token(c_ap, '/aprendiz/informacion')
+r = c_ap.post('/aprendiz/informacion', data={
+    'nombres': 'NombreNuevo', 'apellidos': 'ApellidoNuevo', 'correo': 'no-es-correo',
+    'telefono': '', 'csrf_token': t}, follow_redirects=True)
+check('rechaza un correo inválido', 'correo electrónico válido' in r.get_data(as_text=True))
+
+t = token(c_ap, '/aprendiz/informacion')
+r = c_ap.post('/aprendiz/informacion', data={
+    'nombres': 'X', 'apellidos': 'Y', 'correo': inst.correo,
+    'telefono': '', 'csrf_token': t}, follow_redirects=True)
+check('rechaza un correo ya usado por otra cuenta', 'Ya existe una cuenta' in r.get_data(as_text=True))
+
+# La ficha no se puede cambiar desde ahí aunque se envíe en el formulario
+t = token(c_ap, '/aprendiz/informacion')
+c_ap.post('/aprendiz/informacion', data={
+    'nombres': 'NombreNuevo', 'apellidos': 'ApellidoNuevo', 'correo': ap.correo,
+    'telefono': '', 'ficha': 'INTENTO-DE-CAMBIO', 'csrf_token': t}, follow_redirects=True)
+with app.app_context():
+    check('el aprendiz NO puede cambiarse la ficha',
+          db.session.get(Usuario, ap.id_usuario).aprendiz.ficha == ficha_antes)
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

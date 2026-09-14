@@ -2,6 +2,81 @@
 {% block title %}Gestión de Fichas — SENA Prácticas{% endblock %}
 
 {% block content %}
+
+{# ── Fichas que esperan a ser creadas ── #}
+{% if pendientes %}
+<div class="biblioteca-shell mb-4" style="border-color: rgba(245,158,11,.3) !important;">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon" style="background: var(--accent-amber-glow); border-color: rgba(245,158,11,.28); color: var(--accent-amber);">
+      <i class="bi bi-exclamation-triangle"></i>
+    </div>
+    <h4>Aprendices sin ficha asignada</h4>
+    <span class="badge-lib badge-amber ms-auto">{{ pendientes | length }}</span>
+  </div>
+  <div class="biblioteca-shell-body">
+    <p class="text-secondary mb-4">
+      Estos aprendices no están matriculados en ninguna ficha. Si el código todavía
+      no existe, al crear la ficha quedan matriculados automáticamente; si ya existe,
+      basta con matricularlos.
+    </p>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Código de ficha</th>
+            <th class="text-center">Aprendices en espera</th>
+            <th>Quiénes son</th>
+            <th class="text-end">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pendientes %}
+          <tr>
+            <td>
+              <span class="codigo-ficha" style="font-size: 0.95rem; color: var(--accent-amber);">{{ p.codigo }}</span>
+              {% if p.curso %}
+                <div class="small text-secondary">{{ p.curso.nombre }}</div>
+              {% else %}
+                <div class="small text-muted fst-italic">La ficha no existe</div>
+              {% endif %}
+            </td>
+            <td class="text-center"><span class="badge-lib badge-amber">{{ p.aprendices | length }}</span></td>
+            <td>
+              <div class="small text-secondary">
+                {% for a in p.aprendices[:3] %}
+                  {{ a.usuario.nombres }} {{ a.usuario.apellidos }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% if p.aprendices | length > 3 %}
+                  <span class="text-muted">y {{ p.aprendices | length - 3 }} más</span>
+                {% endif %}
+              </div>
+            </td>
+            <td class="text-end">
+              {% if p.curso %}
+                <form method="POST" action="{{ url_for('admin.matricular_pendientes_ficha') }}" class="m-0 d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="codigo" value="{{ p.codigo }}">
+                  <button type="submit" class="btn btn-sm btn-success">
+                    <i class="bi bi-person-check me-1"></i> Matricular
+                  </button>
+                </form>
+              {% else %}
+                <button type="button" class="btn btn-sm btn-success"
+                        data-bs-toggle="modal" data-bs-target="#modalCrearFicha"
+                        data-codigo="{{ p.codigo }}">
+                  <i class="bi bi-plus-lg me-1"></i> Crear esta ficha
+                </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="page-toolbar">
   <div class="d-flex justify-content-between align-items-center gap-4 mb-2">
     <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">Gestión de Fichas / Cursos</h2>
@@ -289,4 +364,17 @@
   </div>
 </div>
 {% endfor %}
+
+<script>
+  // "Crear esta ficha" abre el modal con el código ya escrito
+  document.querySelectorAll('[data-codigo]').forEach(function (boton) {
+    boton.addEventListener('click', function () {
+      const modal = document.querySelector('#modalCrearFicha');
+      if (!modal) return;
+      const campo = modal.querySelector('[name="ficha"]');
+      if (campo) campo.value = this.dataset.codigo;
+    });
+  });
+</script>
+
 {% endblock %}

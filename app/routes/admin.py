@@ -34,7 +34,8 @@ from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.models.aprendiz_backup import AprendizBackup
 from app.utils import (role_required, log_historial, calcular_progreso,
-                       directorio_evidencias, HORAS_PRACTICA_POR_DEFECTO)
+                       directorio_evidencias, fichas_pendientes,
+                       matricular_pendientes, HORAS_PRACTICA_POR_DEFECTO)
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -156,7 +157,8 @@ def usuarios():
     lista = query.order_by(Usuario.fecha_creacion.desc()).all()
     roles = Rol.query.all()
     return render_template('admin/usuarios.html', usuarios=lista, roles=roles, q=q,
-                           resumen=_resumen_borrado(lista))
+                           resumen=_resumen_borrado(lista),
+                           cursos=Curso.query.order_by(Curso.nombre).all())
 
 
 @bp.route('/usuarios/crear', methods=['POST'])
@@ -348,6 +350,80 @@ def eliminar_usuario(id_usuario):
 
     flash(f'Usuario {etiqueta} eliminado definitivamente.', 'success')
     return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/usuarios/<int:id_usuario>/ficha', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def cambiar_ficha_aprendiz(id_usuario):
+    """Mueve a un aprendiz de ficha, o lo deja sin asignar.
+
+    Mantiene sincronizadas las dos caras del dato: el código en `aprendiz.ficha`
+    y la matrícula en `curso_aprendiz`. Si se desincronizan, el aprendiz aparece
+    como pendiente aunque tenga curso, o al revés.
+    """
+    u = Usuario.query.get_or_404(id_usuario)
+    if not u.aprendiz:
+        flash('Ese usuario no tiene perfil de aprendiz.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    id_curso = request.form.get('id_curso', type=int)
+    ap = u.aprendiz
+
+    CursoAprendiz.query.filter_by(id_aprendiz=ap.id_aprendiz).delete(
+        synchronize_session=False)
+
+    if id_curso:
+        curso = Curso.query.get(id_curso)
+        if not curso:
+            db.session.rollback()
+            flash('La ficha seleccionada no existe.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+        db.session.add(CursoAprendiz(id_curso=curso.id_curso,
+                                     id_aprendiz=ap.id_aprendiz))
+        ap.ficha = curso.ficha
+        detalle = f'Aprendiz {u.correo} asignado a la ficha {curso.nombre}'
+        aviso = f'Aprendiz movido a la ficha "{curso.nombre}".'
+    else:
+        ap.ficha = None
+        detalle = f'Aprendiz {u.correo} retirado de su ficha'
+        aviso = 'Aprendiz retirado de su ficha.'
+
+    log_historial(current_user, 'Aprendiz', 'MODIFICAR', detalle)
+    db.session.commit()
+    flash(aviso, 'success')
+    destino = request.form.get('next')
+    if destino and destino.startswith('/') and not destino.startswith('//'):
+        return redirect(destino)
+    return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/fichas/matricular-pendientes', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def matricular_pendientes_ficha():
+    """Matricula de golpe a los aprendices que esperan una ficha que ya existe.
+
+    Es el caso de un código correcto sin matrícula: el curso está, solo falta
+    el vínculo. Crear otra ficha sería un error.
+    """
+    codigo = request.form.get('codigo', '').strip()
+    curso = Curso.query.filter_by(ficha=codigo).first() if codigo else None
+    if not curso:
+        flash('No existe ninguna ficha con ese código.', 'danger')
+        return redirect(url_for('admin.fichas'))
+
+    matriculados = matricular_pendientes(curso)
+    if matriculados:
+        log_historial(current_user, 'Fichas', 'MODIFICAR',
+                      f'{len(matriculados)} aprendices matriculados en {curso.nombre}')
+        db.session.commit()
+        flash(f'Se matricularon {len(matriculados)} '
+              f'aprendiz{"" if len(matriculados) == 1 else "es"} en «{curso.nombre}».',
+              'success')
+    else:
+        flash('No quedaban aprendices por matricular en esa ficha.', 'info')
+    return redirect(url_for('admin.fichas'))
 
 
 # ─── Asignar Roles ────────────────────────────
@@ -658,6 +734,7 @@ def fichas():
     return render_template('admin/fichas/lista.html',
                            fichas_data=fichas_data,
                            instructores=instructores_disponibles,
+                           pendientes=fichas_pendientes(),
                            q=q)
 
 
@@ -695,10 +772,20 @@ def crear_ficha():
     curso = Curso(nombre=nombre, ficha=ficha or None,
                   fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
     db.session.add(curso)
+    db.session.flush()
+
+    # Los aprendices que se registraron con este código quedaban en espera
+    esperando = matricular_pendientes(curso)
+
     log_historial(current_user, 'Fichas', 'CREAR', f'Ficha {nombre} creada')
     db.session.commit()
 
-    flash('Ficha creada correctamente.', 'success')
+    if esperando:
+        flash(f'Ficha creada. Se matricularon automáticamente {len(esperando)} '
+              f'aprendiz{"" if len(esperando) == 1 else "es"} que la esperaban.',
+              'success')
+    else:
+        flash('Ficha creada correctamente.', 'success')
     return redirect(url_for('admin.fichas'))
 
 
