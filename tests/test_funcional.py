@@ -484,6 +484,92 @@ with app.app_context():
     check('desconectar elimina la cuenta',
           CuentaGoogle.query.filter_by(id_usuario=ap.id_usuario).first() is None)
 
+print('\n── Eliminar usuarios (admin) ──')
+from app.models.historial_cambios import HistorialCambios
+from app.models.rol import Rol
+from app.models.usuario_rol import UsuarioRol
+from app.models.curso_aprendiz import CursoAprendiz as CA2
+from app.models.notificacion import Notificacion as Notif2
+
+# Se crea un aprendiz de usar y tirar, con evidencia, matrícula e historial
+with app.app_context():
+    victima = Usuario(nombres='Borrar', apellidos='Me', correo='borrar.me@test.com',
+                      password_hash=generate_password_hash('clave123'), estado=True)
+    db.session.add(victima); db.session.flush()
+    rol_ap = Rol.query.filter_by(nombre='aprendiz').first()
+    db.session.add(UsuarioRol(id_usuario=victima.id_usuario, id_rol=rol_ap.id_rol))
+    ap_v = Aprendiz(id_usuario=victima.id_usuario, estado_practica='En proceso')
+    db.session.add(ap_v); db.session.flush()
+    db.session.add(CA2(id_curso=id_curso, id_aprendiz=ap_v.id_aprendiz))
+    db.session.add(Evidencia(id_aprendiz=ap_v.id_aprendiz, tipo='texto',
+                             contenido='evidencia de prueba', estado='Entregada'))
+    db.session.add(Notif2(id_usuario=victima.id_usuario, mensaje='hola'))
+    db.session.add(HistorialCambios(id_usuario=victima.id_usuario, modulo='Prueba',
+                                    accion='CREAR', descripcion='rastro de auditoria'))
+    db.session.commit()
+    id_victima = victima.id_usuario
+    id_ap_victima = ap_v.id_aprendiz
+
+html = c_admin.get('/admin/usuarios').get_data(as_text=True)
+check('el listado ofrece eliminar', 'modalEliminarUsuario' in html)
+check('el modal resume lo que se pierde', 'Se eliminará también' in html)
+
+# Sin la confirmación correcta no se borra nada
+t = token(c_admin, '/admin/usuarios')
+r = c_admin.post(f'/admin/usuarios/{id_victima}/eliminar',
+                 data={'csrf_token': t, 'confirmacion': 'otra-cosa@test.com'},
+                 follow_redirects=True)
+check('rechaza una confirmación que no coincide', 'no coincide' in r.get_data(as_text=True))
+with app.app_context():
+    check('y el usuario sigue existiendo', db.session.get(Usuario, id_victima) is not None)
+
+# No puede eliminarse a sí mismo
+t = token(c_admin, '/admin/usuarios')
+r = c_admin.post(f'/admin/usuarios/{admin.id_usuario}/eliminar',
+                 data={'csrf_token': t, 'confirmacion': admin.correo}, follow_redirects=True)
+check('no puede eliminar su propia cuenta', 'propia cuenta' in r.get_data(as_text=True))
+with app.app_context():
+    check('el admin sigue ahí', db.session.get(Usuario, admin.id_usuario) is not None)
+
+# Un instructor no puede llegar a esta ruta
+t2 = token(c_inst, '/instructor/aprendices')
+r = c_inst.post(f'/admin/usuarios/{id_victima}/eliminar',
+                data={'csrf_token': t2, 'confirmacion': 'borrar.me@test.com'})
+check('un instructor no puede eliminar usuarios', r.status_code == 403, str(r.status_code))
+
+# Con la confirmación correcta, se borra en cascada
+t = token(c_admin, '/admin/usuarios')
+r = c_admin.post(f'/admin/usuarios/{id_victima}/eliminar',
+                 data={'csrf_token': t, 'confirmacion': 'borrar.me@test.com'},
+                 follow_redirects=True)
+check('elimina el usuario', 'eliminado definitivamente' in r.get_data(as_text=True))
+with app.app_context():
+    check('  · el usuario ya no existe', db.session.get(Usuario, id_victima) is None)
+    check('  · se borró su perfil de aprendiz', db.session.get(Aprendiz, id_ap_victima) is None)
+    check('  · se borraron sus evidencias',
+          Evidencia.query.filter_by(id_aprendiz=id_ap_victima).count() == 0)
+    check('  · se borró su matrícula en la ficha',
+          CA2.query.filter_by(id_aprendiz=id_ap_victima).count() == 0)
+    check('  · se borraron sus notificaciones',
+          Notif2.query.filter_by(id_usuario=id_victima).count() == 0)
+    rastro = HistorialCambios.query.filter_by(descripcion='rastro de auditoria').first()
+    check('  · SE CONSERVA su historial de auditoría', rastro is not None)
+    check('  · desligado del usuario borrado', rastro is not None and rastro.id_usuario is None)
+    check('  · y queda registrado quién lo eliminó',
+          HistorialCambios.query.filter(
+              HistorialCambios.descripcion.like('%borrar.me@test.com%'),
+              HistorialCambios.accion == 'ELIMINAR').first() is not None)
+
+# El historial se sigue pudiendo abrir y exportar con entradas huérfanas
+check('el historial se muestra con entradas sin usuario',
+      c_admin.get('/admin/historial').status_code == 200)
+check('la exportación a Excel no falla',
+      c_admin.get('/admin/backup/exportar/historial').status_code == 200)
+
+# La ficha del curso no se toca al borrar a uno de sus aprendices
+with app.app_context():
+    check('la ficha sigue existiendo', db.session.get(Curso, id_curso) is not None)
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

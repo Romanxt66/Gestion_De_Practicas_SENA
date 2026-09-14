@@ -4,7 +4,10 @@ from datetime import datetime, timezone
 class HistorialCambios(db.Model):
     __tablename__ = 'historial_cambios'
     id_historial = db.Column(db.Integer, primary_key=True)
-    id_usuario   = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=False)
+    # Admite nulo a propósito: si se elimina un usuario, sus entradas de
+    # auditoría se conservan (quedan como 'usuario eliminado'). Borrar el
+    # rastro de lo que hizo alguien sería justo lo contrario de auditar.
+    id_usuario   = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=True)
     modulo       = db.Column(db.String(50))
     accion       = db.Column(db.Enum('CREAR', 'MODIFICAR', 'ELIMINAR', name='accion_enum'))
     descripcion  = db.Column(db.Text)

@@ -31,8 +31,12 @@
                 <span class="ts-label fw-bold" style="color: var(--text-primary);">{{ h.fecha.strftime('%Y-%m-%d %H:%M:%S') if h.fecha else '--' }}</span>
               </td>
               <td>
-                <span class="text-primary fw-medium">{{ h.usuario.nombres }} {{ h.usuario.apellidos }}</span>
-                <br><small class="text-muted">{{ h.usuario.correo }}</small>
+                {% if h.usuario %}
+                  <span class="text-primary fw-medium">{{ h.usuario.nombres }} {{ h.usuario.apellidos }}</span>
+                  <br><small class="text-muted">{{ h.usuario.correo }}</small>
+                {% else %}
+                  <span class="text-muted fst-italic">Usuario eliminado</span>
+                {% endif %}
               </td>
               <td><span class="badge-lib badge-gray fw-bold font-monospace"><i class="bi bi-hdd-network me-1"></i> {{ h.modulo }}</span></td>
               <td>

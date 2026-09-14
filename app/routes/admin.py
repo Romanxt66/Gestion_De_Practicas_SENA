@@ -10,6 +10,7 @@ Blueprint Admin/Superusuario:
   /admin/fichas
 """
 import io
+import os
 from datetime import datetime
 
 from flask import (Blueprint, render_template, redirect, url_for,
@@ -29,8 +30,11 @@ from app.models.instructor import Instructor
 from app.models.rol import Rol
 from app.models.usuario import Usuario
 from app.models.usuario_rol import UsuarioRol
+from app.models.notificacion import Notificacion
+from app.models.progreso_aprendiz import ProgresoAprendiz
+from app.models.aprendiz_backup import AprendizBackup
 from app.utils import (role_required, log_historial, calcular_progreso,
-                       HORAS_PRACTICA_POR_DEFECTO)
+                       directorio_evidencias, HORAS_PRACTICA_POR_DEFECTO)
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -64,6 +68,54 @@ def _es_superusuario(id_usuario):
     if not id_rol:
         return False
     return UsuarioRol.query.filter_by(id_usuario=id_usuario, id_rol=id_rol).first() is not None
+
+
+def _resumen_borrado(usuarios):
+    """Qué se llevaría por delante el borrado de cada usuario.
+
+    Se calcula en consultas agrupadas (no una por usuario) para poder mostrarlo
+    en la confirmación sin penalizar el listado.
+    """
+    ids = [u.id_usuario for u in usuarios]
+    resumen = {i: {'evidencias': 0, 'fichas': 0, 'notificaciones': 0, 'historial': 0}
+               for i in ids}
+    if not ids:
+        return resumen
+
+    def _contar(consulta, clave):
+        for id_usuario, total in consulta:
+            if id_usuario in resumen:
+                resumen[id_usuario][clave] = int(total)
+
+    _contar(db.session.query(Notificacion.id_usuario, db.func.count())
+            .filter(Notificacion.id_usuario.in_(ids))
+            .group_by(Notificacion.id_usuario).all(), 'notificaciones')
+
+    _contar(db.session.query(HistorialCambios.id_usuario, db.func.count())
+            .filter(HistorialCambios.id_usuario.in_(ids))
+            .group_by(HistorialCambios.id_usuario).all(), 'historial')
+
+    # Evidencias y fichas del aprendiz
+    _contar(db.session.query(Aprendiz.id_usuario, db.func.count(Evidencia.id_evidencia))
+            .join(Evidencia, Evidencia.id_aprendiz == Aprendiz.id_aprendiz)
+            .filter(Aprendiz.id_usuario.in_(ids))
+            .group_by(Aprendiz.id_usuario).all(), 'evidencias')
+
+    _contar(db.session.query(Aprendiz.id_usuario, db.func.count())
+            .join(CursoAprendiz, CursoAprendiz.id_aprendiz == Aprendiz.id_aprendiz)
+            .filter(Aprendiz.id_usuario.in_(ids))
+            .group_by(Aprendiz.id_usuario).all(), 'fichas')
+
+    # Fichas a cargo del instructor (se suman a la misma casilla)
+    for id_usuario, total in (db.session.query(Instructor.id_usuario, db.func.count())
+                              .join(CursoInstructor,
+                                    CursoInstructor.id_instructor == Instructor.id_instructor)
+                              .filter(Instructor.id_usuario.in_(ids))
+                              .group_by(Instructor.id_usuario).all()):
+        if id_usuario in resumen:
+            resumen[id_usuario]['fichas'] += int(total)
+
+    return resumen
 
 
 # ─── Dashboard ────────────────────────────────
@@ -103,7 +155,8 @@ def usuarios():
         )
     lista = query.order_by(Usuario.fecha_creacion.desc()).all()
     roles = Rol.query.all()
-    return render_template('admin/usuarios.html', usuarios=lista, roles=roles, q=q)
+    return render_template('admin/usuarios.html', usuarios=lista, roles=roles, q=q,
+                           resumen=_resumen_borrado(lista))
 
 
 @bp.route('/usuarios/crear', methods=['POST'])
@@ -214,6 +267,80 @@ def toggle_usuario(id_usuario):
                   f'Usuario {u.correo} {estado_str}')
     db.session.commit()
     flash(f'Usuario {estado_str}.', 'success')
+    return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/usuarios/<int:id_usuario>/eliminar', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def eliminar_usuario(id_usuario):
+    """Elimina definitivamente un usuario y todo lo que cuelga de él.
+
+    Es irreversible. Para retirar el acceso sin perder datos está el bloqueo.
+    Las entradas de auditoría NO se borran: se desligan del usuario y quedan
+    como "usuario eliminado", y el borrado en sí se registra en el historial.
+    """
+    u = Usuario.query.get_or_404(id_usuario)
+
+    if u.id_usuario == current_user.id_usuario:
+        flash('No puedes eliminar tu propia cuenta.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    if _es_superusuario(u.id_usuario) and _total_superusuarios_activos() <= 1 and u.estado:
+        flash('No puedes eliminar al único superusuario activo.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    # La confirmación exige reescribir el correo: evita borrar la fila de al lado
+    if request.form.get('confirmacion', '').strip().lower() != (u.correo or '').lower():
+        flash('La confirmación no coincide con el correo del usuario.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    etiqueta = f'{u.nombres} {u.apellidos} <{u.correo}>'
+    archivos = []
+
+    # ── Aprendiz: evidencias, progreso, matrículas y respaldo ──
+    if u.aprendiz:
+        id_ap = u.aprendiz.id_aprendiz
+        for ev in Evidencia.query.filter_by(id_aprendiz=id_ap).all():
+            if ev.tipo == 'archivo' and ev.contenido:
+                archivos.append(os.path.basename(ev.contenido))
+        Evidencia.query.filter_by(id_aprendiz=id_ap).delete(synchronize_session=False)
+        ProgresoAprendiz.query.filter_by(id_aprendiz=id_ap).delete(synchronize_session=False)
+        CursoAprendiz.query.filter_by(id_aprendiz=id_ap).delete(synchronize_session=False)
+        AprendizBackup.query.filter_by(id_aprendiz=id_ap).delete(synchronize_session=False)
+        db.session.delete(u.aprendiz)
+
+    # ── Instructor: sus asignaciones a fichas (las fichas se conservan) ──
+    if u.instructor:
+        CursoInstructor.query.filter_by(
+            id_instructor=u.instructor.id_instructor).delete(synchronize_session=False)
+        db.session.delete(u.instructor)
+
+    # ── Comunes ──
+    Notificacion.query.filter_by(id_usuario=id_usuario).delete(synchronize_session=False)
+    UsuarioRol.query.filter_by(id_usuario=id_usuario).delete(synchronize_session=False)
+    if u.cuenta_google:
+        db.session.delete(u.cuenta_google)
+
+    # El rastro de auditoría se conserva, desligado del usuario borrado
+    HistorialCambios.query.filter_by(id_usuario=id_usuario).update(
+        {'id_usuario': None}, synchronize_session=False)
+
+    log_historial(current_user, 'Usuarios', 'ELIMINAR',
+                  f'Usuario eliminado definitivamente: {etiqueta}')
+    db.session.delete(u)
+    db.session.commit()
+
+    # Los archivos se borran una vez confirmada la transacción
+    if archivos:
+        carpeta = directorio_evidencias()
+        for nombre in archivos:
+            try:
+                os.remove(os.path.join(carpeta, nombre))
+            except OSError:
+                pass
+
+    flash(f'Usuario {etiqueta} eliminado definitivamente.', 'success')
     return redirect(url_for('admin.usuarios'))
 
 

@@ -112,6 +112,13 @@
                         <button type="button" class="btn btn-sm btn-secondary" disabled title="No puedes bloquearte a ti mismo">Tú</button>
                      {% endif %}
                    </form>
+                   {% if current_user.id_usuario != u.id_usuario %}
+                   <button type="button" class="btn btn-sm btn-ghost text-danger border-danger"
+                           data-bs-toggle="modal" data-bs-target="#modalEliminarUsuario{{ u.id_usuario }}"
+                           title="Eliminar definitivamente">
+                     <i class="bi bi-trash3"></i>
+                   </button>
+                   {% endif %}
                  </div>
               </td>
             </tr>
@@ -290,4 +297,84 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+{# ── Eliminar usuario: irreversible, exige reescribir el correo ── #}
+{% for u in usuarios %}
+{% if current_user.id_usuario != u.id_usuario %}
+{% set r = resumen.get(u.id_usuario, {}) %}
+<div class="modal fade" id="modalEliminarUsuario{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin.eliminar_usuario', id_usuario=u.id_usuario) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>Eliminar definitivamente
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-3">
+            Vas a eliminar a <strong class="text-white">{{ u.nombres }} {{ u.apellidos }}</strong>
+            ({{ u.correo }}). <strong class="text-danger">Esta acción no se puede deshacer.</strong>
+          </p>
+
+          <div class="ui-note mb-3" style="border-color: rgba(239,68,68,.3);">
+            <i class="bi bi-trash3 ui-note-icon" style="color:#f87171;"></i>
+            <div>
+              <span class="ui-note-title">Se eliminará también</span>
+              <p class="ui-note-text mb-0">
+                {{ r.get('evidencias', 0) }} evidencia{{ '' if r.get('evidencias', 0) == 1 else 's' }}
+                (y sus archivos) ·
+                {{ r.get('fichas', 0) }} vínculo{{ '' if r.get('fichas', 0) == 1 else 's' }} con fichas ·
+                {{ r.get('notificaciones', 0) }} notificación{{ '' if r.get('notificaciones', 0) == 1 else 'es' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="ui-note mb-3">
+            <i class="bi bi-clock-history ui-note-icon"></i>
+            <div>
+              <span class="ui-note-title">Se conserva</span>
+              <p class="ui-note-text mb-0">
+                Sus {{ r.get('historial', 0) }} entrada{{ '' if r.get('historial', 0) == 1 else 's' }}
+                del historial de auditoría, que quedarán como «usuario eliminado».
+                Las fichas y los cursos no se borran.
+              </p>
+            </div>
+          </div>
+
+          <label class="form-label" for="confirmacion{{ u.id_usuario }}">
+            Para confirmar, escribe <code class="text-danger">{{ u.correo }}</code>
+          </label>
+          <input type="text" class="form-control" id="confirmacion{{ u.id_usuario }}"
+                 name="confirmacion" autocomplete="off" placeholder="{{ u.correo }}"
+                 data-esperado="{{ u.correo }}" data-destino="#btnEliminar{{ u.id_usuario }}">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger" id="btnEliminar{{ u.id_usuario }}" disabled>
+            <i class="bi bi-trash3 me-1"></i> Eliminar definitivamente
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // El botón de borrado solo se habilita cuando el correo escrito coincide.
+  document.querySelectorAll('input[data-esperado]').forEach(function (campo) {
+    const boton = document.querySelector(campo.dataset.destino);
+    if (!boton) return;
+    campo.addEventListener('input', function () {
+      boton.disabled = this.value.trim().toLowerCase() !== this.dataset.esperado.toLowerCase();
+    });
+  });
+</script>
 {% endblock %}
