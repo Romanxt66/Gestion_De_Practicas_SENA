@@ -118,8 +118,16 @@ docker compose exec web flask db upgrade
 > aprendices existentes quedan sin fechas y siguen con la estimación de 6 meses
 > hasta que un instructor las cargue.
 
-Con varios workers conviene además poner `RUN_DB_INIT=0` en el `.env` para que
-el arranque no ejecute `create_all()`/seed en paralelo.
+El arranque **ya no ejecuta `db.create_all()`** mientras exista la carpeta
+`migrations/`: si lo hiciera, crearía por su cuenta cualquier tabla nueva del
+modelo y la migración correspondiente fallaría después con
+`relation "..." already exists`. El esquema lo gestiona Alembic y punto.
+
+> Si alguna vez te topas con ese error, la tabla ya existe y solo falta que
+> Alembic lo sepa: `flask db stamp <id-de-la-migración>`.
+
+Con varios workers conviene además poner `RUN_DB_INIT=0` para que el seed no se
+ejecute en paralelo.
 
 ## Desarrollo local
 

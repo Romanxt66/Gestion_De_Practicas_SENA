@@ -24,12 +24,19 @@ def seed_data():
     admin_pass = os.getenv('ADMIN_PASSWORD')
     tipo_documento = os.getenv('ADMIN_TIPO_DOCUMENTO')
     numero_documento = os.getenv('ADMIN_NUMERO_DOCUMENTO')
-    nombres = os.getenv('ADMIN_NOMBRES')
-    apellidos = os.getenv('ADMIN_APELLIDOS')
-    
+    # nombres y apellidos no admiten nulos en la tabla: sin valor por defecto,
+    # crear el admin falla con IntegrityError.
+    nombres = os.getenv('ADMIN_NOMBRES') or 'Administrador'
+    apellidos = os.getenv('ADMIN_APELLIDOS') or 'del Sistema'
+
     if not admin_pass:
         print("⚠️ ADVERTENCIA: La variable de entorno ADMIN_PASSWORD no está definida.")
         print("⚠️ Saltando la creación o sincronización del superusuario por seguridad.")
+        return
+
+    if not correo_admin:
+        print("⚠️ ADVERTENCIA: ADMIN_PASSWORD está definida pero ADMIN_EMAIL no.")
+        print("⚠️ Saltando el superusuario: no se sabe a qué cuenta aplicarla.")
         return
         
     admin_user = Usuario.query.filter_by(correo=correo_admin).first()
