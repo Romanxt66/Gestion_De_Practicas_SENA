@@ -14,6 +14,7 @@ Todo sale en un hilo aparte para no dejar esperando a quien sube o califica.
 import smtplib
 import threading
 from email.message import EmailMessage
+from email.utils import formataddr
 
 from flask import current_app
 
@@ -23,24 +24,38 @@ from app.servicios import google_oauth
 # ─────────────────────────────────────────────
 # Transportes
 # ─────────────────────────────────────────────
-def _enviar_smtp(cfg, destinatario, asunto, texto, html=None):
+def _construir_mensaje(remitente_correo, remitente_nombre, destinatario,
+                       asunto, texto, html, responder_a=None):
+    """Monta el correo. Mismo mensaje para los dos transportes.
+
+    Detalles que reducen las probabilidades de acabar en spam: un nombre
+    visible en el remitente (en vez del correo pelado), una dirección de
+    respuesta real, y la marca de mensaje automático de la RFC 3834, que evita
+    además que un autorespondedor del destinatario conteste en bucle.
+    """
     msg = EmailMessage()
     msg['Subject'] = asunto
-    msg['From'] = cfg['usuario']
+    msg['From'] = formataddr((remitente_nombre, remitente_correo))
     msg['To'] = destinatario
+    if responder_a:
+        msg['Reply-To'] = responder_a
+    msg['Auto-Submitted'] = 'auto-generated'
     msg.set_content(texto)
     if html:
         msg.add_alternative(html, subtype='html')
+    return msg
 
+
+def _enviar_smtp(cfg, mensaje):
     if cfg['ssl']:
         with smtplib.SMTP_SSL(cfg['servidor'], cfg['puerto'], timeout=cfg['timeout']) as s:
             s.login(cfg['usuario'], cfg['password'])
-            s.send_message(msg)
+            s.send_message(mensaje)
     else:
         with smtplib.SMTP(cfg['servidor'], cfg['puerto'], timeout=cfg['timeout']) as s:
             s.starttls()
             s.login(cfg['usuario'], cfg['password'])
-            s.send_message(msg)
+            s.send_message(mensaje)
 
 
 def _config_smtp():
@@ -58,12 +73,14 @@ def _entregar(app, datos):
     """Se ejecuta en el hilo: intenta Gmail del usuario y si no, SMTP institucional."""
     with app.app_context():
         destinatario = datos['destinatario']
-        asunto, texto, html = datos['asunto'], datos['texto'], datos['html']
 
         if datos['refresh_token'] and google_oauth.esta_configurado():
+            mensaje = _construir_mensaje(
+                datos['remitente'], datos['remitente_nombre'], destinatario,
+                datos['asunto'], datos['texto'], datos['html'],
+                responder_a=datos['remitente'])
             try:
-                google_oauth.enviar_gmail(datos['refresh_token'], datos['remitente'],
-                                          destinatario, asunto, texto, html)
+                google_oauth.enviar_gmail(datos['refresh_token'], mensaje)
                 return
             except google_oauth.ErrorGoogle as e:
                 # Se registra el motivo en la cuenta para poder avisar al usuario
@@ -78,8 +95,14 @@ def _entregar(app, datos):
                 'Sin MAIL_USERNAME/MAIL_PASSWORD y sin cuenta de Google: '
                 'no se envió el aviso a %s.', destinatario)
             return
+        # Por la cuenta institucional el remitente es el sistema, pero la
+        # respuesta sigue yendo a la persona que originó el aviso.
+        mensaje = _construir_mensaje(
+            cfg['usuario'], 'SENA Prácticas', destinatario,
+            datos['asunto'], datos['texto'], datos['html'],
+            responder_a=datos['responder_a'])
         try:
-            _enviar_smtp(cfg, destinatario, asunto, texto, html)
+            _enviar_smtp(cfg, mensaje)
         except Exception as e:
             current_app.logger.warning('No se pudo enviar el correo a %s: %s',
                                        destinatario, e)
@@ -106,6 +129,8 @@ def enviar(destinatario: str, asunto: str, texto: str, html: str = None,
         return
 
     cuenta = getattr(remitente_usuario, 'cuenta_google', None) if remitente_usuario else None
+    nombre = (f'{remitente_usuario.nombres} {remitente_usuario.apellidos}'
+              if remitente_usuario else 'SENA Prácticas')
     datos = {
         'destinatario': destinatario,
         'asunto': asunto,
@@ -113,6 +138,10 @@ def enviar(destinatario: str, asunto: str, texto: str, html: str = None,
         'html': html,
         'refresh_token': cuenta.refresh_token if cuenta else None,
         'remitente': cuenta.correo_google if cuenta else current_app.config.get('MAIL_USERNAME'),
+        # Nombre visible: "Roman Torres (SENA Prácticas)" se reconoce mejor que
+        # un correo suelto, y ayuda a que no se tome por spam.
+        'remitente_nombre': f'{nombre} · SENA Prácticas' if cuenta else 'SENA Prácticas',
+        'responder_a': remitente_usuario.correo if remitente_usuario else None,
         'id_cuenta': cuenta.id_cuenta if cuenta else None,
     }
     hilo = threading.Thread(target=_entregar,

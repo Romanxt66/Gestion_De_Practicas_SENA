@@ -611,6 +611,37 @@ check('y cómo revocar el permiso', 'myaccount.google.com/permissions' in html)
 check('el login enlaza a las páginas legales',
       '/privacidad' in anon_legal.get('/login').get_data(as_text=True))
 
+print('\n── Cabeceras del correo (entregabilidad) ──')
+capturados = []
+original2 = svc_correo._enviar_smtp
+svc_correo._enviar_smtp = lambda cfg, mensaje: capturados.append(mensaje)
+try:
+    with app.app_context():
+        app.config['MAIL_USERNAME'] = 'notificaciones@sena.test'
+        app.config['MAIL_PASSWORD'] = 'x'
+        with app.test_request_context():
+            u_ap = db.session.get(Usuario, ap.id_usuario)
+            u_in = db.session.get(Usuario, inst.id_usuario)
+            datos_prueba = {
+                'destinatario': u_in.correo, 'asunto': 'Prueba', 'texto': 'texto',
+                'html': '<p>h</p>', 'refresh_token': None,
+                'remitente': 'notificaciones@sena.test',
+                'remitente_nombre': 'SENA Prácticas',
+                'responder_a': u_ap.correo, 'id_cuenta': None,
+            }
+            svc_correo._entregar(app, datos_prueba)
+finally:
+    svc_correo._enviar_smtp = original2
+
+check('se construyó el mensaje', len(capturados) == 1, str(len(capturados)))
+if capturados:
+    m = capturados[0]
+    check('el remitente lleva nombre visible', 'SENA Prácticas' in m['From'], m['From'])
+    check('hay dirección de respuesta real', m['Reply-To'] == ap.correo, str(m['Reply-To']))
+    check('va marcado como mensaje automático',
+          m['Auto-Submitted'] == 'auto-generated', str(m['Auto-Submitted']))
+    check('lleva versión en texto plano y en HTML', m.is_multipart())
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

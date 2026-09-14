@@ -186,20 +186,13 @@ def revocar(refresh_token_cifrado: str) -> None:
 # ─────────────────────────────────────────────
 # Envío
 # ─────────────────────────────────────────────
-def enviar_gmail(refresh_token_cifrado: str, remitente: str, destinatario: str,
-                 asunto: str, texto: str, html: str = None) -> None:
-    """Envía un correo con la API de Gmail en nombre de la cuenta vinculada."""
-    from email.message import EmailMessage
+def enviar_gmail(refresh_token_cifrado: str, mensaje) -> None:
+    """Envía un mensaje ya construido con la API de Gmail.
 
-    msg = EmailMessage()
-    msg['Subject'] = asunto
-    msg['From'] = remitente
-    msg['To'] = destinatario
-    msg.set_content(texto)
-    if html:
-        msg.add_alternative(html, subtype='html')
-
-    crudo = base64.urlsafe_b64encode(msg.as_bytes()).decode('ascii')
+    Recibe el EmailMessage montado en el servicio de correo para que el mensaje
+    sea idéntico se envíe por Gmail o por SMTP.
+    """
+    crudo = base64.urlsafe_b64encode(mensaje.as_bytes()).decode('ascii')
     token = access_token(refresh_token_cifrado)
     _peticion(
         GMAIL_SEND_URL,
