@@ -225,6 +225,14 @@
         sessionStorage.removeItem('tabSessionActive');
     {% endif %}
 
+    // Si el navegador restaura la página desde su caché de retroceso (bfcache),
+    // el contenido sería el de la sesión anterior. Las cabeceras no-store ya lo
+    // evitan en los navegadores actuales; esto es el cinturón de seguridad por
+    // si alguno la restaura igualmente: se fuerza una recarga contra el servidor.
+    window.addEventListener('pageshow', function (evento) {
+      if (evento.persisted) window.location.reload();
+    });
+
     // El dock desplaza automáticamente hasta la sección activa en pantallas pequeñas
     (function () {
       const dock = document.querySelector('.dock');

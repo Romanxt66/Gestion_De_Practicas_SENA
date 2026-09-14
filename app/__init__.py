@@ -156,10 +156,12 @@ def create_app():
 
     @app.after_request
     def add_header(response):
-        # Los estáticos (Bootstrap, iconos, imágenes) sí se cachean;
-        # solo las páginas dinámicas se marcan como no cacheables.
+        # Estáticos: 'no-cache' NO significa "no guardar", sino "revalida antes
+        # de usar". El navegador conserva el archivo y el servidor responde 304
+        # si no cambió. Es lo correcto aquí porque las URL no llevan versión:
+        # con un max-age largo, un cambio de CSS tardaría semanas en llegar.
         if request.endpoint == 'static':
-            response.headers.setdefault("Cache-Control", "public, max-age=2592000")
+            response.headers["Cache-Control"] = "no-cache"
         else:
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"

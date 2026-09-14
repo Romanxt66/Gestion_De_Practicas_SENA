@@ -579,6 +579,26 @@ check('la exportación a Excel no falla',
 with app.app_context():
     check('la ficha sigue existiendo', db.session.get(Curso, id_curso) is not None)
 
+print('\n── Caché y botón de retroceso ──')
+r = c_ap.get('/aprendiz/dashboard')
+cc = r.headers.get('Cache-Control', '')
+check('las páginas privadas no se guardan en caché', 'no-store' in cc, cc)
+check('y exigen revalidación', 'must-revalidate' in cc, cc)
+check('los estáticos revalidan en vez de cachearse a ciegas',
+      c_ap.get('/static/biblioteca.css').headers.get('Cache-Control') == 'no-cache')
+check('la página lleva el seguro contra la caché de retroceso',
+      'evento.persisted' in r.get_data(as_text=True))
+
+# Tras cambiar de usuario, la misma ruta responde con los datos del nuevo
+otro_ap = next((u for u in aps if u.id_usuario != ap.id_usuario), None)
+if otro_ap:
+    c_otro = cliente(otro_ap.id_usuario)
+    html_a = c_ap.get('/aprendiz/informacion').get_data(as_text=True)
+    html_b = c_otro.get('/aprendiz/informacion').get_data(as_text=True)
+    check('cada sesión ve su propio correo en la misma ruta',
+          ap.correo in html_a and otro_ap.correo in html_b
+          and otro_ap.correo not in html_a)
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)
