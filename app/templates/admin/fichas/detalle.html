@@ -59,6 +59,69 @@
   {% endif %}
 </div>
 
+<!-- Instructores a cargo de la ficha -->
+<div class="biblioteca-shell mb-4">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-person-badge"></i></div>
+    <h4>Instructores a cargo</h4>
+  </div>
+  <div class="biblioteca-shell-body">
+    {% if instructores %}
+      <ul class="inst-fichas mb-3">
+        {% for i in instructores %}
+          <li class="inst-ficha">
+            <a href="{{ url_for('admin.instructores') }}">
+              <b>{{ i.usuario.nombres }} {{ i.usuario.apellidos }}</b>
+              <span>{{ i.area_formacion or i.usuario.correo }}</span>
+            </a>
+            <form action="{{ url_for('admin.desasignar_instructor_ficha', id_curso=curso.id_curso, id_instructor=i.id_instructor) }}"
+                  method="POST" class="m-0"
+                  onsubmit="return confirm('Quitar a {{ i.usuario.nombres }} de esta ficha. Los aprendices y sus evidencias no se tocan. ¿Continuar?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="volver" value="detalle">
+              <button type="submit" class="inst-quitar" title="Quitar de la ficha">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="inst-vacio mb-3">
+        <i class="bi bi-exclamation-triangle"></i>
+        Esta ficha no tiene ningún instructor asignado: nadie recibirá los avisos
+        de evidencias ni podrá calificarlas.
+      </p>
+    {% endif %}
+
+    {% if instructores_disponibles %}
+      <form action="{{ url_for('admin.asignar_instructor_ficha', id_curso=curso.id_curso) }}"
+            method="POST" class="inst-vincular">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="volver" value="detalle">
+        <select class="form-select form-select-sm" name="id_instructor" required>
+          <option value="" selected disabled>Asignar un instructor…</option>
+          {% for i in instructores_disponibles %}
+            <option value="{{ i.id_instructor }}">
+              {{ i.usuario.nombres }} {{ i.usuario.apellidos }}{% if i.area_formacion %} — {{ i.area_formacion }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="bi bi-link-45deg"></i> Asignar
+        </button>
+      </form>
+    {% elif instructores %}
+      <p class="inst-vacio mb-0"><i class="bi bi-check2-all"></i> Todos los instructores activos ya están en esta ficha.</p>
+    {% else %}
+      <p class="inst-vacio mb-0">
+        <i class="bi bi-info-circle"></i> No hay instructores activos.
+        <a href="{{ url_for('admin.instructores') }}">Gestionar instructores</a>
+      </p>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Sección de Aprendices -->
 <div class="biblioteca-shell mb-4">
   <div class="biblioteca-shell-header">

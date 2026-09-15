@@ -1030,6 +1030,56 @@ t = token(c_admin, '/admin/instructores')
 c_admin.post(f'/admin/instructores/{id_inst}/fichas/vincular',
              data={'id_curso': id_curso, 'csrf_token': t}, follow_redirects=True)
 
+print('\n── El detalle de la ficha muestra sus instructores ──')
+# Se parte de la ficha con el instructor ya vinculado (lo deja el bloque anterior)
+html = c_admin.get(f'/admin/fichas/{id_curso}/detalle').get_data(as_text=True)
+check('el admin ve la sección de instructores', 'Instructores a cargo' in html)
+check('  · con el nombre del instructor asignado',
+      f'{inst.nombres} {inst.apellidos}' in html)
+check('  · y puede quitarlo desde ahí',
+      f'/admin/fichas/{id_curso}/desasignar-instructor/{id_inst}' in html)
+
+html = c_inst.get(f'/instructor/fichas/{id_curso}/detalle').get_data(as_text=True)
+check('el instructor también los ve en su detalle',
+      'Instructores a cargo' in html and f'{inst.nombres} {inst.apellidos}' in html)
+check('  · y se reconoce a sí mismo', '(tú)' in html)
+check('  · pero sin poder asignar ni quitar',
+      'desasignar-instructor' not in html and 'asignar-instructor' not in html)
+
+# Quitar desde el detalle regresa al detalle, no al listado
+t = token(c_admin, f'/admin/fichas/{id_curso}/detalle')
+r = c_admin.post(f'/admin/fichas/{id_curso}/desasignar-instructor/{id_inst}',
+                 data={'volver': 'detalle', 'csrf_token': t}, follow_redirects=False)
+check('quitar desde el detalle vuelve al detalle',
+      f'/admin/fichas/{id_curso}/detalle' in r.headers.get('Location', ''),
+      r.headers.get('Location'))
+
+html = c_admin.get(f'/admin/fichas/{id_curso}/detalle').get_data(as_text=True)
+check('una ficha sin instructor lo advierte',
+      'no tiene ningún instructor asignado' in html)
+
+# Y asignar desde el detalle también
+t = token(c_admin, f'/admin/fichas/{id_curso}/detalle')
+r = c_admin.post(f'/admin/fichas/{id_curso}/asignar-instructor',
+                 data={'id_instructor': id_inst, 'volver': 'detalle', 'csrf_token': t},
+                 follow_redirects=False)
+check('asignar desde el detalle vuelve al detalle',
+      f'/admin/fichas/{id_curso}/detalle' in r.headers.get('Location', ''),
+      r.headers.get('Location'))
+with app.app_context():
+    check('  · y queda asignado',
+          CI.query.filter_by(id_instructor=id_inst, id_curso=id_curso).first() is not None)
+
+# Sin 'volver' se sigue regresando al listado de fichas, como antes
+t = token(c_admin, '/admin/fichas')
+r = c_admin.post(f'/admin/fichas/{id_curso}/desasignar-instructor/{id_inst}',
+                 data={'csrf_token': t}, follow_redirects=False)
+check('sin indicar destino se vuelve al listado de fichas',
+      r.headers.get('Location', '').endswith('/admin/fichas'), r.headers.get('Location'))
+t = token(c_admin, '/admin/fichas')
+c_admin.post(f'/admin/fichas/{id_curso}/asignar-instructor',
+             data={'id_instructor': id_inst, 'csrf_token': t}, follow_redirects=True)
+
 print('\n── Portal de acceso y dock móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)
@@ -1066,12 +1116,15 @@ check('el dock solo aparece en pantallas pequeñas',
       '.dock-wrap{display:none' in css.replace(' ', '') or
       '.dock-wrap {' in css and 'display: none' in css)
 check('el fondo con desenfoque está aplicado', 'backdrop-filter' in css)
-check('el fondo es carbón frío, no negro plano',
-      '--bg-base:       #080b0e' in css and '--bg-surface:    #101419' in css)
-check('  · y la barra lateral va un tono por debajo',
-      'rgba(4, 6, 10, 0.92)' in css)
-check('  · sin superficies del negro anterior',
-      'rgba(12, 12, 12' not in css and 'rgba(10, 10, 10' not in css)
+check('el fondo usa la paleta del mockup',
+      '--bg-base:       #070a10' in css and '--bg-surface:    #0f1623' in css)
+check('  · con la lateral en su propio tono',
+      '--bg-lateral:    #0a0f18' in css)
+check('  · y los halos verde y azul, sin rejilla',
+      'rgba(16, 185, 129, 0.08)' in css and 'rgba(14, 165, 233, 0.05)' in css)
+check('  · sin superficies de las paletas anteriores',
+      'rgba(12, 12, 12' not in css and 'rgba(10, 10, 10' not in css
+      and 'rgba(16, 20, 25' not in css)
 
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:

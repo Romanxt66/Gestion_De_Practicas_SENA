@@ -22,10 +22,10 @@
 
   /* Superficies — carbón frío, no negro plano: los bloques se despegan
      del fondo sin necesidad de subir el brillo de los bordes. */
-  --bg-base:       #080b0e;   /* la página */
-  --bg-lateral:    #04060a;   /* barra lateral, un punto más profunda */
-  --bg-surface:    #101419;   /* bloques y tarjetas */
-  --bg-elevated:   #161b22;   /* menús y capas por encima */
+  --bg-base:       #070a10;   /* la página */
+  --bg-lateral:    #0a0f18;   /* barra lateral y barra superior */
+  --bg-surface:    #0f1623;   /* bloques y tarjetas */
+  --bg-elevated:   #141e2f;   /* la misma tarjeta al pasar por encima */
   --bg-hover:      rgba(255, 255, 255, 0.045);
 
   /* Acentos secundarios */
@@ -42,12 +42,12 @@
 
   /* Texto */
   --text-primary:  #ffffff;
-  --text-secondary:#a1a1aa;
-  --text-muted:    #71717a;
-  --text-disabled: #52525b;
+  --text-secondary:#cbd5e1;
+  --text-muted:    #94a3b8;
+  --text-disabled: #64748b;
 
   /* Bordes */
-  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.04);
   --border-default: rgba(255, 255, 255, 0.08);
   --border-muted:  rgba(255, 255, 255, 0.14);
   --border-glow:   rgba(16, 185, 129, 0.45);
@@ -75,7 +75,7 @@
 
   /* Fondo opaco de los campos. Debe coincidir con el relleno que se usa
      para anular el amarillo/blanco del autocompletado del navegador. */
-  --input-bg:   #0f1317;
+  --input-bg:   #0b1120;
 
   /* Medidas del armazón */
   --appbar-h:   72px;
@@ -1605,7 +1605,7 @@ body.biblioteca-body::before { content: none !important; }
   padding: 0.45rem;
   border-radius: 18px;
   /* Translúcido: deja ver el contenido que pasa por detrás */
-  background: rgba(8, 11, 14, 0.5);
+  background: color-mix(in srgb, var(--bg-lateral) 55%, transparent);
   border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(20px) saturate(140%);
@@ -2298,8 +2298,8 @@ input:-webkit-autofill::first-line {
   position: sticky; top: 0; z-index: 1020;
   display: flex; align-items: center; gap: 1rem;
   padding: 1rem 1.6rem;
-  background: rgba(4, 6, 10, 0.92);
-  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-lateral) 95%, transparent);
+  border-bottom: 1px solid var(--border-default);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -2517,11 +2517,9 @@ input:-webkit-autofill::first-line {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(1000px 540px at 18% -8%, var(--acc-soft), transparent 62%),
-    radial-gradient(760px 440px at 96% 4%, rgba(56, 189, 248, 0.055), transparent 60%),
-    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(180deg, #0c1014 0%, var(--bg-base) 55%);
+    radial-gradient(at 15% 10%, rgba(16, 185, 129, 0.08) 0, transparent 40%),
+    radial-gradient(at 85% 20%, rgba(14, 165, 233, 0.05) 0, transparent 35%),
+    var(--bg-base);
 }
 
 /* Las superficies se vuelven translúcidas para que el fondo se intuya */
@@ -2529,24 +2527,20 @@ input:-webkit-autofill::first-line {
 .layout .lib-card,
 .layout .kpi,
 .layout .page-toolbar {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 42%),
-    rgba(16, 20, 25, 0.8) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-surface) !important;
 }
+.layout .biblioteca-shell:hover,
+.layout .lib-card:hover,
+.layout .kpi:hover { border-color: color-mix(in srgb, var(--acc) 40%, transparent); }
+
 .layout .ficha-card {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 40%),
-    linear-gradient(160deg,
-              color-mix(in srgb, var(--tono) 10%, rgba(16,20,25,.82)) 0%,
-              rgba(16,20,25,.82) 58%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: linear-gradient(160deg,
+              color-mix(in srgb, var(--tono) 10%, var(--bg-surface)) 0%,
+              var(--bg-surface) 58%);
 }
 .lateral {
-  background: rgba(4, 6, 10, 0.92);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--bg-lateral) 95%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2558,11 +2552,9 @@ input:-webkit-autofill::first-line {
   flex-direction: column;
   position: relative;
   background:
-    radial-gradient(900px 520px at 50% -10%, var(--acc-soft), transparent 62%),
-    radial-gradient(700px 400px at 88% 15%, rgba(56,189,248,.055), transparent 60%),
-    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(180deg, #0c1014 0%, var(--bg-base) 55%);
+    radial-gradient(at 15% 10%, var(--acc-soft) 0, transparent 40%),
+    radial-gradient(at 85% 20%, rgba(14, 165, 233, 0.05) 0, transparent 35%),
+    var(--bg-base);
 }
 
 .portal-nav {
@@ -2672,14 +2664,14 @@ input:-webkit-autofill::first-line {
   padding: 0.75rem 0.9rem;
   border-radius: var(--radius-md, 12px);
   border: 1px solid var(--border-default);
-  background: rgba(13, 16, 19, 0.62);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   transition: border-color var(--trans-base), background var(--trans-base);
 }
 .perfil:hover { border-color: var(--border-muted); }
 .perfiles input:checked + .perfil {
   border-color: var(--acc);
-  background: linear-gradient(110deg, var(--acc-soft), rgba(16, 20, 25, 0.8) 65%);
+  background: linear-gradient(110deg, var(--acc-soft), var(--bg-surface) 65%);
   box-shadow: 0 0 0 1px var(--acc-glow);
 }
 .perfiles input:focus-visible + .perfil { outline: 2px solid var(--acc); outline-offset: 3px; }
@@ -2794,9 +2786,7 @@ input:-webkit-autofill::first-line {
 
 /* ── Plan de entregas (minimalista, sin morado) ──────────── */
 .plan-entregas {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 42%),
-    rgba(16, 20, 25, 0.8);
+  background: var(--bg-surface);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, .08));
   border-radius: 14px;
@@ -2925,9 +2915,7 @@ input:-webkit-autofill::first-line {
 
 /* ── Tarjetas de instructor (panel del admin) ────────────── */
 .inst-card {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 42%),
-    rgba(16, 20, 25, 0.8);
+  background: var(--bg-surface);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;

@@ -52,6 +52,13 @@ def _parse_fecha(valor):
     return datetime.strptime(valor, '%Y-%m-%d').date() if valor else None
 
 
+def _volver_ficha(id_curso):
+    """Tras asignar o quitar un instructor, volver de donde se venía."""
+    if request.form.get('volver') == 'detalle':
+        return redirect(url_for('admin.ficha_detalle', id_curso=id_curso))
+    return redirect(url_for('admin.fichas'))
+
+
 def _destino(por_defecto='admin.usuarios'):
     """A qué listado volver tras guardar.
 
@@ -1077,14 +1084,14 @@ def asignar_instructor_ficha(id_curso):
 
     if not id_instructor:
         flash('Selecciona un instructor.', 'danger')
-        return redirect(url_for('admin.fichas'))
+        return _volver_ficha(id_curso)
 
     instructor = Instructor.query.get_or_404(id_instructor)
 
     if CursoInstructor.query.filter_by(id_curso=id_curso,
                                        id_instructor=id_instructor).first():
         flash('Este instructor ya está asignado a la ficha.', 'warning')
-        return redirect(url_for('admin.fichas'))
+        return _volver_ficha(id_curso)
 
     db.session.add(CursoInstructor(id_curso=id_curso, id_instructor=id_instructor))
     log_historial(current_user, 'Fichas', 'MODIFICAR',
@@ -1093,7 +1100,7 @@ def asignar_instructor_ficha(id_curso):
 
     flash(f'{instructor.usuario.nombres} quedó a cargo de la ficha '
           f'{curso.ficha or curso.nombre}.', 'success')
-    return redirect(url_for('admin.fichas'))
+    return _volver_ficha(id_curso)
 
 
 @bp.route('/fichas/<int:id_curso>/desasignar-instructor/<int:id_instructor>',
@@ -1116,7 +1123,7 @@ def desasignar_instructor_ficha(id_curso, id_instructor):
 
     flash(f'{nombre_inst} ya no está a cargo de la ficha '
           f'{curso.ficha or curso.nombre}.', 'success')
-    return redirect(url_for('admin.fichas'))
+    return _volver_ficha(id_curso)
 
 
 @bp.route('/fichas/<int:id_curso>/detalle')
@@ -1155,9 +1162,18 @@ def ficha_detalle(id_curso):
             'evidencias': evidencias,
         })
 
+    asignados = [ci.instructor for ci in curso.instructores if ci.instructor]
+    ids_asignados = {i.id_instructor for i in asignados}
+    disponibles = (Instructor.query.join(Usuario)
+                   .filter(Instructor.activo.is_(True))
+                   .order_by(Usuario.nombres).all())
+
     return render_template('admin/fichas/detalle.html',
                            curso=curso,
-                           aprendices_data=aprendices_data)
+                           aprendices_data=aprendices_data,
+                           instructores=asignados,
+                           instructores_disponibles=[i for i in disponibles
+                                                     if i.id_instructor not in ids_asignados])
 
 
 @bp.route('/fichas/<int:id_curso>/remover-aprendiz/<int:id_aprendiz>', methods=['POST'])
