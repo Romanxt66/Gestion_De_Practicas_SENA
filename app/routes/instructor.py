@@ -29,11 +29,11 @@ from app.utils import (role_required, log_historial, calcular_progreso,
                        progreso_de_aprendices, contar_evidencias_por_aprendiz,
                        ids_cursos_de_instructor, ids_aprendices_de_instructor,
                        matricular_pendientes, resumen_curso,
-                       indice_aprobacion, evidencias_entregadas_hoy)
+                       indice_aprobacion, evidencias_entregadas_hoy,
+                       ESTADOS_PRACTICA)
 
 bp = Blueprint('instructor', __name__, url_prefix='/instructor')
 
-ESTADOS_PRACTICA = ['En proceso', 'Aprobado', 'Reprobado', 'Cancelado']
 ESTADOS_EVIDENCIA = ['Entregada', 'Revisada', 'Aprobada', 'No Aprobada']
 
 

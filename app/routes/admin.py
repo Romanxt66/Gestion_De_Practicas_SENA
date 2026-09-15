@@ -36,7 +36,9 @@ from app.models.aprendiz_backup import AprendizBackup
 from app.utils import (role_required, log_historial, calcular_progreso,
                        directorio_evidencias, fichas_pendientes,
                        matricular_pendientes, resumen_curso,
-                       HORAS_PRACTICA_POR_DEFECTO)
+                       avisar_admins_ficha_pendiente,
+                       HORAS_PRACTICA_POR_DEFECTO, TIPOS_DOCUMENTO,
+                       ESTADOS_PRACTICA)
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -180,6 +182,9 @@ def usuarios():
     roles = Rol.query.all()
     return render_template('admin/usuarios.html', usuarios=lista, roles=roles, q=q,
                            resumen=_resumen_borrado(lista),
+                           tipos_documento=TIPOS_DOCUMENTO,
+                           estados_practica=ESTADOS_PRACTICA,
+                           horas_por_defecto=HORAS_PRACTICA_POR_DEFECTO,
                            cursos=Curso.query.order_by(Curso.nombre).all())
 
 
@@ -193,8 +198,18 @@ def crear_usuario():
     password  = request.form.get('password', '')
     id_rol    = request.form.get('id_rol', type=int)
 
+    # Datos personales: los mismos que pide el registro público, para que un
+    # usuario creado por el admin no nazca incompleto.
+    tipo_documento   = request.form.get('tipo_documento', '').strip()
+    numero_documento = request.form.get('numero_documento', '').strip()
+    telefono         = request.form.get('telefono', '').strip()
+
     if not nombres or not apellidos or not correo:
         flash('Nombres, apellidos y correo son obligatorios.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    if '@' not in correo or '.' not in correo.split('@')[-1]:
+        flash('Ingresa un correo electrónico válido.', 'danger')
         return redirect(url_for('admin.usuarios'))
 
     if len(password) < LONGITUD_MINIMA_PASSWORD:
@@ -202,33 +217,110 @@ def crear_usuario():
               'danger')
         return redirect(url_for('admin.usuarios'))
 
+    if tipo_documento and tipo_documento not in dict(TIPOS_DOCUMENTO):
+        flash('Tipo de documento inválido.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
     if Usuario.query.filter_by(correo=correo).first():
         flash('Ya existe un usuario con ese correo.', 'warning')
         return redirect(url_for('admin.usuarios'))
 
-    rol = Rol.query.get(id_rol) if id_rol else None
+    if numero_documento and Usuario.query.filter_by(
+            numero_documento=numero_documento).first():
+        flash('Ya existe un usuario con ese número de documento.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    rol = db.session.get(Rol, id_rol) if id_rol else None
     if id_rol and not rol:
         flash('El rol seleccionado no existe.', 'danger')
         return redirect(url_for('admin.usuarios'))
 
+    nombre_rol = rol.nombre if rol else None
+
+    # ── Campos que solo aplican a un rol ───────────────────
+    codigo_ficha = estado_practica = ''
+    horas_requeridas = HORAS_PRACTICA_POR_DEFECTO
+    inicio = fin = None
+    area_formacion = ''
+
+    if nombre_rol == 'aprendiz':
+        codigo_ficha    = request.form.get('codigo_ficha', '').strip()
+        estado_practica = request.form.get('estado_practica', '').strip() or 'En proceso'
+
+        if not codigo_ficha:
+            flash('Indica el código de ficha del aprendiz.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        if estado_practica not in ESTADOS_PRACTICA:
+            flash('Estado de práctica inválido.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        horas = request.form.get('horas_requeridas', type=int)
+        if horas is not None:
+            if horas < 0:
+                flash('Las horas requeridas no pueden ser negativas.', 'danger')
+                return redirect(url_for('admin.usuarios'))
+            horas_requeridas = horas
+
+        try:
+            inicio = _parse_fecha(request.form.get('fecha_inicio_practica', '').strip())
+            fin = _parse_fecha(request.form.get('fecha_fin_practica', '').strip())
+        except ValueError:
+            flash('Formato de fecha inválido.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        if inicio and fin and fin <= inicio:
+            flash('La fecha de finalización debe ser posterior a la de inicio.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+    elif nombre_rol == 'instructor':
+        area_formacion = request.form.get('area_formacion', '').strip()
+
     u = Usuario(nombres=nombres, apellidos=apellidos, correo=correo,
+                tipo_documento=tipo_documento or None,
+                numero_documento=numero_documento or None,
+                telefono=telefono or None,
                 password_hash=generate_password_hash(password), estado=True)
     db.session.add(u)
     db.session.flush()
 
+    aviso_ficha = None
     if rol:
         db.session.add(UsuarioRol(id_usuario=u.id_usuario, id_rol=rol.id_rol))
-        if rol.nombre == 'aprendiz':
-            db.session.add(Aprendiz(id_usuario=u.id_usuario,
-                                    estado_practica='En proceso',
-                                    horas_requeridas=HORAS_PRACTICA_POR_DEFECTO,
-                                    horas_cumplidas=0))
-        elif rol.nombre == 'instructor':
-            db.session.add(Instructor(id_usuario=u.id_usuario, activo=True))
+
+        if nombre_rol == 'aprendiz':
+            ap = Aprendiz(id_usuario=u.id_usuario,
+                          ficha=codigo_ficha,
+                          estado_practica=estado_practica,
+                          horas_requeridas=horas_requeridas,
+                          horas_cumplidas=0,
+                          fecha_inicio_practica=inicio,
+                          fecha_fin_practica=fin)
+            db.session.add(ap)
+            db.session.flush()
+
+            # Igual que en el registro público: si la ficha ya existe se
+            # matricula de una vez; si no, queda en "fichas no asignadas".
+            curso = Curso.query.filter_by(ficha=codigo_ficha).first()
+            if curso:
+                db.session.add(CursoAprendiz(id_curso=curso.id_curso,
+                                             id_aprendiz=ap.id_aprendiz))
+            else:
+                avisar_admins_ficha_pendiente(codigo_ficha, u)
+                aviso_ficha = codigo_ficha
+
+        elif nombre_rol == 'instructor':
+            db.session.add(Instructor(id_usuario=u.id_usuario,
+                                      area_formacion=area_formacion or None,
+                                      activo=True))
 
     log_historial(current_user, 'Usuarios', 'CREAR', f'Usuario {correo} creado')
     db.session.commit()
+
     flash(f'Usuario {nombres} {apellidos} creado.', 'success')
+    if aviso_ficha:
+        flash(f'La ficha {aviso_ficha} todavía no existe: el aprendiz quedó en '
+              'espera y se matriculará solo en cuanto la crees.', 'info')
     return redirect(url_for('admin.usuarios'))
 
 
@@ -242,6 +334,8 @@ def editar_usuario(id_usuario):
     correo    = request.form.get('correo', '').strip().lower()
     telefono  = request.form.get('telefono', '').strip()
     password  = request.form.get('password', '')
+    tipo_documento   = request.form.get('tipo_documento', '').strip()
+    numero_documento = request.form.get('numero_documento', '').strip()
 
     if not nombres or not apellidos or not correo:
         flash('Nombres, apellidos y correo son obligatorios.', 'danger')
@@ -249,6 +343,15 @@ def editar_usuario(id_usuario):
 
     if correo != u.correo and Usuario.query.filter_by(correo=correo).first():
         flash('Ya existe otro usuario con ese correo.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    if tipo_documento and tipo_documento not in dict(TIPOS_DOCUMENTO):
+        flash('Tipo de documento inválido.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    if numero_documento and numero_documento != u.numero_documento and Usuario.query.filter_by(
+            numero_documento=numero_documento).first():
+        flash('Ya existe otro usuario con ese número de documento.', 'warning')
         return redirect(url_for('admin.usuarios'))
 
     if password and len(password) < LONGITUD_MINIMA_PASSWORD:
@@ -260,6 +363,8 @@ def editar_usuario(id_usuario):
     u.apellidos = apellidos
     u.correo = correo
     u.telefono = telefono
+    u.tipo_documento = tipo_documento or None
+    u.numero_documento = numero_documento or None
 
     if password:
         u.password_hash = generate_password_hash(password)

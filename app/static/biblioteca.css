@@ -2902,3 +2902,12 @@ input:-webkit-autofill::first-line {
   .plan-entregas { padding: 1.05rem 1rem .95rem; }
   .plan-ayuda { display: none; }
 }
+
+/* ── Bloques de campos que dependen del rol elegido ──────── */
+.campos-rol { border: 0; padding: 0; margin: 0; min-width: 0; }
+.rotulo-rol {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--acc);
+}

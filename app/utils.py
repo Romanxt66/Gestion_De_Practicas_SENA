@@ -44,6 +44,17 @@ CATALOGO_EVIDENCIAS = (
 DOCUMENTOS_EVIDENCIA = {d['clave']: d for d in CATALOGO_EVIDENCIAS}
 EVIDENCIAS_ESPERADAS = sum(d['cantidad'] for d in CATALOGO_EVIDENCIAS)
 
+# Listas cerradas que comparten los formularios de registro, instructor y admin.
+# Tenerlas en un solo sitio evita que una vista acepte valores que otra rechaza.
+TIPOS_DOCUMENTO = (
+    ('CC', 'Cédula de Ciudadanía'),
+    ('TI', 'Tarjeta de Identidad'),
+    ('CE', 'Cédula de Extranjería'),
+    ('PEP', 'PEP'),
+)
+
+ESTADOS_PRACTICA = ('En proceso', 'Aprobado', 'Reprobado', 'Cancelado')
+
 EXTENSIONES_PERMITIDAS = {
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'zip', 'txt'
 }

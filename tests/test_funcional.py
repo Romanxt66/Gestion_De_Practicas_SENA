@@ -841,6 +841,93 @@ with app.app_context():
     check('el resumen de ficha trae estado y avance',
           'estado' in r and 'avance' in r and 0 <= r['avance'] <= 100)
 
+print('\n── El admin crea usuarios completos según el rol ──')
+with app.app_context():
+    rol_ap_id = Rol.query.filter_by(nombre='aprendiz').first().id_rol
+    rol_in_id = Rol.query.filter_by(nombre='instructor').first().id_rol
+    ficha_real = Curso.query.first().ficha
+
+def crear(**campos):
+    campos.setdefault('csrf_token', token(c_admin, '/admin/usuarios'))
+    return c_admin.post('/admin/usuarios/crear', data=campos, follow_redirects=True)
+
+r = crear(nombres='Ana', apellidos='Ruiz', correo='ana.nueva@x.co', password='clave123',
+          tipo_documento='CC', numero_documento='90900001', telefono='3001112233',
+          id_rol=rol_ap_id, codigo_ficha=ficha_real, estado_practica='En proceso',
+          horas_requeridas='500', fecha_inicio_practica='2026-01-10',
+          fecha_fin_practica='2026-07-10')
+with app.app_context():
+    u = Usuario.query.filter_by(correo='ana.nueva@x.co').first()
+    check('crea el aprendiz con sus datos personales',
+          u is not None and u.tipo_documento == 'CC'
+          and u.numero_documento == '90900001' and u.telefono == '3001112233')
+    a = u.aprendiz if u else None
+    check('  · con ficha, estado y horas',
+          a is not None and a.ficha == ficha_real
+          and a.estado_practica == 'En proceso' and a.horas_requeridas == 500)
+    check('  · con el periodo de práctica',
+          a is not None and str(a.fecha_inicio_practica) == '2026-01-10'
+          and str(a.fecha_fin_practica) == '2026-07-10')
+    check('  · y matriculado en la ficha que ya existía', a is not None and len(a.cursos) == 1)
+
+r = crear(nombres='Beto', apellidos='Paz', correo='beto.nuevo@x.co', password='clave123',
+          id_rol=rol_ap_id, codigo_ficha='ZZZ-NO-EXISTE')
+check('con una ficha inexistente avisa que queda en espera',
+      'todavía no existe' in r.get_data(as_text=True))
+with app.app_context():
+    u = Usuario.query.filter_by(correo='beto.nuevo@x.co').first()
+    check('  · y lo deja sin matricular', u is not None and len(u.aprendiz.cursos) == 0)
+
+r = crear(nombres='Sin', apellidos='Ficha', correo='sin.ficha@x.co',
+          password='clave123', id_rol=rol_ap_id)
+check('exige la ficha al crear un aprendiz', 'código de ficha' in r.get_data(as_text=True))
+with app.app_context():
+    check('  · y no crea el usuario a medias',
+          Usuario.query.filter_by(correo='sin.ficha@x.co').first() is None)
+
+r = crear(nombres='Fechas', apellidos='Malas', correo='fechas@x.co', password='clave123',
+          id_rol=rol_ap_id, codigo_ficha=ficha_real,
+          fecha_inicio_practica='2026-07-10', fecha_fin_practica='2026-01-10')
+check('rechaza un periodo de práctica invertido',
+      'posterior a la de inicio' in r.get_data(as_text=True))
+
+r = crear(nombres='Estado', apellidos='Raro', correo='estado@x.co', password='clave123',
+          id_rol=rol_ap_id, codigo_ficha=ficha_real, estado_practica='Inventado')
+check('rechaza un estado de práctica fuera de la lista',
+      'Estado de práctica inválido' in r.get_data(as_text=True))
+
+r = crear(nombres='Iván', apellidos='Soto', correo='ivan.nuevo@x.co', password='clave123',
+          id_rol=rol_in_id, area_formacion='Teleinformática')
+with app.app_context():
+    u = Usuario.query.filter_by(correo='ivan.nuevo@x.co').first()
+    check('crea el instructor con su área de formación',
+          u is not None and u.instructor is not None
+          and u.instructor.area_formacion == 'Teleinformática')
+    check('  · y sin perfil de aprendiz', u is not None and u.aprendiz is None)
+
+r = crear(nombres='Doc', apellidos='Repe', correo='doc.repe@x.co', password='clave123',
+          numero_documento='90900001')
+check('rechaza un número de documento ya usado',
+      'número de documento' in r.get_data(as_text=True))
+
+r = crear(nombres='Tipo', apellidos='Raro', correo='tipo.raro@x.co', password='clave123',
+          tipo_documento='XX')
+check('rechaza un tipo de documento fuera de la lista',
+      'Tipo de documento inválido' in r.get_data(as_text=True))
+
+r = crear(nombres='Pelado', apellidos='Sin Rol', correo='pelado@x.co', password='clave123')
+with app.app_context():
+    u = Usuario.query.filter_by(correo='pelado@x.co').first()
+    check('sin rol no inventa perfiles internos',
+          u is not None and u.aprendiz is None and u.instructor is None)
+
+html = c_admin.get('/admin/usuarios').get_data(as_text=True)
+check('el formulario separa los campos por rol',
+      html.count('campos-rol') >= 2 and 'data-para="aprendiz"' in html
+      and 'data-para="instructor"' in html)
+check('  · y los bloques ocultos nacen deshabilitados',
+      html.count('class="campos-rol d-none"') == 2)
+
 print('\n── Portal de acceso y dock móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)

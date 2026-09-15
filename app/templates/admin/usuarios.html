@@ -178,18 +178,98 @@
              </div>
            </div>
 
+           <div class="row gx-3">
+             <div class="col-md-4 mb-3">
+               <label class="form-label" for="tipo_documento">Tipo de documento</label>
+               <select class="form-select" id="tipo_documento" name="tipo_documento">
+                 <option value="">Sin especificar</option>
+                 {% for clave, etiqueta in tipos_documento %}
+                   <option value="{{ clave }}">{{ etiqueta }}</option>
+                 {% endfor %}
+               </select>
+             </div>
+             <div class="col-md-4 mb-3">
+               <label class="form-label" for="numero_documento">Nº de documento</label>
+               <input class="form-control" type="text" id="numero_documento"
+                      name="numero_documento" placeholder="Sin puntos ni comas">
+             </div>
+             <div class="col-md-4 mb-3">
+               <label class="form-label" for="telefono">Teléfono</label>
+               <input class="form-control" type="tel" id="telefono" name="telefono"
+                      placeholder="Número de contacto">
+             </div>
+           </div>
+
            <div class="lib-divider"></div>
 
            <div class="mb-3">
              <label class="form-label" for="id_rol">Asignar Rol Inicial</label>
              <select class="form-select" id="id_rol" name="id_rol">
-               <option value="" selected>Crear sin rol (se asignará después)</option>
+               <option value="" data-rol="" selected>Crear sin rol (se asignará después)</option>
                {% for r in roles %}
-                  <option value="{{ r.id_rol }}">{{ r.nombre | capitalize }}</option>
+                  <option value="{{ r.id_rol }}" data-rol="{{ r.nombre }}">{{ r.nombre | capitalize }}</option>
                {% endfor %}
              </select>
              <small class="text-info mt-1 d-block"><i class="bi bi-info-circle"></i> Si seleccionas Aprendiz o Instructor, se creará el perfil interno automáticamente para ese rol.</small>
            </div>
+
+           <!-- Campos propios del aprendiz -->
+           <fieldset class="campos-rol d-none" data-para="aprendiz" disabled>
+             <div class="lib-divider"></div>
+             <p class="rotulo-rol"><i class="bi bi-mortarboard"></i> Datos de la práctica</p>
+
+             <div class="row gx-3">
+               <div class="col-md-6 mb-3">
+                 <label class="form-label" for="codigo_ficha">Código de ficha <span class="text-danger">*</span></label>
+                 <input class="form-control" type="text" id="codigo_ficha"
+                        name="codigo_ficha" list="fichas-existentes" placeholder="Ej. 3235642" required>
+                 <datalist id="fichas-existentes">
+                   {% for c in cursos %}<option value="{{ c.ficha }}">{{ c.nombre }}</option>{% endfor %}
+                 </datalist>
+                 <small class="text-muted">Si la ficha aún no existe, el aprendiz queda en espera y se matricula solo al crearla.</small>
+               </div>
+               <div class="col-md-3 mb-3">
+                 <label class="form-label" for="estado_practica">Estado</label>
+                 <select class="form-select" id="estado_practica" name="estado_practica">
+                   {% for e in estados_practica %}
+                     <option value="{{ e }}">{{ e }}</option>
+                   {% endfor %}
+                 </select>
+               </div>
+               <div class="col-md-3 mb-3">
+                 <label class="form-label" for="horas_requeridas">Horas requeridas</label>
+                 <input class="form-control" type="number" id="horas_requeridas"
+                        name="horas_requeridas" min="0" value="{{ horas_por_defecto }}">
+               </div>
+             </div>
+
+             <div class="row gx-3">
+               <div class="col-md-6 mb-3">
+                 <label class="form-label" for="fecha_inicio_practica">Inicio de la práctica</label>
+                 <input class="form-control" type="date" id="fecha_inicio_practica"
+                        name="fecha_inicio_practica">
+               </div>
+               <div class="col-md-6 mb-3">
+                 <label class="form-label" for="fecha_fin_practica">Fin de la práctica</label>
+                 <input class="form-control" type="date" id="fecha_fin_practica"
+                        name="fecha_fin_practica">
+                 <small class="text-muted">Si las dejas vacías, el avance se estima a 6 meses.</small>
+               </div>
+             </div>
+           </fieldset>
+
+           <!-- Campos propios del instructor -->
+           <fieldset class="campos-rol d-none" data-para="instructor" disabled>
+             <div class="lib-divider"></div>
+             <p class="rotulo-rol"><i class="bi bi-person-badge"></i> Datos del instructor</p>
+
+             <div class="mb-3">
+               <label class="form-label" for="area_formacion">Área de formación</label>
+               <input class="form-control" type="text" id="area_formacion"
+                      name="area_formacion" placeholder="Ej. Teleinformática">
+               <small class="text-muted">Las fichas a cargo se asignan después desde Instructores.</small>
+             </div>
+           </fieldset>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
@@ -236,6 +316,23 @@
                  <i class="bi bi-telephone"></i>
                  <input type="text" class="form-control" name="telefono" value="{{ u.telefono or '' }}">
                </div>
+             </div>
+           </div>
+
+           <div class="row gx-3">
+             <div class="col-md-6 mb-3">
+               <label class="form-label">Tipo de documento</label>
+               <select class="form-select" name="tipo_documento">
+                 <option value="">Sin especificar</option>
+                 {% for clave, etiqueta in tipos_documento %}
+                   <option value="{{ clave }}" {% if u.tipo_documento == clave %}selected{% endif %}>{{ etiqueta }}</option>
+                 {% endfor %}
+               </select>
+             </div>
+             <div class="col-md-6 mb-3">
+               <label class="form-label">Nº de documento</label>
+               <input type="text" class="form-control" name="numero_documento"
+                      value="{{ u.numero_documento or '' }}">
              </div>
            </div>
 
@@ -441,6 +538,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {% block extra_js %}
 <script>
+  // Los campos propios de cada rol solo se muestran (y solo se envían) cuando
+  // ese rol está elegido: un fieldset deshabilitado no viaja en el POST ni
+  // participa en la validación del navegador.
+  (function () {
+    const selector = document.getElementById('id_rol');
+    const bloques = document.querySelectorAll('.campos-rol');
+    if (!selector || !bloques.length) return;
+
+    function aplicar() {
+      const opcion = selector.options[selector.selectedIndex];
+      const rol = opcion ? (opcion.dataset.rol || '') : '';
+      bloques.forEach(function (bloque) {
+        const activo = bloque.dataset.para === rol;
+        bloque.classList.toggle('d-none', !activo);
+        bloque.disabled = !activo;
+      });
+    }
+    selector.addEventListener('change', aplicar);
+    aplicar();
+  })();
+
   // El botón de borrado solo se habilita cuando el correo escrito coincide.
   document.querySelectorAll('input[data-esperado]').forEach(function (campo) {
     const boton = document.querySelector(campo.dataset.destino);
