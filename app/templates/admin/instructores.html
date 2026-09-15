@@ -3,65 +3,208 @@
 
 {% block content %}
 <div class="page-toolbar">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-person-badge text-primary me-2"></i>Gestión de Instructores</h2>
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">
+    <i class="bi bi-person-badge text-primary me-2"></i>Gestión de Instructores
+  </h2>
+  <div class="toolbar-actions">
+    <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary">
+      <i class="bi bi-person-plus"></i> Crear instructor
+    </a>
+  </div>
 </div>
 
-<div class="biblioteca-shell">
-  <div class="biblioteca-shell-header">
-    <div class="shell-header-icon bg-dark text-white border-secondary"><i class="bi bi-briefcase"></i></div>
-    <h4>Listado Oficial de Instructores</h4>
-  </div>
-  <div class="biblioteca-shell-body p-0">
-    <div class="table-responsive">
-      <table class="biblioteca-table mb-0">
-        <thead>
-          <tr>
-            <th>ID Inst.</th>
-            <th>Nombre y Correo</th>
-            <th>Área de Formación</th>
-            <th>Estado Sistema</th>
-            <th class="text-end">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-           {% for inst in instructores %}
-            <tr>
-              <td>#{{ inst.id_instructor }}</td>
-              <td>
-                <div class="fw-bold text-primary">{{ inst.usuario.nombres }} {{ inst.usuario.apellidos }}</div>
-                <div class="small text-muted">{{ inst.usuario.correo }}</div>
-              </td>
-              <td>
-                <form action="{{ url_for('admin.editar_area_instructor', id_instructor=inst.id_instructor) }}" method="POST" class="d-flex align-items-center gap-2 m-0">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="text" name="area_formacion" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ inst.area_formacion or '' }}" placeholder="Sin definir" style="max-width: 200px;">
-                  <button type="submit" class="btn btn-sm btn-ghost" title="Guardar Área"><i class="bi bi-check2"></i></button>
-                </form>
-              </td>
-              <td>
-                {% if inst.activo %}
-                  <span class="badge-lib badge-green"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Activo</span>
-                {% else %}
-                  <span class="badge-lib badge-red"><i class="bi bi-slash-circle me-1"></i> Inactivo</span>
-                {% endif %}
-              </td>
-              <td>
-                <form action="{{ url_for('admin.toggle_instructor', id_instructor=inst.id_instructor) }}" method="POST" class="d-flex justify-content-end" onsubmit="return confirm('¿Cambiar estado del instructor?');">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  {% if inst.activo %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Marcar Inactivo">Inactivar</button>
-                  {% else %}
-                    <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar Activo">Activar</button>
-                  {% endif %}
-                </form>
-              </td>
-            </tr>
-           {% else %}
-            <tr><td colspan="5" class="text-center py-4 text-muted fst-italic">No hay instructores asignados.</td></tr>
-           {% endfor %}
-        </tbody>
-      </table>
+{% if not filas %}
+  <div class="biblioteca-shell">
+    <div class="biblioteca-shell-body text-center py-5">
+      <i class="bi bi-person-badge" style="font-size: 2rem; color: var(--text-disabled);"></i>
+      <p class="text-muted mt-3 mb-0">Todavía no hay instructores registrados.</p>
+      <a href="{{ url_for('admin.usuarios') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-person-plus"></i> Crear el primero
+      </a>
     </div>
   </div>
-</div>
+{% endif %}
+
+{% for fila in filas %}
+  {% set inst = fila.instructor %}
+  <section class="inst-card">
+
+    <header class="inst-cab">
+      <span class="inst-avatar">{{ inst.usuario.nombres[0] | upper }}</span>
+      <div class="inst-ident">
+        <h3>{{ inst.usuario.nombres }} {{ inst.usuario.apellidos }}</h3>
+        <span class="inst-correo">{{ inst.usuario.correo }}</span>
+      </div>
+
+      <div class="inst-estado">
+        {% if inst.activo %}
+          <span class="badge-lib badge-green"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Activo</span>
+        {% else %}
+          <span class="badge-lib badge-red"><i class="bi bi-slash-circle me-1"></i> Inactivo</span>
+        {% endif %}
+      </div>
+
+      <div class="inst-acciones">
+        <button type="button" class="btn btn-sm btn-ghost" data-bs-toggle="modal"
+                data-bs-target="#modalInst{{ inst.id_instructor }}">
+          <i class="bi bi-pencil-square"></i> Editar datos
+        </button>
+        <form action="{{ url_for('admin.toggle_instructor', id_instructor=inst.id_instructor) }}"
+              method="POST" class="m-0"
+              onsubmit="return confirm('{% if inst.activo %}Al inactivarlo dejará de aparecer para asignar fichas. ¿Continuar?{% else %}¿Volver a marcarlo como activo?{% endif %}');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if inst.activo %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">Inactivar</button>
+          {% else %}
+            <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+          {% endif %}
+        </form>
+      </div>
+    </header>
+
+    <div class="inst-cuerpo">
+
+      <!-- Área de formación -->
+      <div class="inst-bloque">
+        <p class="inst-rotulo">Área de formación</p>
+        <form action="{{ url_for('admin.editar_area_instructor', id_instructor=inst.id_instructor) }}"
+              method="POST" class="inst-area">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="area_formacion" class="form-control form-control-sm"
+                 value="{{ inst.area_formacion or '' }}" placeholder="Sin definir">
+          <button type="submit" class="btn btn-sm btn-ghost" title="Guardar área">
+            <i class="bi bi-check2"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Fichas a cargo -->
+      <div class="inst-bloque inst-bloque-ancho">
+        <p class="inst-rotulo">
+          Fichas a cargo
+          <span class="inst-conteo">{{ fila.fichas | length }} de {{ total_fichas }} · {{ fila.aprendices }} aprendiz{{ 'es' if fila.aprendices != 1 }}</span>
+        </p>
+
+        {% if fila.fichas %}
+          <ul class="inst-fichas">
+            {% for c in fila.fichas %}
+              <li class="inst-ficha">
+                <a href="{{ url_for('admin.ficha_detalle', id_curso=c.id_curso) }}">
+                  <b>{{ c.ficha or 'sin código' }}</b>
+                  <span>{{ c.nombre }}</span>
+                </a>
+                <form action="{{ url_for('admin.desvincular_ficha_instructor', id_instructor=inst.id_instructor, id_curso=c.id_curso) }}"
+                      method="POST" class="m-0"
+                      onsubmit="return confirm('Desvincular a {{ inst.usuario.nombres }} de la ficha {{ c.ficha or c.nombre }}. Los aprendices y sus evidencias no se tocan. ¿Continuar?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="inst-quitar" title="Desvincular de esta ficha">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="inst-vacio"><i class="bi bi-info-circle"></i> No tiene ninguna ficha asignada todavía.</p>
+        {% endif %}
+
+        {% if fila.disponibles %}
+          <form action="{{ url_for('admin.vincular_ficha_instructor', id_instructor=inst.id_instructor) }}"
+                method="POST" class="inst-vincular">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select class="form-select form-select-sm" name="id_curso" required>
+              <option value="" selected disabled>Vincular a una ficha…</option>
+              {% for c in fila.disponibles %}
+                <option value="{{ c.id_curso }}">{{ c.ficha or 's/c' }} — {{ c.nombre }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">
+              <i class="bi bi-link-45deg"></i> Vincular
+            </button>
+          </form>
+        {% elif total_fichas %}
+          <p class="inst-vacio"><i class="bi bi-check2-all"></i> Ya está en todas las fichas del centro.</p>
+        {% else %}
+          <p class="inst-vacio">
+            <i class="bi bi-info-circle"></i>
+            Todavía no hay fichas creadas.
+            <a href="{{ url_for('admin.fichas') }}">Crear una ficha</a>
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal: datos del instructor -->
+  <div class="modal fade" id="modalInst{{ inst.id_instructor }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <form action="{{ url_for('admin.editar_usuario', id_usuario=inst.usuario.id_usuario) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="volver" value="instructores">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-pencil-square text-primary me-2"></i>
+              Datos de {{ inst.usuario.nombres }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row gx-3">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nombres <span class="text-danger">*</span></label>
+                <input class="form-control" type="text" name="nombres" value="{{ inst.usuario.nombres }}" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                <input class="form-control" type="text" name="apellidos" value="{{ inst.usuario.apellidos }}" required>
+              </div>
+            </div>
+
+            <div class="row gx-3">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Correo <span class="text-danger">*</span></label>
+                <input class="form-control" type="email" name="correo" value="{{ inst.usuario.correo }}" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Teléfono</label>
+                <input class="form-control" type="text" name="telefono" value="{{ inst.usuario.telefono or '' }}">
+              </div>
+            </div>
+
+            <div class="row gx-3">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Tipo de documento</label>
+                <select class="form-select" name="tipo_documento">
+                  <option value="">Sin especificar</option>
+                  {% for clave, etiqueta in tipos_documento %}
+                    <option value="{{ clave }}" {% if inst.usuario.tipo_documento == clave %}selected{% endif %}>{{ etiqueta }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Nº de documento</label>
+                <input class="form-control" type="text" name="numero_documento"
+                       value="{{ inst.usuario.numero_documento or '' }}">
+              </div>
+            </div>
+
+            <div class="lib-divider"></div>
+
+            <div class="mb-1">
+              <label class="form-label">Nueva contraseña</label>
+              <input class="form-control" type="password" name="password" minlength="6"
+                     placeholder="Dejar en blanco para no cambiarla">
+              <small class="text-muted">Si la cambias, entrégasela al instructor: no se le avisa por correo.</small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endfor %}
 {% endblock %}

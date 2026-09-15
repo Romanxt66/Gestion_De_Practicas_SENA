@@ -52,6 +52,16 @@ def _parse_fecha(valor):
     return datetime.strptime(valor, '%Y-%m-%d').date() if valor else None
 
 
+def _destino(por_defecto='admin.usuarios'):
+    """A qué listado volver tras guardar.
+
+    El formulario elige entre una lista cerrada de endpoints: así la misma
+    acción sirve desde varias pantallas sin aceptar URLs de fuera."""
+    permitidos = {'usuarios': 'admin.usuarios', 'instructores': 'admin.instructores'}
+    return redirect(url_for(permitidos.get(request.form.get('volver', ''), por_defecto)))
+
+
+
 def _id_rol_superusuario():
     rol = Rol.query.filter_by(nombre='superusuario').first()
     return rol.id_rol if rol else None
@@ -339,25 +349,25 @@ def editar_usuario(id_usuario):
 
     if not nombres or not apellidos or not correo:
         flash('Nombres, apellidos y correo son obligatorios.', 'danger')
-        return redirect(url_for('admin.usuarios'))
+        return _destino()
 
     if correo != u.correo and Usuario.query.filter_by(correo=correo).first():
         flash('Ya existe otro usuario con ese correo.', 'warning')
-        return redirect(url_for('admin.usuarios'))
+        return _destino()
 
     if tipo_documento and tipo_documento not in dict(TIPOS_DOCUMENTO):
         flash('Tipo de documento inválido.', 'danger')
-        return redirect(url_for('admin.usuarios'))
+        return _destino()
 
     if numero_documento and numero_documento != u.numero_documento and Usuario.query.filter_by(
             numero_documento=numero_documento).first():
         flash('Ya existe otro usuario con ese número de documento.', 'warning')
-        return redirect(url_for('admin.usuarios'))
+        return _destino()
 
     if password and len(password) < LONGITUD_MINIMA_PASSWORD:
         flash(f'La contraseña debe tener al menos {LONGITUD_MINIMA_PASSWORD} caracteres.',
               'danger')
-        return redirect(url_for('admin.usuarios'))
+        return _destino()
 
     u.nombres = nombres
     u.apellidos = apellidos
@@ -372,7 +382,7 @@ def editar_usuario(id_usuario):
     log_historial(current_user, 'Usuarios', 'MODIFICAR', f'Usuario {correo} editado')
     db.session.commit()
     flash(f'Usuario {nombres} {apellidos} actualizado.', 'success')
-    return redirect(url_for('admin.usuarios'))
+    return _destino()
 
 
 @bp.route('/usuarios/<int:id_usuario>/toggle', methods=['POST'])
@@ -634,7 +644,28 @@ def quitar_rol():
 @role_required('superusuario')
 def instructores():
     lista = Instructor.query.join(Usuario).order_by(Usuario.nombres).all()
-    return render_template('admin/instructores.html', instructores=lista)
+    cursos = Curso.query.order_by(Curso.nombre).all()
+
+    # Cuántos aprendices tiene cada ficha (una consulta, no una por fila)
+    aprendices_por_curso = dict(
+        db.session.query(CursoAprendiz.id_curso, db.func.count(CursoAprendiz.id_aprendiz))
+        .group_by(CursoAprendiz.id_curso).all())
+
+    filas = []
+    for inst in lista:
+        asignadas = [ci.curso for ci in inst.cursos if ci.curso]
+        ids_asignadas = {c.id_curso for c in asignadas}
+        filas.append({
+            'instructor': inst,
+            'fichas': sorted(asignadas, key=lambda c: c.nombre or ''),
+            'disponibles': [c for c in cursos if c.id_curso not in ids_asignadas],
+            'aprendices': sum(int(aprendices_por_curso.get(c.id_curso, 0))
+                              for c in asignadas),
+        })
+
+    return render_template('admin/instructores.html', filas=filas,
+                           total_fichas=len(cursos),
+                           tipos_documento=TIPOS_DOCUMENTO)
 
 
 @bp.route('/instructores/<int:id_instructor>/toggle', methods=['POST'])
@@ -650,14 +681,68 @@ def toggle_instructor(id_instructor):
     return redirect(url_for('admin.instructores'))
 
 
+@bp.route('/instructores/<int:id_instructor>/fichas/vincular', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def vincular_ficha_instructor(id_instructor):
+    """Poner al instructor a cargo de una ficha, desde su propia pantalla."""
+    inst = Instructor.query.get_or_404(id_instructor)
+    id_curso = request.form.get('id_curso', type=int)
+
+    if not id_curso:
+        flash('Selecciona la ficha que quieres vincular.', 'danger')
+        return redirect(url_for('admin.instructores'))
+
+    curso = Curso.query.get_or_404(id_curso)
+
+    if CursoInstructor.query.filter_by(id_curso=id_curso,
+                                       id_instructor=id_instructor).first():
+        flash('Ese instructor ya estaba a cargo de esa ficha.', 'warning')
+        return redirect(url_for('admin.instructores'))
+
+    db.session.add(CursoInstructor(id_curso=id_curso, id_instructor=id_instructor))
+    log_historial(current_user, 'Instructores', 'MODIFICAR',
+                  f'Instructor {id_instructor} vinculado a la ficha {curso.ficha or curso.nombre}')
+    db.session.commit()
+    flash(f'{inst.usuario.nombres} quedó a cargo de la ficha '
+          f'{curso.ficha or curso.nombre}.', 'success')
+    return redirect(url_for('admin.instructores'))
+
+
+@bp.route('/instructores/<int:id_instructor>/fichas/<int:id_curso>/desvincular',
+          methods=['POST'])
+@login_required
+@role_required('superusuario')
+def desvincular_ficha_instructor(id_instructor, id_curso):
+    """Quitarle la ficha al instructor. Aprendices y evidencias no se tocan."""
+    ci = CursoInstructor.query.filter_by(
+        id_curso=id_curso, id_instructor=id_instructor).first()
+
+    if not ci:
+        flash('Ese instructor ya no estaba a cargo de esa ficha.', 'info')
+        return redirect(url_for('admin.instructores'))
+
+    curso = ci.curso
+    nombre = (ci.instructor.usuario.nombres
+              if ci.instructor and ci.instructor.usuario else id_instructor)
+    etiqueta = (curso.ficha or curso.nombre) if curso else id_curso
+    db.session.delete(ci)
+
+    log_historial(current_user, 'Instructores', 'MODIFICAR',
+                  f'Instructor {id_instructor} desvinculado de la ficha {etiqueta}')
+    db.session.commit()
+    flash(f'{nombre} ya no está a cargo de la ficha {etiqueta}.', 'success')
+    return redirect(url_for('admin.instructores'))
+
+
 @bp.route('/instructores/<int:id_instructor>/area', methods=['POST'])
 @login_required
 @role_required('superusuario')
 def editar_area_instructor(id_instructor):
     inst = Instructor.query.get_or_404(id_instructor)
-    inst.area_formacion = request.form.get('area_formacion', '').strip()
+    inst.area_formacion = request.form.get('area_formacion', '').strip() or None
     log_historial(current_user, 'Instructores', 'MODIFICAR',
-                  f'Área instructor {id_instructor}: {inst.area_formacion}')
+                  f'Área instructor {id_instructor}: {inst.area_formacion or "sin definir"}')
     db.session.commit()
     flash('Área de formación actualizada.', 'success')
     return redirect(url_for('admin.instructores'))
@@ -1006,7 +1091,8 @@ def asignar_instructor_ficha(id_curso):
                   f'Instructor {instructor.usuario.nombres} asignado a {curso.nombre}')
     db.session.commit()
 
-    flash('Instructor asignado correctamente.', 'success')
+    flash(f'{instructor.usuario.nombres} quedó a cargo de la ficha '
+          f'{curso.ficha or curso.nombre}.', 'success')
     return redirect(url_for('admin.fichas'))
 
 
@@ -1028,7 +1114,8 @@ def desasignar_instructor_ficha(id_curso, id_instructor):
                   f'Instructor {nombre_inst} desasignado de {curso.nombre}')
     db.session.commit()
 
-    flash('Instructor removido de la ficha.', 'success')
+    flash(f'{nombre_inst} ya no está a cargo de la ficha '
+          f'{curso.ficha or curso.nombre}.', 'success')
     return redirect(url_for('admin.fichas'))
 
 

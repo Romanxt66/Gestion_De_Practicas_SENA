@@ -2911,3 +2911,94 @@ input:-webkit-autofill::first-line {
   font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--acc);
 }
+
+/* ── Tarjetas de instructor (panel del admin) ────────────── */
+.inst-card {
+  background: rgba(12, 12, 12, .72);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.inst-cab {
+  display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.inst-avatar {
+  width: 40px; height: 40px; border-radius: 12px; flex: none;
+  display: grid; place-items: center;
+  background: var(--acc-soft); border: 1px solid var(--acc-glow);
+  color: var(--acc); font-weight: 700;
+}
+.inst-ident { min-width: 0; margin-right: auto; }
+.inst-ident h3 {
+  margin: 0; font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: -0.01em;
+}
+.inst-correo { font-size: 0.8rem; color: var(--text-muted); }
+.inst-acciones { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.inst-cuerpo {
+  display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: 1.25rem 2rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.inst-rotulo {
+  display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+  margin: 0 0 0.6rem;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.inst-conteo {
+  letter-spacing: 0; text-transform: none; font-weight: 500;
+  font-size: 0.72rem; color: var(--text-disabled);
+}
+
+.inst-area { display: flex; align-items: center; gap: 0.4rem; margin: 0; }
+.inst-area .form-control { min-width: 0; }
+
+.inst-fichas {
+  list-style: none; margin: 0 0 0.85rem; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+}
+.inst-ficha {
+  display: flex; align-items: stretch;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .03);
+  overflow: hidden;
+}
+.inst-ficha > a {
+  display: grid; gap: 0.1rem;
+  padding: 0.45rem 0.7rem;
+  text-decoration: none; min-width: 0;
+}
+.inst-ficha b { font-size: 0.82rem; color: var(--acc); font-weight: 700; }
+.inst-ficha span { font-size: 0.72rem; color: var(--text-muted); }
+.inst-ficha:hover { border-color: var(--acc-glow); }
+
+.inst-quitar {
+  display: grid; place-items: center;
+  padding: 0 0.6rem; height: 100%;
+  border: 0; border-left: 1px solid var(--border-subtle);
+  background: transparent; color: var(--text-disabled);
+  font-size: 0.7rem; cursor: pointer;
+  transition: color var(--trans-fast), background var(--trans-fast);
+}
+.inst-quitar:hover { color: var(--accent-red, #f87171); background: rgba(248, 113, 113, .1); }
+
+.inst-vincular { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0; }
+.inst-vincular .form-select { max-width: 340px; }
+
+.inst-vacio { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+.inst-vacio a { color: var(--acc); }
+
+@media (max-width: 767.98px) {
+  .inst-cuerpo { grid-template-columns: 1fr; }
+  .inst-ident { margin-right: 0; width: 100%; }
+  .inst-acciones { width: 100%; }
+  .inst-vincular .form-select { max-width: none; flex: 1 1 100%; }
+}

@@ -928,6 +928,108 @@ check('el formulario separa los campos por rol',
 check('  · y los bloques ocultos nacen deshabilitados',
       html.count('class="campos-rol d-none"') == 2)
 
+print('\n── El admin gestiona las fichas del instructor ──')
+with app.app_context():
+    id_inst = inst.instructor.id_instructor
+    from app.models.curso_instructor import CursoInstructor as CI
+    CI.query.filter_by(id_instructor=id_inst).delete(synchronize_session=False)
+    db.session.commit()
+
+html = c_admin.get('/admin/instructores').get_data(as_text=True)
+check('la vista ofrece vincular cuando no tiene fichas',
+      'No tiene ninguna ficha asignada' in html and 'Vincular a una ficha' in html)
+
+t = token(c_admin, '/admin/instructores')
+r = c_admin.post(f'/admin/instructores/{id_inst}/fichas/vincular',
+                 data={'id_curso': id_curso, 'csrf_token': t}, follow_redirects=True)
+with app.app_context():
+    check('vincula al instructor con la ficha',
+          CI.query.filter_by(id_instructor=id_inst, id_curso=id_curso).first() is not None)
+check('  · y lo dice con el nombre de la ficha', 'a cargo de la ficha' in r.get_data(as_text=True))
+
+html = c_admin.get('/admin/instructores').get_data(as_text=True)
+
+def formulario_de(id_i, pagina):
+    """El <form> de vincular que pertenece a ESE instructor, no a otro."""
+    accion = f'/admin/instructores/{id_i}/fichas/vincular'
+    if accion not in pagina:
+        return ''
+    desde = pagina.index(accion)
+    return pagina[desde:pagina.index('</form>', desde)]
+
+opciones = re.findall(r'<option value="(\\d+)"', formulario_de(id_inst, html))
+check('la ficha vinculada ya no se ofrece en su desplegable',
+      str(id_curso) not in opciones, opciones)
+check('  · y sí aparece como ficha a cargo',
+      f'/admin/fichas/{id_curso}/detalle' in html)
+
+# Vincular dos veces no duplica
+t = token(c_admin, '/admin/instructores')
+r = c_admin.post(f'/admin/instructores/{id_inst}/fichas/vincular',
+                 data={'id_curso': id_curso, 'csrf_token': t}, follow_redirects=True)
+check('no duplica una ficha ya vinculada', 'ya estaba a cargo' in r.get_data(as_text=True))
+with app.app_context():
+    check('  · y sigue habiendo un solo vínculo',
+          CI.query.filter_by(id_instructor=id_inst, id_curso=id_curso).count() == 1)
+
+# Desvincular no toca aprendices ni evidencias
+with app.app_context():
+    aprendices_antes = CursoAprendiz.query.filter_by(id_curso=id_curso).count()
+    evidencias_antes = Evidencia.query.count()
+
+t = token(c_admin, '/admin/instructores')
+r = c_admin.post(f'/admin/instructores/{id_inst}/fichas/{id_curso}/desvincular',
+                 data={'csrf_token': t}, follow_redirects=True)
+with app.app_context():
+    check('desvincula al instructor de la ficha',
+          CI.query.filter_by(id_instructor=id_inst, id_curso=id_curso).first() is None)
+    check('  · sin tocar a los aprendices de la ficha',
+          CursoAprendiz.query.filter_by(id_curso=id_curso).count() == aprendices_antes)
+    check('  · ni sus evidencias', Evidencia.query.count() == evidencias_antes)
+
+# Desvincular algo que ya no está no revienta
+t = token(c_admin, '/admin/instructores')
+r = c_admin.post(f'/admin/instructores/{id_inst}/fichas/{id_curso}/desvincular',
+                 data={'csrf_token': t}, follow_redirects=True)
+check('desvincular dos veces no da error', r.status_code == 200
+      and 'ya no estaba a cargo' in r.get_data(as_text=True), r.status_code)
+
+# Editar los datos del instructor desde su propia pantalla
+t = token(c_admin, '/admin/instructores')
+r = c_admin.post(f'/admin/usuarios/{inst.id_usuario}/editar', data={
+    'nombres': inst.nombres, 'apellidos': inst.apellidos, 'correo': inst.correo,
+    'telefono': '3109998877', 'tipo_documento': 'CC', 'numero_documento': '77712345',
+    'volver': 'instructores', 'csrf_token': t}, follow_redirects=False)
+check('al editar desde Instructores vuelve a Instructores',
+      '/admin/instructores' in r.headers.get('Location', ''), r.headers.get('Location'))
+with app.app_context():
+    u = db.session.get(Usuario, inst.id_usuario)
+    check('  · y guarda teléfono y documento',
+          u.telefono == '3109998877' and u.tipo_documento == 'CC'
+          and u.numero_documento == '77712345')
+
+# El destino solo acepta la lista cerrada
+t = token(c_admin, '/admin/instructores')
+r = c_admin.post(f'/admin/usuarios/{inst.id_usuario}/editar', data={
+    'nombres': inst.nombres, 'apellidos': inst.apellidos, 'correo': inst.correo,
+    'volver': 'https://sitio-externo.example/robo', 'csrf_token': t},
+    follow_redirects=False)
+check('ignora un destino que no está en la lista',
+      'sitio-externo' not in r.headers.get('Location', '')
+      and '/admin/usuarios' in r.headers.get('Location', ''),
+      r.headers.get('Location'))
+
+# Solo el admin puede tocar esto
+t = token(c_inst, '/instructor/dashboard')
+r = c_inst.post(f'/admin/instructores/{id_inst}/fichas/vincular',
+                data={'id_curso': id_curso, 'csrf_token': t})
+check('un instructor no puede vincularse fichas solo', r.status_code == 403, r.status_code)
+
+# Se deja como estaba
+t = token(c_admin, '/admin/instructores')
+c_admin.post(f'/admin/instructores/{id_inst}/fichas/vincular',
+             data={'id_curso': id_curso, 'csrf_token': t}, follow_redirects=True)
+
 print('\n── Portal de acceso y dock móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)
