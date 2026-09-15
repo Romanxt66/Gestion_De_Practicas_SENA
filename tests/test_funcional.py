@@ -1080,7 +1080,7 @@ t = token(c_admin, '/admin/fichas')
 c_admin.post(f'/admin/fichas/{id_curso}/asignar-instructor',
              data={'id_instructor': id_inst, 'csrf_token': t}, follow_redirects=True)
 
-print('\n── Portal de acceso y dock móvil ──')
+print('\n── Portal de acceso y panel móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)
 check('la raíz lleva al portal de acceso',
@@ -1110,11 +1110,21 @@ for campo in ('nombres', 'apellidos', 'tipo_documento', 'numero_documento',
     check(f'  · registro conserva el campo {campo}', f'name="{campo}"' in html)
 
 html = c_ap.get('/aprendiz/dashboard').get_data(as_text=True)
-check('el panel trae el dock inferior para móvil', 'dock-wrap' in html)
+check('el panel lateral deslizante está en el armazón',
+      'lateral-movil' in html and 'panelAbrir' in html and 'panelFondo' in html)
+_desde = html.index('lateral-movil')
+_panel = html[_desde:html.index('</aside>', _desde)]
+_fija = html[html.index('lateral-fija'):_desde]
+check('  · con el mismo menú que la barra fija',
+      _panel.count('lateral-item') == _fija.count('lateral-item') > 0,
+      f"deslizante={_panel.count('lateral-item')} fija={_fija.count('lateral-item')}")
 css = open('app/static/biblioteca.css', encoding='utf-8').read()
-check('el dock solo aparece en pantallas pequeñas',
-      '.dock-wrap{display:none' in css.replace(' ', '') or
-      '.dock-wrap {' in css and 'display: none' in css)
+check('  · oculto hasta que se abre',
+      'transform: translateX(-100%)' in css and '.lateral-movil.abierto' in css)
+check('  · y sin existir en escritorio',
+      '.lateral-movil, .panel-fondo, .panel-abrir { display: none !important; }' in css)
+check('ya no queda nada del dock inferior',
+      'dock' not in css and 'dock' not in html)
 check('el fondo con desenfoque está aplicado', 'backdrop-filter' in css)
 check('las superficies son translúcidas y con desenfoque',
       '--velo-bloque:' in css and '--desenfoque:    blur(' in css

@@ -122,6 +122,15 @@
 <!-- ══ BARRA LATERAL (escritorio) ═════════════════════ -->
 <aside class="lateral lateral-fija d-none d-lg-flex">{{ menu_lateral() }}</aside>
 
+<!-- ══ MISMO PANEL, DESLIZANTE (móvil) ════════════════ -->
+<aside class="lateral lateral-movil" id="panelMovil" aria-label="Menú principal" aria-hidden="true">
+  <button type="button" class="panel-cerrar" id="panelCerrar" aria-label="Cerrar el menú">
+    <i class="bi bi-x-lg"></i>
+  </button>
+  {{ menu_lateral() }}
+</aside>
+<div class="panel-fondo" id="panelFondo" hidden></div>
+
 {% endif %}
 
 <div class="contenido">
@@ -129,11 +138,10 @@
 {% if mostrar_chrome %}
 <!-- ══ BARRA SUPERIOR ═════════════════════════════════ -->
 <header class="superior">
-  <a class="d-lg-none" href="{{ inicio }}" aria-label="Inicio"
-     style="display:grid;place-items:center;width:38px;height:38px;border-radius:10px;flex-shrink:0;
-            color:#04140d;background:linear-gradient(145deg,var(--acc-strong),var(--acc));">
-    <i class="bi bi-grid-1x2-fill"></i>
-  </a>
+  <button type="button" class="panel-abrir d-lg-none" id="panelAbrir"
+          aria-label="Abrir el menú" aria-controls="panelMovil" aria-expanded="false">
+    <i class="bi bi-list"></i>
+  </button>
 
   {% if rol.nombre == 'instructor' %}
   <form class="buscador" method="GET" action="{{ url_for('instructor.fichas') }}">
@@ -237,51 +245,6 @@
 </div><!-- /layout -->
 
 
-{% if mostrar_chrome %}
-<!-- ══ DOCK INFERIOR (solo móvil) ═════════════════════ -->
-<nav class="dock-wrap" aria-label="Navegación principal">
-  <div class="dock">
-    {% if rol.nombre == 'aprendiz' %}
-      <a class="dock-item {% if request.endpoint == 'aprendiz.dashboard' %}active{% endif %}" href="{{ url_for('aprendiz.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
-      <a class="dock-item {% if 'evidencias_subir' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.evidencias_subir') }}"><i class="bi bi-upload"></i> Subir</a>
-      <a class="dock-item {% if 'mis_evidencias' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.mis_evidencias') }}"><i class="bi bi-folder2-open"></i> Evidencias</a>
-      <a class="dock-item {% if 'aprendiz.progreso' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.progreso') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
-      <a class="dock-item {% if 'notificaciones' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.notificaciones') }}">
-        <i class="bi bi-bell"></i> Alertas
-        {% if nav_notificaciones %}<span class="dock-badge">{{ nav_notificaciones }}</span>{% endif %}
-      </a>
-      <a class="dock-item {% if 'informacion' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.informacion') }}"><i class="bi bi-person"></i> Mi info</a>
-      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
-
-    {% elif rol.nombre == 'instructor' %}
-      <a class="dock-item {% if request.endpoint == 'instructor.dashboard' %}active{% endif %}" href="{{ url_for('instructor.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
-      <a class="dock-item {% if 'instructor.ficha' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.fichas') }}"><i class="bi bi-journal-bookmark"></i> Fichas</a>
-      <a class="dock-item {% if 'instructor.aprendices' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.aprendices') }}"><i class="bi bi-people"></i> Aprendices</a>
-      <a class="dock-item {% if 'revisar' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.revisar_evidencias') }}">
-        <i class="bi bi-journal-check"></i> Evidencias
-        {% if nav_pendientes %}<span class="dock-badge">{{ nav_pendientes }}</span>{% endif %}
-      </a>
-      <a class="dock-item {% if 'progreso_aprendices' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.progreso_aprendices') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
-      <a class="dock-item {% if 'mis_cursos' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.mis_cursos') }}"><i class="bi bi-book"></i> Cursos</a>
-      <a class="dock-item {% if 'alertas' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.alertas') }}"><i class="bi bi-exclamation-triangle"></i> Alertas</a>
-      <a class="dock-item {% if 'reportes' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('instructor.reportes') }}"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a>
-      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
-
-    {% elif rol.nombre == 'superusuario' %}
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.dashboard') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.ficha') %}active{% endif %}" href="{{ url_for('admin.fichas') }}"><i class="bi bi-journal-bookmark"></i> Fichas</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.usuarios') %}active{% endif %}" href="{{ url_for('admin.usuarios') }}"><i class="bi bi-people"></i> Usuarios</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.roles') %}active{% endif %}" href="{{ url_for('admin.roles') }}"><i class="bi bi-shield-check"></i> Roles</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.instructores') %}active{% endif %}" href="{{ url_for('admin.instructores') }}"><i class="bi bi-person-badge"></i> Instructores</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.empresas') %}active{% endif %}" href="{{ url_for('admin.empresas') }}"><i class="bi bi-building"></i> Empresas</a>
-      <a class="dock-item {% if (request.endpoint or '').startswith('admin.historial') %}active{% endif %}" href="{{ url_for('admin.historial') }}"><i class="bi bi-clock-history"></i> Historial</a>
-      <a class="dock-item {% if 'backup' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('admin.backup') }}"><i class="bi bi-cloud-download"></i> Backup</a>
-      <a class="dock-item {% if 'cuenta.' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('cuenta.conexiones') }}"><i class="bi bi-plug"></i> Conexiones</a>
-    {% endif %}
-  </div>
-</nav>
-{% endif %}
-
 {% block modals %}{% endblock %}
 
 <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -311,13 +274,37 @@
       if (evento.persisted) window.location.reload();
     });
 
-    // El dock se desplaza hasta la sección activa en pantallas pequeñas
+    // Panel lateral deslizante en móvil
     (function () {
-      const dock = document.querySelector('.dock');
-      const activo = dock && dock.querySelector('.dock-item.active');
-      if (dock && activo) {
-        dock.scrollLeft = activo.offsetLeft - (dock.clientWidth / 2) + (activo.clientWidth / 2);
+      const panel  = document.getElementById('panelMovil');
+      const fondo  = document.getElementById('panelFondo');
+      const abrir  = document.getElementById('panelAbrir');
+      const cerrar = document.getElementById('panelCerrar');
+      if (!panel || !fondo || !abrir) return;
+
+      function mostrar(visible) {
+        panel.classList.toggle('abierto', visible);
+        fondo.hidden = !visible;
+        panel.setAttribute('aria-hidden', String(!visible));
+        abrir.setAttribute('aria-expanded', String(visible));
+        // Bloquear el desplazamiento del fondo mientras está abierto
+        document.body.style.overflow = visible ? 'hidden' : '';
+        if (visible) {
+          const activo = panel.querySelector('.lateral-item.active');
+          if (activo) activo.scrollIntoView({ block: 'nearest' });
+        }
       }
+
+      abrir.addEventListener('click', function () { mostrar(true); });
+      if (cerrar) cerrar.addEventListener('click', function () { mostrar(false); });
+      fondo.addEventListener('click', function () { mostrar(false); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && panel.classList.contains('abierto')) mostrar(false);
+      });
+      // Al pasar a escritorio el panel fijo toma el relevo
+      window.addEventListener('resize', function () {
+        if (window.innerWidth >= 992 && panel.classList.contains('abierto')) mostrar(false);
+      });
     })();
 
     // Ctrl/Cmd + K enfoca el buscador

@@ -86,7 +86,6 @@
 
   /* Medidas del armazón */
   --appbar-h:   72px;
-  --dock-h:     64px;
 }
 
 /* ── Base Reset ── */
@@ -1431,7 +1430,7 @@ body.biblioteca-body::before {
 
 /* ════════════════════════════════════════════════════════════
    REDISEÑO — armazón de la aplicación
-   Barra superior fija + dock inferior flotante, sobre negro puro.
+   Barra superior fija y panel lateral.
    ════════════════════════════════════════════════════════════ */
 
 body.biblioteca-body {
@@ -1601,73 +1600,9 @@ body.biblioteca-body::before { content: none !important; }
 
 /* ── Dock inferior flotante ─────────────────────────────── */
 /* Solo en móvil: en escritorio la navegación es la barra lateral */
-.dock-wrap {
-  display: none;
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  z-index: 1040;
-}
-@media (max-width: 991.98px) {
-  .dock-wrap { display: block; }
-  /* Hueco para que el dock no tape el final del contenido */
-  .contenido-cuerpo { padding-bottom: calc(var(--dock-h) + 1.5rem); }
-}
 
-.dock {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.45rem;
-  border-radius: 18px;
-  /* Translúcido: deja ver el contenido que pasa por detrás */
-  background: color-mix(in srgb, var(--bg-lateral) 55%, transparent);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.dock::-webkit-scrollbar { display: none; }
 
-.dock-item {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
-  padding: 0.6rem 0.9rem;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: all var(--trans-fast);
-}
-.dock-item i { font-size: 1rem; }
-.dock-item:hover { color: var(--text-primary); background: var(--bg-hover); }
-
-.dock-item.active {
-  color: var(--acc);
-  background: var(--acc-soft);
-  border: 1px solid var(--acc-glow);
-}
-
-.dock-badge {
-  min-width: 18px; height: 18px;
-  padding: 0 5px;
-  border-radius: 99px;
-  background: var(--accent-amber);
-  color: #000;
-  font-size: 0.63rem;
-  font-weight: 800;
-  line-height: 18px;
-  text-align: center;
-}
-
-/* El contenido deja hueco para que el dock no tape nada */
-.app-main { flex: 1; padding: 1.75rem 1.5rem calc(var(--dock-h) + 2.5rem); }
+.app-main { flex: 1; padding: 1.75rem 1.5rem 2.5rem; }
 
 /* ════════════════════════════════════════════════════════════
    REDISEÑO — módulos de contenido
@@ -1935,7 +1870,7 @@ body.biblioteca-body::before { content: none !important; }
   .appbar-user-name, .appbar-user-rol { display: none; }
   .nav-user-pill { padding: 0.2rem; }
 
-  .app-main { padding: 1rem 0.9rem calc(var(--dock-h) + 2rem); }
+  .app-main { padding: 1rem 0.9rem 2rem; }
 
   /* Varias plantillas añaden .align-items-center de Bootstrap, que lleva
      !important; hay que igualarlo para poder apilar en columna. */
@@ -1953,14 +1888,6 @@ body.biblioteca-body::before { content: none !important; }
   .lib-card-body { padding: 1.15rem; }
 
   .stat-num { font-size: 2.35rem; }
-
-  .dock {
-    border-radius: 0;
-    border-left: 0; border-right: 0; border-bottom: 0;
-    padding: 0.4rem 0.5rem;
-    justify-content: flex-start;
-  }
-  .dock-item { padding: 0.5rem 0.7rem; font-size: 0.75rem; }
 
   /* Tablas: se desplazan en horizontal en vez de romper la página */
   .table-responsive { -webkit-overflow-scrolling: touch; }
@@ -3070,3 +2997,65 @@ input:-webkit-autofill::first-line {
 .form-select:focus {
   background-color: color-mix(in srgb, var(--input-bg) 85%, transparent) !important;
 }
+
+/* ── Panel lateral deslizante (móvil) ─────────────────────
+   Es la misma barra lateral del escritorio; en pantallas pequeñas
+   se sale de la vista y entra desde la izquierda al pulsar el botón. */
+.lateral-movil {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: min(84vw, 290px);
+  z-index: 1045;
+  /* Más cuerpo que la barra fija: aquí el panel se superpone al
+     contenido y tiene que leerse, no dejarlo entrever. */
+  background: color-mix(in srgb, var(--bg-lateral) 96%, transparent);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform var(--trans-base), visibility var(--trans-base);
+}
+.lateral-movil.abierto { transform: translateX(0); visibility: visible; }
+
+/* En escritorio manda la barra fija: esta no existe */
+@media (min-width: 992px) {
+  .lateral-movil, .panel-fondo, .panel-abrir { display: none !important; }
+}
+
+.panel-fondo {
+  position: fixed; inset: 0; z-index: 1044;
+  background: rgba(3, 5, 8, 0.6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.panel-abrir {
+  display: grid; place-items: center;
+  width: 38px; height: 38px; flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--velo-elevado);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: color var(--trans-fast), border-color var(--trans-fast);
+}
+.panel-abrir:hover { color: #fff; border-color: var(--border-muted); }
+
+.panel-cerrar {
+  position: absolute; top: 0.85rem; right: 0.85rem;
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.panel-cerrar:hover { color: #fff; background: var(--bg-hover); }
