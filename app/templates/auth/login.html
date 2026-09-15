@@ -5,119 +5,118 @@
 
 {% block extra_css %}
 <style>
-  main { display: flex; flex-direction: column; padding: 0 !important; overflow: visible !important; }
-
-  .login-shell {
-    flex: 1; min-height: 0;
-    display: flex; flex-direction: column;
-    background: linear-gradient(180deg, #0c0d0c 0%, #0a0a0a 60%, #080808 100%);
-    transition: background var(--trans-slow);
-  }
-  /* Un único halo, del color del perfil elegido */
-  .login-shell::before {
-    content: "";
-    position: absolute; inset: 0;
-    background: radial-gradient(760px 420px at 50% 0%, var(--acc-soft), transparent 65%);
-    pointer-events: none;
-    transition: background var(--trans-slow);
-  }
-
-  .login-main {
-    flex: 1; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    padding: 2rem 1rem 3rem;
-  }
-
-  .login-caja { width: 100%; max-width: 380px; }
-
-  .login-marca {
-    display: flex; align-items: center; justify-content: center;
-    gap: 0.6rem; margin-bottom: 2.25rem;
-    color: var(--text-secondary);
-    font-size: 0.8rem; font-weight: 600;
-    letter-spacing: 0.16em; text-transform: uppercase;
-  }
-  .login-marca i { color: var(--acc); font-size: 1.1rem; transition: color var(--trans-base); }
-
-  .login-titulo {
-    margin: 0 0 0.4rem;
-    font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;
-    color: #fff;
-  }
-  .login-sub { margin: 0 0 1.75rem; color: var(--text-muted); font-size: 0.88rem; }
-
-  /* Segmentado compacto */
-  .login-caja .ui-segmented { padding: 0.25rem; margin-bottom: 0.5rem; }
-  .login-caja .ui-segmented label { padding: 0.5rem 0.4rem; font-size: 0.82rem; gap: 0.35rem; }
-
-  .login-ayuda {
-    min-height: 2.4em;
-    margin: 0 0 1.5rem;
-    font-size: 0.78rem; line-height: 1.5;
-    color: var(--text-muted);
-  }
-
-  .login-caja .ui-field { margin-bottom: 0.9rem; }
-  .login-caja .ui-input-shell { background: var(--input-bg); }
-  .login-caja .btn-cta { margin-top: 0.5rem; padding: 0.8rem 1.25rem; font-size: 0.95rem; }
-
-  .login-pie {
-    margin-top: 1.75rem; text-align: center;
-    font-size: 0.8rem; color: var(--text-muted);
-  }
-  .login-pie a { color: var(--acc); text-decoration: none; font-weight: 600; }
-  .login-pie a:hover { text-decoration: underline; }
-
-  .login-legal {
-    padding: 1.25rem; text-align: center;
-    font-size: 0.72rem; color: var(--text-disabled);
-  }
+  /* Sin display:flex: convertiría en elementos flex a los hijos del portal
+     y la píldora del centro perdería su inline-flex, ocupando todo el ancho. */
+  main { padding: 0 !important; overflow: visible !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-shell" data-perfil="{{ perfil_activo }}" id="loginShell">
-  <main class="login-main">
-    <div class="login-caja">
+<div class="portal" data-perfil="{{ perfil_activo }}" id="portal">
 
-      <div class="login-marca">
-        <i class="bi bi-mortarboard-fill"></i> SENA Prácticas
-      </div>
+  <!-- ══ Navegación ══ -->
+  <header class="portal-nav">
+    <a class="portal-nav-marca" href="{{ url_for('auth.login') }}">
+      <span class="portal-nav-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      <span>
+        <span class="portal-nav-nombre">SENA <em>·</em> Prácticas</span>
+        <span class="portal-nav-sub">Sistema de etapa productiva</span>
+      </span>
+    </a>
 
-      <h1 class="login-titulo">Iniciar sesión</h1>
-      <p class="login-sub">Selecciona tu tipo de cuenta e ingresa tus datos.</p>
+    <nav class="portal-nav-links">
+      <a href="{{ url_for('auth.registro') }}">Registro de aprendiz</a>
+      <a href="{{ url_for('auth.privacidad') }}">Privacidad</a>
+      <a href="{{ url_for('auth.terminos') }}">Términos</a>
+    </nav>
 
-      <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <a class="portal-nav-cta" href="https://www.sena.edu.co" target="_blank" rel="noopener">
+      <i class="bi bi-box-arrow-up-right"></i> <span>Portal oficial SENA</span>
+    </a>
+  </header>
 
-        <div class="ui-segmented" role="radiogroup" aria-label="Tipo de cuenta">
+  <!-- ══ Portada ══ -->
+  <main class="portal-hero">
+    <span class="portal-etiqueta">
+      <span class="punto"></span> {{ config.CENTRO_FORMACION }}
+    </span>
+
+    <h1 class="portal-h1">Gestión de <em>Prácticas</em></h1>
+    <p class="portal-lead">
+      Conecta aprendices, instructores y empresas durante la etapa productiva:
+      entrega de evidencias, seguimiento por ficha y calificación, en un solo lugar.
+    </p>
+
+    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <p class="portal-rotulo">Selecciona tu perfil de ingreso</p>
+
+      <div class="perfiles" role="radiogroup" aria-label="Tipo de cuenta">
+        <div>
           <input type="radio" name="perfil" id="perfil-aprendiz" value="aprendiz"
                  {% if perfil_activo == 'aprendiz' %}checked{% endif %}>
-          <label for="perfil-aprendiz"><i class="bi bi-mortarboard"></i> Aprendiz</label>
-
-          <input type="radio" name="perfil" id="perfil-instructor" value="instructor"
-                 {% if perfil_activo == 'instructor' %}checked{% endif %}>
-          <label for="perfil-instructor"><i class="bi bi-person-badge"></i> Instructor</label>
-
-          <input type="radio" name="perfil" id="perfil-admin" value="admin"
-                 {% if perfil_activo == 'admin' %}checked{% endif %}>
-          <label for="perfil-admin"><i class="bi bi-shield-lock"></i> Admin</label>
+          <label class="perfil" for="perfil-aprendiz">
+            <div class="perfil-cab">
+              <span class="perfil-icono"><i class="bi bi-mortarboard"></i></span>
+            </div>
+            <h3>Aprendiz</h3>
+            <p>Sube las evidencias de tu práctica, consulta tu avance y revisa las
+               observaciones de tu instructor.</p>
+            <div class="perfil-pie">Acceso aprendices <i class="bi bi-chevron-right"></i></div>
+          </label>
         </div>
 
-        <p class="login-ayuda" data-perfil-texto></p>
+        <div>
+          <input type="radio" name="perfil" id="perfil-instructor" value="instructor"
+                 {% if perfil_activo == 'instructor' %}checked{% endif %}>
+          <label class="perfil" for="perfil-instructor">
+            <div class="perfil-cab">
+              <span class="perfil-icono"><i class="bi bi-person-badge"></i></span>
+              <span class="perfil-marca">Docente</span>
+            </div>
+            <h3>Instructor</h3>
+            <p>Supervisa las fichas a tu cargo, califica evidencias y haz seguimiento
+               al progreso de tus aprendices.</p>
+            <div class="perfil-pie">Panel de evaluación <i class="bi bi-chevron-right"></i></div>
+          </label>
+        </div>
 
+        <div>
+          <input type="radio" name="perfil" id="perfil-admin" value="admin"
+                 {% if perfil_activo == 'admin' %}checked{% endif %}>
+          <label class="perfil" for="perfil-admin">
+            <div class="perfil-cab">
+              <span class="perfil-icono"><i class="bi bi-shield-lock"></i></span>
+            </div>
+            <h3>Administrador</h3>
+            <p>Gestiona usuarios, roles, fichas y empresas, y consulta la auditoría
+               completa del sistema.</p>
+            <div class="perfil-pie">Gestión global <i class="bi bi-chevron-right"></i></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- ══ Credenciales ══ -->
+      <div class="portal-form">
         <div class="ui-field">
-          <div class="ui-field-head"><label for="correo">Correo</label></div>
+          <div class="ui-field-head">
+            <label for="correo">Correo institucional</label>
+            <span class="ui-field-hint">Requerido</span>
+          </div>
           <div class="ui-input-shell">
             <i class="bi bi-envelope"></i>
             <input type="email" id="correo" name="correo"
                    placeholder="usuario@soy.sena.edu.co"
-                   autocomplete="username" required autofocus>
+                   autocomplete="username" required>
           </div>
         </div>
 
         <div class="ui-field">
-          <div class="ui-field-head"><label for="password">Contraseña</label></div>
+          <div class="ui-field-head">
+            <label for="password">Contraseña</label>
+            <span class="ui-field-hint">Requerido</span>
+          </div>
           <div class="ui-input-shell">
             <i class="bi bi-key"></i>
             <input type="password" id="password" name="password"
@@ -130,24 +129,46 @@
         </div>
 
         <button class="btn-cta" type="submit">
-          Entrar <i class="bi bi-arrow-right"></i>
+          Iniciar sesión como <span data-perfil-nombre>Aprendiz</span>
+          <i class="bi bi-arrow-right"></i>
         </button>
-      </form>
 
-      <p class="login-pie">
-        ¿Eres aprendiz y no tienes cuenta?
-        <a href="{{ url_for('auth.registro') }}">Regístrate</a>
-      </p>
+        <p class="portal-registro">
+          ¿Eres aprendiz y aún no tienes cuenta?
+          <a href="{{ url_for('auth.registro') }}">Regístrate aquí</a>
+        </p>
+      </div>
+    </form>
+
+    <!-- ══ Qué ofrece el sistema ══ -->
+    <div class="portal-tiras">
+      <div class="portal-tira">
+        <b>Evidencias con trazabilidad</b>
+        <span>Cada entrega queda registrada con su fecha, estado y observaciones.</span>
+      </div>
+      <div class="portal-tira">
+        <b>Seguimiento por ficha</b>
+        <span>El instructor ve el avance de cada aprendiz de sus fichas.</span>
+      </div>
+      <div class="portal-tira">
+        <b>Avisos por correo</b>
+        <span>Al subir una evidencia y al calificarla, las partes reciben aviso.</span>
+      </div>
+      <div class="portal-tira">
+        <b>Acceso por rol</b>
+        <span>Cada perfil ve y modifica únicamente lo que le corresponde.</span>
+      </div>
     </div>
   </main>
 
-  <div class="login-legal">&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas
-      <div class="mt-3" style="font-size: 0.72rem;">
-        <a href="{{ url_for('auth.privacidad') }}" style="color: var(--text-muted); text-decoration: none;">Privacidad</a>
-        <span style="color: var(--text-disabled);"> · </span>
-        <a href="{{ url_for('auth.terminos') }}" style="color: var(--text-muted); text-decoration: none;">Términos</a>
-      </div>
-  </div>
+  <!-- ══ Pie ══ -->
+  <footer class="portal-pie">
+    <span>&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</span>
+    <span class="derecha">
+      <a href="{{ url_for('auth.privacidad') }}">Política de privacidad</a>
+      <a href="{{ url_for('auth.terminos') }}">Términos de uso</a>
+    </span>
+  </footer>
 </div>
 {% endblock %}
 
@@ -167,25 +188,19 @@
   })();
 
   (function () {
-    // El perfil elegido cambia el color de acento y el texto de ayuda.
+    // El perfil elegido cambia el color de acento y el texto del botón.
     // La validación real la hace el servidor.
-    const ayuda = {
-      aprendiz:   'Solo cuentas de aprendiz. Si aún no tienes, regístrate con el código de tu ficha.',
-      instructor: 'Solo cuentas de instructor, creadas por el administrador.',
-      admin:      'Solo cuentas de administrador del sistema.'
-    };
-    const shell = document.getElementById('loginShell');
-    const texto = document.querySelector('[data-perfil-texto]');
+    const nombres = { aprendiz: 'Aprendiz', instructor: 'Instructor', admin: 'Administrador' };
+    const portal = document.getElementById('portal');
+    const etiqueta = document.querySelector('[data-perfil-nombre]');
 
     function aplicar(valor) {
-      shell.setAttribute('data-perfil', valor);
-      texto.textContent = ayuda[valor] || '';
+      portal.setAttribute('data-perfil', valor);
+      if (etiqueta) etiqueta.textContent = nombres[valor] || '';
     }
-
     document.querySelectorAll('input[name="perfil"]').forEach(function (radio) {
       radio.addEventListener('change', function () { aplicar(this.value); });
     });
-
     const marcado = document.querySelector('input[name="perfil"]:checked');
     aplicar(marcado ? marcado.value : 'aprendiz');
   })();

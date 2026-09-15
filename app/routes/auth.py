@@ -39,9 +39,14 @@ ETIQUETA_PERFIL = {
 # ─── Landing page ─────────────────────────────
 @bp.route('/')
 def landing():
+    """La portada ya no es una página aparte: el propio acceso hace de portada.
+
+    Se conserva la ruta porque hay enlaces que apuntan aquí (marca, páginas de
+    error); simplemente redirige.
+    """
     if current_user.is_authenticated:
         return _redirect_by_role(current_user)
-    return render_template('auth/landing.html')
+    return redirect(url_for('auth.login'))
 
 
 # ─── Login ────────────────────────────────────

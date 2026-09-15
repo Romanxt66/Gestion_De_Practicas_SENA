@@ -796,6 +796,35 @@ with app.app_context():
     check('el resumen de ficha trae estado y avance',
           'estado' in r and 'avance' in r and 0 <= r['avance'] <= 100)
 
+print('\n── Portal de acceso y dock móvil ──')
+anon = app.test_client()
+r = anon.get('/', follow_redirects=False)
+check('la raíz lleva al portal de acceso',
+      r.status_code in (301, 302) and '/login' in r.headers.get('Location', ''),
+      f"{r.status_code} {r.headers.get('Location')}")
+
+html = anon.get('/login').get_data(as_text=True)
+check('el portal ofrece los tres perfiles reales',
+      html.count('class="perfil') >= 3
+      and 'value="aprendiz"' in html and 'value="instructor"' in html and 'value="admin"' in html)
+check('el portal muestra el centro de formación', 'Oriente de Vélez' in html)
+check('el portal conserva el formulario de credenciales',
+      'name="correo"' in html and 'name="password"' in html and 'csrf_token' in html)
+check('el portal enlaza al registro', '/registro' in html)
+
+html = anon.get('/registro').get_data(as_text=True)
+for campo in ('nombres', 'apellidos', 'tipo_documento', 'numero_documento',
+              'correo', 'telefono', 'codigo_ficha', 'password', 'confirm_password'):
+    check(f'  · registro conserva el campo {campo}', f'name="{campo}"' in html)
+
+html = c_ap.get('/aprendiz/dashboard').get_data(as_text=True)
+check('el panel trae el dock inferior para móvil', 'dock-wrap' in html)
+css = open('app/static/biblioteca.css', encoding='utf-8').read()
+check('el dock solo aparece en pantallas pequeñas',
+      '.dock-wrap{display:none' in css.replace(' ', '') or
+      '.dock-wrap {' in css and 'display: none' in css)
+check('el fondo con desenfoque está aplicado', 'backdrop-filter' in css)
+
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
     print('FALLAS:', fallos)

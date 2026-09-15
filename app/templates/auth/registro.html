@@ -3,50 +3,52 @@
 
 {% block extra_css %}
 <style>
-  main { display: flex; flex-direction: column; padding: 0 !important; overflow: visible !important; }
-  .login-shell {
-    flex: 1; min-height: 0; display: flex; flex-direction: column;
-    background: linear-gradient(180deg, #0c0d0c 0%, #000 60%);
+  /* Sin display:flex: convertiría en elementos flex a los hijos del portal
+     y la píldora del centro perdería su inline-flex, ocupando todo el ancho. */
+  main { padding: 0 !important; overflow: visible !important; }
+  .registro-caja {
+    width: 100%; max-width: 720px; margin: 0 auto;
+    padding: 2rem; border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+    background: rgba(10,10,10,.65);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    text-align: left;
   }
-  .login-shell::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(760px 420px at 50% 0%, var(--acc-soft), transparent 65%);
-  }
-  .login-main {
-    flex: 1; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    padding: 2.5rem 1rem 3rem;
-  }
-  .login-caja { width: 100%; max-width: 560px; }
-  .login-marca {
-    display: flex; align-items: center; justify-content: center;
-    gap: 0.6rem; margin-bottom: 2rem;
-    color: var(--text-secondary);
-    font-size: 0.8rem; font-weight: 600;
-    letter-spacing: 0.16em; text-transform: uppercase;
-  }
-  .login-marca i { color: var(--acc); font-size: 1.1rem; }
-  .login-titulo { margin: 0 0 0.4rem; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
-  .login-sub { margin: 0 0 1.5rem; color: var(--text-muted); font-size: 0.88rem; }
-  .login-caja .ui-field { margin-bottom: 0.9rem; }
-  .login-caja .btn-cta { margin-top: 0.75rem; padding: 0.8rem 1.25rem; font-size: 0.95rem; }
-  .login-pie { margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
-  .login-pie a { color: var(--acc); text-decoration: none; font-weight: 600; }
-  .login-pie a:hover { text-decoration: underline; }
-  .login-legal { padding: 1.25rem; text-align: center; font-size: 0.72rem; color: var(--text-disabled); }
+  .registro-caja .ui-field { margin-bottom: 0.9rem; }
+  .registro-caja .btn-cta { margin-top: 0.75rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-shell">
-  <main class="login-main">
-    <div class="login-caja">
+<div class="portal">
 
-      <div class="login-marca"><i class="bi bi-mortarboard-fill"></i> SENA Prácticas</div>
+  <header class="portal-nav">
+    <a class="portal-nav-marca" href="{{ url_for('auth.login') }}">
+      <span class="portal-nav-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      <span>
+        <span class="portal-nav-nombre">SENA <em>·</em> Prácticas</span>
+        <span class="portal-nav-sub">Sistema de etapa productiva</span>
+      </span>
+    </a>
+    <nav class="portal-nav-links">
+      <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+      <a href="{{ url_for('auth.privacidad') }}">Privacidad</a>
+      <a href="{{ url_for('auth.terminos') }}">Términos</a>
+    </nav>
+    <a class="portal-nav-cta" href="{{ url_for('auth.login') }}">
+      <i class="bi bi-box-arrow-in-right"></i> <span>Ya tengo cuenta</span>
+    </a>
+  </header>
 
-      <h1 class="login-titulo">Crear cuenta</h1>
-      <p class="login-sub">Registro de aprendiz. Necesitas el código de tu ficha.</p>
+  <main class="portal-hero" style="padding-top: 3rem;">
+    <span class="portal-etiqueta"><span class="punto"></span> Registro de aprendiz</span>
+    <h1 class="portal-h1" style="font-size: clamp(2rem, 4.5vw, 3rem);">Crear <em>cuenta</em></h1>
+    <p class="portal-lead">
+      Regístrate con el código de tu ficha. Si todavía no está creada en el sistema,
+      quedarás en espera y se te matriculará automáticamente en cuanto exista.
+    </p>
 
+    <div class="registro-caja mt-5">
       <form method="POST" action="{{ url_for('auth.registro') }}" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -173,19 +175,15 @@
           Crear mi cuenta <i class="bi bi-arrow-right"></i>
         </button>
       </form>
-
-      <p class="login-pie">
-        ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a>
-      </p>
     </div>
   </main>
 
-  <div class="login-legal">&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas
-      <div class="mt-3" style="font-size: 0.72rem;">
-        <a href="{{ url_for('auth.privacidad') }}" style="color: var(--text-muted); text-decoration: none;">Privacidad</a>
-        <span style="color: var(--text-disabled);"> · </span>
-        <a href="{{ url_for('auth.terminos') }}" style="color: var(--text-muted); text-decoration: none;">Términos</a>
-      </div>
-  </div>
+  <footer class="portal-pie">
+    <span>&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</span>
+    <span class="derecha">
+      <a href="{{ url_for('auth.privacidad') }}">Política de privacidad</a>
+      <a href="{{ url_for('auth.terminos') }}">Términos de uso</a>
+    </span>
+  </footer>
 </div>
 {% endblock %}
