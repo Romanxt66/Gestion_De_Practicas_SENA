@@ -28,10 +28,10 @@
     </div>
     <div class="kpi-valor">
       <span class="kpi-numero">{{ evidencias_count }}</span>
-      <span class="kpi-nota">de 12 esperadas</span>
+      <span class="kpi-nota">de {{ evidencias_esperadas }} esperadas</span>
     </div>
     <div class="progress progress-fina mt-3">
-      <div class="progress-bar is-purple" role="progressbar" style="width: {{ pct_evidencias }}%;"></div>
+      <div class="progress-bar" role="progressbar" style="width: {{ pct_evidencias }}%;"></div>
     </div>
   </div>
 

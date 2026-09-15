@@ -150,14 +150,15 @@ with app.app_context():
     antes = Evidencia.query.filter_by(id_aprendiz=id_ap).count()
 t = token(c_ap, '/aprendiz/evidencias/subir')
 r = c_ap.post('/aprendiz/evidencias/subir', data={
-    'tipo': 'texto', 'contenido': 'Evidencia de prueba automatizada',
+    'tipo': 'texto', 'documento': 'bitacora',
+    'contenido': 'Evidencia de prueba automatizada',
     'csrf_token': t}, follow_redirects=True)
 with app.app_context():
     check('la evidencia de texto se guarda',
           Evidencia.query.filter_by(id_aprendiz=id_ap).count() == antes + 1)
 t = token(c_ap, '/aprendiz/evidencias/subir')
 r = c_ap.post('/aprendiz/evidencias/subir', data={
-    'tipo': 'archivo', 'csrf_token': t,
+    'tipo': 'archivo', 'documento': 'acta', 'csrf_token': t,
     'archivo': (io.BytesIO(b'contenido pdf'), 'reporte.pdf')},
     content_type='multipart/form-data', follow_redirects=True)
 with app.app_context():
@@ -174,10 +175,54 @@ with app.app_context():
         os.remove(ruta)  # limpieza
 t = token(c_ap, '/aprendiz/evidencias/subir')
 r = c_ap.post('/aprendiz/evidencias/subir', data={
-    'tipo': 'archivo', 'csrf_token': t,
+    'tipo': 'archivo', 'documento': 'bitacora', 'csrf_token': t,
     'archivo': (io.BytesIO(b'x'), 'virus.exe')},
     content_type='multipart/form-data', follow_redirects=True)
 check('rechaza extensión no permitida', 'no permitido' in r.get_data(as_text=True))
+
+# Plan de entregas: 12 bitácoras + 3 actas + 1 formato de planeación
+from app.utils import (CATALOGO_EVIDENCIAS, EVIDENCIAS_ESPERADAS,
+                       desglose_evidencias)
+check('el plan pide 16 documentos en total', EVIDENCIAS_ESPERADAS == 16,
+      EVIDENCIAS_ESPERADAS)
+esperado = {'bitacora': 12, 'acta': 3, 'planeacion': 1}
+check('el plan se compone de bitácoras, actas y planeación',
+      {d['clave']: d['cantidad'] for d in CATALOGO_EVIDENCIAS} == esperado,
+      {d['clave']: d['cantidad'] for d in CATALOGO_EVIDENCIAS})
+
+t = token(c_ap, '/aprendiz/evidencias/subir')
+r = c_ap.post('/aprendiz/evidencias/subir', data={
+    'tipo': 'texto', 'contenido': 'Sin documento', 'csrf_token': t},
+    follow_redirects=True)
+check('rechaza la evidencia si no se dice qué documento es',
+      'qué documento' in r.get_data(as_text=True))
+
+t = token(c_ap, '/aprendiz/evidencias/subir')
+r = c_ap.post('/aprendiz/evidencias/subir', data={
+    'tipo': 'texto', 'documento': 'inventado', 'contenido': 'x',
+    'csrf_token': t}, follow_redirects=True)
+check('rechaza un documento fuera del catálogo',
+      'qué documento' in r.get_data(as_text=True))
+
+with app.app_context():
+    d = desglose_evidencias(id_ap)
+    por_clave = {x['clave']: x for x in d['detalle']}
+    check('el desglose cuenta la bitácora entregada',
+          por_clave['bitacora']['entregadas'] >= 1, por_clave['bitacora'])
+    check('el desglose cuenta el acta entregada',
+          por_clave['acta']['entregadas'] >= 1, por_clave['acta'])
+    check('y el formato de planeación sigue pendiente',
+          por_clave['planeacion']['entregadas'] == 0)
+    check('el total esperado del desglose es 16', d['total_esperado'] == 16)
+
+html = c_ap.get('/aprendiz/evidencias/subir').get_data(as_text=True)
+check('la vista muestra el plan de entregas', 'plan-entregas' in html)
+check('  · nombra las 12 bitácoras', '12 Bitácoras' in html)
+check('  · nombra las 3 actas', '3 Actas' in html)
+check('  · nombra el formato de planeación',
+      'Formato de planeación de seguimiento' in html)
+check('  · ya no pinta la barra morada',
+      'accent-purple' not in html and 'badge-purple' not in html)
 
 print('\n── Flujo instructor: evaluar evidencia ──')
 with app.app_context():

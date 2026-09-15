@@ -42,7 +42,7 @@
   <div class="col-md-6">
     <div class="biblioteca-shell h-100">
       <div class="biblioteca-shell-header">
-        <div class="shell-header-icon" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple);"><i class="bi bi-file-earmark-check"></i></div>
+        <div class="shell-header-icon" style="background: var(--acc-soft); color: var(--acc);"><i class="bi bi-file-earmark-check"></i></div>
         <h4>Entregas de Evidencias</h4>
       </div>
       <div class="biblioteca-shell-body text-center p-5">
@@ -51,14 +51,14 @@
         
         <div class="progress" style="height: 12px; max-width: 400px; margin: 0 auto; background: var(--bg-hover);">
           <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
-               style="width: {{ pct_evidencias }}%; background: linear-gradient(90deg, #7c3aed, var(--accent-purple));" 
+               style="width: {{ pct_evidencias }}%;" 
                aria-valuenow="{{ pct_evidencias }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
         <div class="d-flex justify-content-center gap-5 mt-4">
           <div>
             <span class="d-block text-muted small text-uppercase">Evidencias Enviadas</span>
-            <span class="fs-4 fw-bold text-purple" style="color: var(--accent-purple);">{{ evidencias_count }}</span>
+            <span class="fs-4 fw-bold" style="color: var(--acc);">{{ evidencias_count }}</span>
           </div>
           <div>
             <span class="d-block text-muted small text-uppercase">Total Requeridas</span>

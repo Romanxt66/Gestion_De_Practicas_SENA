@@ -16,8 +16,33 @@ from app import db
 # (antes estaban repetidos y hardcodeados en 6 sitios distintos)
 # ─────────────────────────────────────────────
 DIAS_PRACTICA = 180
-EVIDENCIAS_ESPERADAS = 12
 HORAS_PRACTICA_POR_DEFECTO = 880
+
+# Documentos que el aprendiz debe entregar durante la etapa productiva.
+# Es la fuente única: el total esperado sale de aquí, no de un número suelto.
+CATALOGO_EVIDENCIAS = (
+    {'clave': 'bitacora',
+     'nombre': 'Bitácora',
+     'plural': 'Bitácoras',
+     'cantidad': 12,
+     'icono': 'bi-journal-text',
+     'ayuda': 'Una por cada seguimiento quincenal de tu práctica.'},
+    {'clave': 'acta',
+     'nombre': 'Acta',
+     'plural': 'Actas',
+     'cantidad': 3,
+     'icono': 'bi-file-earmark-check',
+     'ayuda': 'Actas de seguimiento firmadas con tu instructor.'},
+    {'clave': 'planeacion',
+     'nombre': 'Formato de planeación de seguimiento',
+     'plural': 'Formatos de planeación de seguimiento',
+     'cantidad': 1,
+     'icono': 'bi-clipboard-data',
+     'ayuda': 'El formato de planeación que se diligencia al inicio.'},
+)
+
+DOCUMENTOS_EVIDENCIA = {d['clave']: d for d in CATALOGO_EVIDENCIAS}
+EVIDENCIAS_ESPERADAS = sum(d['cantidad'] for d in CATALOGO_EVIDENCIAS)
 
 EXTENSIONES_PERMITIDAS = {
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'zip', 'txt'
@@ -194,6 +219,41 @@ def calcular_progreso(aprendiz, evidencias_count=None):
         'fecha_inicio': inicio,
         'fecha_fin': fin,
     }
+
+
+def desglose_evidencias(id_aprendiz):
+    """Cuántos documentos de cada tipo lleva entregados el aprendiz.
+
+    Devuelve la lista del catálogo enriquecida con 'entregadas', 'faltan' y
+    'pct'. Las evidencias antiguas (subidas antes de que existiera el catálogo)
+    no tienen documento asignado y se reportan aparte en 'sin_clasificar'.
+    """
+    from app.models.evidencia import Evidencia
+
+    conteo = {}
+    sin_clasificar = 0
+    if id_aprendiz:
+        filas = (db.session.query(Evidencia.documento, db.func.count(Evidencia.id_evidencia))
+                 .filter(Evidencia.id_aprendiz == id_aprendiz)
+                 .group_by(Evidencia.documento).all())
+        for documento, total in filas:
+            if documento in DOCUMENTOS_EVIDENCIA:
+                conteo[documento] = total
+            else:
+                sin_clasificar += total
+
+    detalle = []
+    for d in CATALOGO_EVIDENCIAS:
+        entregadas = conteo.get(d['clave'], 0)
+        detalle.append({**d,
+                        'entregadas': entregadas,
+                        'faltan': max(0, d['cantidad'] - entregadas),
+                        'completo': entregadas >= d['cantidad'],
+                        'pct': min(100, round(entregadas / d['cantidad'] * 100))})
+    return {'detalle': detalle,
+            'sin_clasificar': sin_clasificar,
+            'total_esperado': EVIDENCIAS_ESPERADAS,
+            'total_entregado': sum(x['entregadas'] for x in detalle)}
 
 
 def contar_evidencias_por_aprendiz(ids_aprendices, estado=None):

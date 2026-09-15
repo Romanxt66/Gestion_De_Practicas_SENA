@@ -134,14 +134,16 @@ def create_app():
         """
         from datetime import datetime
         from flask_login import current_user
-        from app.utils import hoy_local
+        from app.utils import hoy_local, EVIDENCIAS_ESPERADAS, CATALOGO_EVIDENCIAS
 
         try:
             anio = hoy_local().year
         except Exception:
             anio = datetime.now().year
 
-        datos = {'anio_actual': anio, 'nav_notificaciones': 0, 'nav_pendientes': 0}
+        datos = {'anio_actual': anio, 'nav_notificaciones': 0, 'nav_pendientes': 0,
+                 'evidencias_esperadas': EVIDENCIAS_ESPERADAS,
+                 'catalogo_evidencias': CATALOGO_EVIDENCIAS}
 
         try:
             if current_user.is_authenticated:

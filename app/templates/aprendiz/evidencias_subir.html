@@ -11,33 +11,46 @@
   </div>
 </div>
 
-<!-- Barra de Progreso Personal -->
-<div class="row mb-4">
-  <div class="col-lg-8 mx-auto">
-    <div class="lib-card" style="border-left: 4px solid var(--accent-green);">
-      <div class="lib-card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="m-0">Progreso de Evidencias</h5>
-          <span class="badge-lib badge-purple" style="font-size: 1rem; background: var(--accent-purple);">{{ pct_evidencias }}%</span>
+<!-- Plan de entregas de la etapa productiva -->
+<div class="row justify-content-center mb-4">
+  <div class="col-lg-8">
+    <section class="plan-entregas">
+      <header class="plan-cabeza">
+        <div>
+          <h5 class="plan-titulo">Plan de entregas</h5>
+          <p class="plan-sub">{{ desglose.total_entregado }} de {{ desglose.total_esperado }} documentos entregados</p>
         </div>
-        <div class="progress" style="height: 28px;">
-          <div class="progress-bar" 
-               id="progreso-personal-bar"
-               style="font-size: 0.9rem; line-height: 28px; background: var(--accent-purple);"
-               role="progressbar">
-            {% if pct_evidencias > 0 %}
-              <span style="color: white; font-weight: bold;">Evidencias enviadas</span>
-            {% else %}
-              <span style="color: white; font-weight: bold;">0 evidencias enviadas</span>
-            {% endif %}
-          </div>
-        </div>
-        <script>document.getElementById('progreso-personal-bar').style.width = "{{ pct_evidencias }}%";</script>
-        <small class="text-muted d-block mt-2">
-          <i class="bi bi-info-circle"></i> Sube un total de 12 evidencias de calidad
-        </small>
+        <span class="plan-pct">{{ (desglose.total_entregado / desglose.total_esperado * 100) | round | int }}%</span>
+      </header>
+
+      <div class="plan-barra" role="progressbar"
+           aria-valuenow="{{ desglose.total_entregado }}" aria-valuemin="0"
+           aria-valuemax="{{ desglose.total_esperado }}">
+        <span style="width: {{ (desglose.total_entregado / desglose.total_esperado * 100) | round | int }}%"></span>
       </div>
-    </div>
+
+      <ul class="plan-lista">
+        {% for d in desglose.detalle %}
+        <li class="plan-item {% if d.completo %}esta-completo{% endif %}">
+          <i class="bi {{ d.icono }} plan-icono"></i>
+          <div class="plan-datos">
+            <span class="plan-nombre">{{ d.cantidad }} {{ d.plural if d.cantidad > 1 else d.nombre }}</span>
+            <span class="plan-ayuda">{{ d.ayuda }}</span>
+          </div>
+          <span class="plan-conteo">{{ d.entregadas }}<i>/{{ d.cantidad }}</i></span>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% if desglose.sin_clasificar %}
+      <p class="plan-nota">
+        <i class="bi bi-info-circle"></i>
+        Tienes {{ desglose.sin_clasificar }}
+        evidencia{{ 's' if desglose.sin_clasificar != 1 }} subida{{ 's' if desglose.sin_clasificar != 1 }}
+        antes de este plan, sin documento asignado.
+      </p>
+      {% endif %}
+    </section>
   </div>
 </div>
 
@@ -53,7 +66,19 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <div class="mb-4">
-            <label class="form-label" for="tipo">Tipo de evidencia <span class="text-danger">*</span></label>
+            <label class="form-label" for="documento">¿Qué documento entregas? <span class="text-danger">*</span></label>
+            <select class="form-select" id="documento" name="documento" required>
+              <option value="" disabled selected>Selecciona el documento...</option>
+              {% for d in desglose.detalle %}
+                <option value="{{ d.clave }}">
+                  {{ d.nombre }} — llevas {{ d.entregadas }} de {{ d.cantidad }}{% if d.completo %} (completo){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="tipo">Formato en que la envías <span class="text-danger">*</span></label>
             <select class="form-select" id="tipo" name="tipo" required onchange="cambiarTipo()">
               <option value="" disabled selected>Selecciona una opción...</option>
               <option value="archivo">Archivo adjunto (.pdf, .doc, .zip, etc)</option>

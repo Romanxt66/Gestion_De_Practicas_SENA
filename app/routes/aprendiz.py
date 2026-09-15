@@ -20,7 +20,8 @@ from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.servicios import correo
 from app.utils import (role_required, calcular_progreso, resumen_curso,
                        extension_permitida, nombre_archivo_seguro,
-                       directorio_evidencias, EXTENSIONES_PERMITIDAS)
+                       directorio_evidencias, desglose_evidencias,
+                       EXTENSIONES_PERMITIDAS, DOCUMENTOS_EVIDENCIA)
 
 bp = Blueprint('aprendiz', __name__, url_prefix='/aprendiz')
 
@@ -91,11 +92,16 @@ def evidencias_subir():
         flash(mensaje, categoria)
         return render_template('aprendiz/evidencias_subir.html', aprendiz=ap,
                                pct_tiempo=p['pct_tiempo'],
-                               pct_evidencias=p['pct_evidencias'])
+                               pct_evidencias=p['pct_evidencias'],
+                               desglose=desglose_evidencias(ap.id_aprendiz))
 
     if request.method == 'POST':
         tipo = request.form.get('tipo', '')
+        documento = request.form.get('documento', '')
         contenido = request.form.get('contenido', '').strip()
+
+        if documento not in DOCUMENTOS_EVIDENCIA:
+            return _volver('Indica qué documento estás entregando.')
 
         if tipo == 'archivo':
             archivo = request.files.get('archivo')
@@ -127,6 +133,7 @@ def evidencias_subir():
         evidencia = Evidencia(
             id_aprendiz=ap.id_aprendiz,
             tipo=tipo,
+            documento=documento,
             contenido=contenido,
             estado='Entregada'
         )
@@ -158,7 +165,8 @@ def evidencias_subir():
 
     return render_template('aprendiz/evidencias_subir.html', aprendiz=ap,
                            pct_tiempo=p['pct_tiempo'],
-                           pct_evidencias=p['pct_evidencias'])
+                           pct_evidencias=p['pct_evidencias'],
+                           desglose=desglose_evidencias(ap.id_aprendiz))
 
 
 # ─── Mi Progreso ──────────────────────────────

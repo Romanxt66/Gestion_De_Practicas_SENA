@@ -2703,3 +2703,123 @@ input:-webkit-autofill::first-line {
   .portal-pie { padding: 1.25rem 1rem; justify-content: center; text-align: center; }
   .portal-pie .derecha { margin-left: 0; justify-content: center; }
 }
+
+/* ── Plan de entregas (minimalista, sin morado) ──────────── */
+.plan-entregas {
+  background: rgba(12, 12, 12, .72);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, .08));
+  border-radius: 14px;
+  padding: 1.25rem 1.35rem 1.1rem;
+}
+
+.plan-cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plan-titulo {
+  margin: 0;
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: var(--text-primary);
+}
+
+.plan-sub {
+  margin: .2rem 0 0;
+  font-size: .8rem;
+  color: var(--text-muted, #8b8b8b);
+}
+
+.plan-pct {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-barra {
+  margin: .95rem 0 1.1rem;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .07);
+  overflow: hidden;
+}
+
+.plan-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--acc);
+  transition: width .35s ease;
+}
+
+.plan-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .1rem;
+}
+
+.plan-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .85rem;
+  padding: .7rem 0;
+  border-top: 1px solid rgba(255, 255, 255, .05);
+}
+
+.plan-item:first-child { border-top: 0; }
+
+.plan-icono {
+  font-size: 1rem;
+  color: var(--text-muted, #8b8b8b);
+}
+
+.plan-datos { display: grid; gap: .15rem; min-width: 0; }
+
+.plan-nombre {
+  font-size: .87rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.plan-ayuda {
+  font-size: .76rem;
+  line-height: 1.35;
+  color: var(--text-muted, #8b8b8b);
+}
+
+.plan-conteo {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.plan-conteo i {
+  font-style: normal;
+  font-weight: 400;
+  font-size: .8rem;
+  color: var(--text-muted, #8b8b8b);
+}
+
+.plan-item.esta-completo .plan-icono,
+.plan-item.esta-completo .plan-conteo { color: var(--acc); }
+
+.plan-nota {
+  margin: .9rem 0 0;
+  font-size: .76rem;
+  color: var(--text-muted, #8b8b8b);
+}
+
+@media (max-width: 575.98px) {
+  .plan-entregas { padding: 1.05rem 1rem .95rem; }
+  .plan-ayuda { display: none; }
+}

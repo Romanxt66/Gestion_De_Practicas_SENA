@@ -12,5 +12,8 @@ class Evidencia(db.Model):
     observaciones  = db.Column(db.Text)
     bitacora       = db.Column(db.String(25))
     actas          = db.Column(db.String(25))
+    # Qué documento del plan de etapa productiva es (bitacora / acta / planeacion).
+    # Las evidencias anteriores al catálogo quedan en NULL.
+    documento      = db.Column(db.String(25), index=True)
 
     aprendiz       = db.relationship('Aprendiz', back_populates='evidencias')

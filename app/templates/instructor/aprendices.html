@@ -72,10 +72,10 @@
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold {% if item.evidencias_count >= 12 %}text-success{% else %}text-purple{% endif %}">{{ item.evidencias_count }} / 12</span>
+                <span class="fw-bold {% if item.evidencias_count >= evidencias_esperadas %}text-success{% endif %}">{{ item.evidencias_count }} / {{ evidencias_esperadas }}</span>
               </div>
               <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
-                <div class="progress-bar {% if item.evidencias_count >= 12 %}bg-success{% else %}bg-purple{% endif %}" role="progressbar" style="width: {{ item.pct_evidencias }}%;"></div>
+                <div class="progress-bar" role="progressbar" style="width: {{ item.pct_evidencias }}%;"></div>
               </div>
             </td>
             <td>
