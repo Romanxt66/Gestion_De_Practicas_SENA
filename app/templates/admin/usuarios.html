@@ -42,6 +42,58 @@
   </li>
 </ul>
 
+{% if pendientes %}
+<!-- Altas que esperan confirmación del correo -->
+<div class="biblioteca-shell mb-4">
+  <div class="biblioteca-shell-header">
+    <div class="shell-header-icon"><i class="bi bi-envelope-check"></i></div>
+    <h4>Esperando confirmación de correo ({{ pendientes | length }})</h4>
+  </div>
+  <div class="biblioteca-shell-body">
+    <p class="ui-note mb-3">
+      <i class="bi bi-info-circle ui-note-icon"></i>
+      Todavía no son cuentas: se crean cuando la persona abre el enlace que
+      recibió. El enlace caduca a las 48 horas.
+    </p>
+
+    <ul class="pendientes">
+      {% for p in pendientes %}
+        <li class="pendiente">
+          <div class="pendiente-datos">
+            <b>{{ p.nombre or 'Sin nombre' }}</b>
+            <span>{{ p.registro.correo }}</span>
+          </div>
+          <div class="pendiente-marcas">
+            {% if p.rol %}<span class="badge-lib badge-cyan">{{ p.rol | capitalize }}</span>{% endif %}
+            {% if p.ficha %}<span class="badge-lib">Ficha {{ p.ficha }}</span>{% endif %}
+            {% if p.registro.origen == 'registro' %}
+              <span class="badge-lib">Se registró solo</span>
+            {% else %}
+              <span class="badge-lib">Creado por un admin</span>
+            {% endif %}
+          </div>
+          <div class="pendiente-acciones">
+            <form action="{{ url_for('admin.reenviar_verificacion', id_verificacion=p.registro.id_verificacion) }}"
+                  method="POST" class="m-0">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-ghost">
+                <i class="bi bi-arrow-repeat"></i> Reenviar
+              </button>
+            </form>
+            <form action="{{ url_for('admin.cancelar_verificacion', id_verificacion=p.registro.id_verificacion) }}"
+                  method="POST" class="m-0"
+                  onsubmit="return confirm('Cancelar la invitación a {{ p.registro.correo }}. El enlace enviado dejará de funcionar. ¿Continuar?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
 <div class="biblioteca-shell">
   <div class="biblioteca-shell-body p-0">
     <div class="table-responsive">
@@ -145,7 +197,7 @@
       <form action="{{ url_for('admin.crear_usuario') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-person-plus text-primary me-2"></i> Crear Nuevo Usuario Activo</h5>
+          <h5 class="modal-title"><i class="bi bi-person-plus text-primary me-2"></i> Crear usuario</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -211,6 +263,7 @@
                {% endfor %}
              </select>
              <small class="text-info mt-1 d-block"><i class="bi bi-info-circle"></i> Si seleccionas Aprendiz o Instructor, se creará el perfil interno automáticamente para ese rol.</small>
+             <small class="text-muted mt-2 d-block"><i class="bi bi-envelope-check"></i> Al guardar se envía un correo de confirmación. La cuenta se crea cuando la persona abra el enlace.</small>
            </div>
 
            <!-- Campos propios del aprendiz -->
@@ -273,7 +326,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Crear y Guardar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-envelope-check"></i> Enviar confirmación</button>
         </div>
       </form>
     </div>

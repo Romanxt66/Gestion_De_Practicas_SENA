@@ -3059,3 +3059,43 @@ input:-webkit-autofill::first-line {
   cursor: pointer;
 }
 .panel-cerrar:hover { color: #fff; background: var(--bg-hover); }
+
+/* ── Aviso de "revisa tu correo" ─────────────────────────── */
+.correo-destino { color: var(--acc); word-break: break-all; }
+
+.pasos-verificacion {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.55rem;
+  color: var(--text-secondary);
+  font-size: 0.93rem;
+}
+.pasos-verificacion::marker { color: var(--acc); }
+.pasos-verificacion b { color: var(--text-primary); }
+
+/* ── Altas esperando confirmación de correo ──────────────── */
+.pendientes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+
+.pendiente {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.pendiente-datos { display: grid; gap: 0.1rem; min-width: 0; }
+.pendiente-datos b { font-size: 0.9rem; color: var(--text-primary); }
+.pendiente-datos span {
+  font-size: 0.78rem; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pendiente-marcas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.pendiente-acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+@media (max-width: 767.98px) {
+  .pendiente { grid-template-columns: 1fr; }
+}

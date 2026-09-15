@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Revisa tu correo — SENA Prácticas{% endblock %}
+
+{% block extra_css %}
+<style>
+  main { padding: 0 !important; overflow: visible !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal">
+
+  <header class="portal-nav">
+    <a class="portal-nav-marca" href="{{ url_for('auth.login') }}">
+      <span class="portal-nav-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      <span>
+        <span class="portal-nav-nombre">SENA <em>·</em> Prácticas</span>
+        <span class="portal-nav-sub">Sistema de etapa productiva</span>
+      </span>
+    </a>
+    <a class="portal-nav-cta" href="{{ url_for('auth.login') }}">
+      <i class="bi bi-box-arrow-in-right"></i> <span>Iniciar sesión</span>
+    </a>
+  </header>
+
+  <main class="portal-hero portal-hero-simple">
+    <span class="portal-etiqueta"><span class="punto"></span> Falta un paso</span>
+
+    <h1 class="portal-h1" style="font-size: clamp(1.9rem, 4vw, 2.8rem);">
+      Revisa tu <em>correo</em>
+    </h1>
+
+    <p class="portal-lead">
+      Enviamos un enlace de confirmación a <b class="correo-destino">{{ correo }}</b>.
+      Ábrelo para activar tu cuenta.
+    </p>
+
+    <div class="registro-caja" style="max-width: 560px; margin: 1.6rem auto 0; text-align: left;">
+      <ol class="pasos-verificacion">
+        <li>Abre el correo que acabamos de enviarte.</li>
+        <li>Pulsa <b>Confirmar mi correo</b>.</li>
+        <li>Vuelve aquí e inicia sesión: tu cuenta ya estará activa.</li>
+      </ol>
+
+      <p class="ui-note mt-3">
+        <i class="bi bi-clock-history ui-note-icon"></i>
+        <span>El enlace caduca en {{ horas }} horas. Hasta que lo abras no existe
+        ninguna cuenta con ese correo.</span>
+      </p>
+
+      <p class="ui-note">
+        <i class="bi bi-inbox ui-note-icon"></i>
+        <span>¿No lo ves? Mira en <b>spam</b> o correo no deseado. Si aparece ahí,
+        márcalo como «No es spam» para que los siguientes avisos te lleguen bien.</span>
+      </p>
+
+      <div class="d-flex flex-wrap gap-2 mt-4">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+          <i class="bi bi-box-arrow-in-right"></i> Ya lo confirmé, iniciar sesión
+        </a>
+        <a href="{{ url_for('auth.registro') }}" class="btn btn-ghost">
+          Cambiar el correo
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="portal-pie">
+    <span>&copy; {{ anio_actual }} SENA · Sistema de Gestión de Prácticas</span>
+    <span class="derecha">
+      <a href="{{ url_for('auth.privacidad') }}">Política de privacidad</a>
+      <a href="{{ url_for('auth.terminos') }}">Términos de uso</a>
+    </span>
+  </footer>
+</div>
+{% endblock %}

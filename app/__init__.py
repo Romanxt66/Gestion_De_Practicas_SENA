@@ -44,7 +44,7 @@ def create_app():
             aprendiz, curso, curso_instructor, curso_aprendiz,
             evidencia, progreso_aprendiz, empresa,
             historial_cambios, notificacion, aprendiz_backup,
-            cuenta_google
+            cuenta_google, verificacion_correo
         )
 
     # Register blueprints

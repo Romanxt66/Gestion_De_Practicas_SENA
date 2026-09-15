@@ -33,6 +33,8 @@ from app.models.usuario_rol import UsuarioRol
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.models.aprendiz_backup import AprendizBackup
+from app.models.verificacion_correo import VerificacionCorreo
+from app.servicios import verificacion
 from app.utils import (role_required, log_historial, calcular_progreso,
                        directorio_evidencias, fichas_pendientes,
                        matricular_pendientes, resumen_curso,
@@ -197,7 +199,23 @@ def usuarios():
         )
     lista = query.order_by(Usuario.fecha_creacion.desc()).all()
     roles = Rol.query.all()
+
+    # Altas que esperan confirmación. Se aprovecha para retirar las caducadas:
+    # no hace falta una tarea programada para algo que se consulta a diario.
+    verificacion.limpiar_caducadas()
+    pendientes = []
+    for p in (VerificacionCorreo.query
+              .order_by(VerificacionCorreo.fecha_creacion.desc()).all()):
+        d = verificacion.datos_de(p)
+        pendientes.append({
+            'registro': p,
+            'nombre': f"{d.get('nombres', '')} {d.get('apellidos', '')}".strip(),
+            'rol': d.get('rol'),
+            'ficha': d.get('codigo_ficha'),
+        })
+
     return render_template('admin/usuarios.html', usuarios=lista, roles=roles, q=q,
+                           pendientes=pendientes,
                            resumen=_resumen_borrado(lista),
                            tipos_documento=TIPOS_DOCUMENTO,
                            estados_practica=ESTADOS_PRACTICA,
@@ -293,51 +311,74 @@ def crear_usuario():
     elif nombre_rol == 'instructor':
         area_formacion = request.form.get('area_formacion', '').strip()
 
-    u = Usuario(nombres=nombres, apellidos=apellidos, correo=correo,
-                tipo_documento=tipo_documento or None,
-                numero_documento=numero_documento or None,
-                telefono=telefono or None,
-                password_hash=generate_password_hash(password), estado=True)
-    db.session.add(u)
-    db.session.flush()
+    # La cuenta no se crea aquí: se le pide a la persona que confirme su
+    # correo. Si la dirección tuviera una errata, el usuario quedaría creado
+    # pero incomunicado, ocupando ese correo y ese documento.
+    pendiente = verificacion.crear_pendiente(
+        correo=correo,
+        datos={
+            'tipo_documento':   tipo_documento,
+            'numero_documento': numero_documento,
+            'nombres':          nombres,
+            'apellidos':        apellidos,
+            'telefono':         telefono,
+            'password_hash':    generate_password_hash(password),
+            'rol':              nombre_rol,
+            'codigo_ficha':     codigo_ficha,
+            'estado_practica':  estado_practica or 'En proceso',
+            'horas_requeridas': horas_requeridas,
+            'fecha_inicio_practica': inicio.isoformat() if inicio else None,
+            'fecha_fin_practica':    fin.isoformat() if fin else None,
+            'area_formacion':   area_formacion,
+        },
+        origen='admin',
+        id_creador=current_user.id_usuario)
 
-    aviso_ficha = None
-    if rol:
-        db.session.add(UsuarioRol(id_usuario=u.id_usuario, id_rol=rol.id_rol))
+    quien = f'{current_user.nombres} {current_user.apellidos}'.strip()
+    if not verificacion.enviar(pendiente, nombre=nombres, quien_invita=quien):
+        db.session.delete(pendiente)
+        db.session.commit()
+        flash('No se pudo enviar el correo de confirmación, así que no se creó '
+              'nada. Revisa la dirección y vuelve a intentarlo.', 'danger')
+        return redirect(url_for('admin.usuarios'))
 
-        if nombre_rol == 'aprendiz':
-            ap = Aprendiz(id_usuario=u.id_usuario,
-                          ficha=codigo_ficha,
-                          estado_practica=estado_practica,
-                          horas_requeridas=horas_requeridas,
-                          horas_cumplidas=0,
-                          fecha_inicio_practica=inicio,
-                          fecha_fin_practica=fin)
-            db.session.add(ap)
-            db.session.flush()
-
-            # Igual que en el registro público: si la ficha ya existe se
-            # matricula de una vez; si no, queda en "fichas no asignadas".
-            curso = Curso.query.filter_by(ficha=codigo_ficha).first()
-            if curso:
-                db.session.add(CursoAprendiz(id_curso=curso.id_curso,
-                                             id_aprendiz=ap.id_aprendiz))
-            else:
-                avisar_admins_ficha_pendiente(codigo_ficha, u)
-                aviso_ficha = codigo_ficha
-
-        elif nombre_rol == 'instructor':
-            db.session.add(Instructor(id_usuario=u.id_usuario,
-                                      area_formacion=area_formacion or None,
-                                      activo=True))
-
-    log_historial(current_user, 'Usuarios', 'CREAR', f'Usuario {correo} creado')
+    log_historial(current_user, 'Usuarios', 'CREAR',
+                  f'Invitación enviada a {correo} (pendiente de confirmar)')
     db.session.commit()
 
-    flash(f'Usuario {nombres} {apellidos} creado.', 'success')
-    if aviso_ficha:
-        flash(f'La ficha {aviso_ficha} todavía no existe: el aprendiz quedó en '
-              'espera y se matriculará solo en cuanto la crees.', 'info')
+    flash(f'Le enviamos un correo de confirmación a {correo}. La cuenta se crea '
+          'cuando abra el enlace.', 'success')
+    return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/usuarios/pendientes/<int:id_verificacion>/reenviar', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def reenviar_verificacion(id_verificacion):
+    pendiente = VerificacionCorreo.query.get_or_404(id_verificacion)
+    datos = verificacion.datos_de(pendiente)
+    quien = f'{current_user.nombres} {current_user.apellidos}'.strip()
+
+    if verificacion.enviar(pendiente, nombre=datos.get('nombres'), quien_invita=quien):
+        flash(f'Correo de confirmación reenviado a {pendiente.correo}.', 'success')
+    else:
+        flash('No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.',
+              'danger')
+    return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/usuarios/pendientes/<int:id_verificacion>/cancelar', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def cancelar_verificacion(id_verificacion):
+    pendiente = VerificacionCorreo.query.get_or_404(id_verificacion)
+    correo = pendiente.correo
+    db.session.delete(pendiente)
+    log_historial(current_user, 'Usuarios', 'ELIMINAR',
+                  f'Invitación cancelada: {correo}')
+    db.session.commit()
+    flash(f'Invitación a {correo} cancelada. El enlace que se envió ya no sirve.',
+          'info')
     return redirect(url_for('admin.usuarios'))
 
 

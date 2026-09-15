@@ -150,6 +150,37 @@ def enviar(destinatario: str, asunto: str, texto: str, html: str = None,
     hilo.start()
 
 
+def enviar_ahora(destinatario: str, asunto: str, texto: str, html: str = None) -> bool:
+    """Envía en el momento por la cuenta institucional y dice si salió.
+
+    Los avisos del sistema se mandan en segundo plano y si fallan solo se
+    anotan en el registro: que no llegue un "evidencia calificada" es molesto,
+    no bloqueante. La confirmación de correo es otra cosa: si no sale, la
+    persona no puede crear su cuenta, así que hay que enterarse y decírselo.
+    """
+    if not destinatario:
+        return False
+
+    cfg = _config_smtp()
+    if not cfg['usuario'] or not cfg['password']:
+        current_app.logger.error(
+            'No hay MAIL_USERNAME/MAIL_PASSWORD: no se pudo enviar la '
+            'confirmación a %s.', destinatario)
+        return False
+
+    mensaje = _construir_mensaje(cfg['usuario'], 'SENA Prácticas', destinatario,
+                                 asunto, texto, html,
+                                 responder_a=current_app.config.get('CONTACTO_EMAIL')
+                                 or cfg['usuario'])
+    try:
+        _enviar_smtp(cfg, mensaje)
+        return True
+    except Exception as e:
+        current_app.logger.error('No se pudo enviar la confirmación a %s: %s',
+                                 destinatario, e)
+        return False
+
+
 # ─────────────────────────────────────────────
 # Plantilla
 # ─────────────────────────────────────────────
@@ -233,3 +264,8 @@ def avisar_evidencia_calificada(aprendiz_usuario, instructor_usuario, estado: st
                     'Ingresa al sistema para ver el detalle de tu progreso.')
     enviar(aprendiz_usuario.correo, asunto, texto, html,
            remitente_usuario=instructor_usuario)
+
+
+def maqueta(titulo: str, cuerpo_html: str, pie: str = '') -> str:
+    """La misma plantilla HTML, para los correos de otros servicios."""
+    return _maqueta(titulo, cuerpo_html, pie)

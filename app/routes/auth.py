@@ -2,7 +2,9 @@
 Blueprint de Autenticación:
   GET  /           → landing page
   GET/POST /login  → iniciar sesión
-  GET/POST /registro → registro solo aprendices
+  GET/POST /registro → registro solo aprendices (queda pendiente de confirmar)
+  GET  /registro/revisa-tu-correo → aviso tras enviar la confirmación
+  GET  /verificar/<token> → confirma el correo y crea la cuenta
   GET  /logout     → cerrar sesión
 """
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, make_response
@@ -10,13 +12,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from app import db
 from app.models.usuario import Usuario
-from app.models.rol import Rol
-from app.models.usuario_rol import UsuarioRol
-from app.models.aprendiz import Aprendiz
-from app.models.curso import Curso
-from app.models.curso_aprendiz import CursoAprendiz
-from app.utils import (get_user_role, HORAS_PRACTICA_POR_DEFECTO,
-                       avisar_admins_ficha_pendiente)
+from app.servicios import verificacion
+from app.utils import get_user_role, HORAS_PRACTICA_POR_DEFECTO
 
 bp = Blueprint('auth', __name__)
 
@@ -106,10 +103,8 @@ def login():
 # ─── Registro (solo aprendices) ───────────────
 @bp.route('/registro', methods=['GET', 'POST'])
 def registro():
-    # Eliminado para permitir el registro incluso si hay sesión
-    # if current_user.is_authenticated:
-    #     return _redirect_by_role(current_user)
-
+    """Registro de aprendices. La cuenta no se crea aquí: queda pendiente de
+    que la persona confirme su correo desde el enlace que recibe."""
     if request.method == 'POST':
         datos = {
             'tipo_documento':   request.form.get('tipo_documento', '').strip(),
@@ -123,80 +118,96 @@ def registro():
             'codigo_ficha':     request.form.get('codigo_ficha', '').strip(),
         }
 
-        # Validaciones básicas
-        if not all([datos['nombres'], datos['apellidos'], datos['correo'], datos['password'], datos['codigo_ficha']]):
-            flash('Completa todos los campos obligatorios.', 'danger')
+        def _error(mensaje, categoria='danger'):
+            flash(mensaje, categoria)
             return render_template('auth/registro.html')
+
+        # ── Validaciones ──────────────────────────
+        if not all([datos['nombres'], datos['apellidos'], datos['correo'],
+                    datos['password'], datos['codigo_ficha']]):
+            return _error('Completa todos los campos obligatorios.')
 
         if datos['password'] != datos['confirm_password']:
-            flash('Las contraseñas no coinciden.', 'danger')
-            return render_template('auth/registro.html')
+            return _error('Las contraseñas no coinciden.')
 
         if len(datos['password']) < LONGITUD_MINIMA_PASSWORD:
-            flash(f"La contraseña debe tener al menos {LONGITUD_MINIMA_PASSWORD} caracteres.",
-                  'danger')
-            return render_template('auth/registro.html')
+            return _error(f'La contraseña debe tener al menos '
+                          f'{LONGITUD_MINIMA_PASSWORD} caracteres.')
 
         if '@' not in datos['correo'] or '.' not in datos['correo'].split('@')[-1]:
-            flash('Ingresa un correo electrónico válido.', 'danger')
-            return render_template('auth/registro.html')
+            return _error('Ingresa un correo electrónico válido.')
 
         if Usuario.query.filter_by(correo=datos['correo']).first():
-            flash('Ya existe una cuenta con ese correo.', 'warning')
-            return render_template('auth/registro.html')
-            
-        # Si la ficha todavía no existe como curso, el registro NO se rechaza:
-        # el aprendiz queda en espera y se avisa a los administradores para que
-        # la creen. Al crearla, se matricula solo (ver utils.matricular_pendientes).
-        curso_asignar = Curso.query.filter_by(ficha=datos['codigo_ficha']).first()
+            return _error('Ya existe una cuenta con ese correo.', 'warning')
 
-        # Crear usuario
-        nuevo_usuario = Usuario(
-            tipo_documento=datos['tipo_documento'],
-            numero_documento=datos['numero_documento'],
-            nombres=datos['nombres'],
-            apellidos=datos['apellidos'],
+        if datos['numero_documento'] and Usuario.query.filter_by(
+                numero_documento=datos['numero_documento']).first():
+            return _error('Ya existe una cuenta con ese número de documento.',
+                          'warning')
+
+        # ── Alta en espera ────────────────────────
+        # No se crea el usuario todavía: si el correo tuviera una errata,
+        # quedaría una cuenta inservible ocupando esa dirección y ese documento.
+        pendiente = verificacion.crear_pendiente(
             correo=datos['correo'],
-            telefono=datos['telefono'],
-            password_hash=generate_password_hash(datos['password']),
-            estado=True
-        )
-        db.session.add(nuevo_usuario)
-        db.session.flush()  # obtener id_usuario sin commit
+            datos={
+                'tipo_documento':   datos['tipo_documento'],
+                'numero_documento': datos['numero_documento'],
+                'nombres':          datos['nombres'],
+                'apellidos':        datos['apellidos'],
+                'telefono':         datos['telefono'],
+                'password_hash':    generate_password_hash(datos['password']),
+                'rol':              'aprendiz',
+                'codigo_ficha':     datos['codigo_ficha'],
+                'estado_practica':  'En proceso',
+                'horas_requeridas': HORAS_PRACTICA_POR_DEFECTO,
+            },
+            origen='registro')
 
-        # Asignar rol aprendiz
-        rol_aprendiz = Rol.query.filter_by(nombre='aprendiz').first()
-        if rol_aprendiz:
-            db.session.add(UsuarioRol(id_usuario=nuevo_usuario.id_usuario, id_rol=rol_aprendiz.id_rol))
+        if not verificacion.enviar(pendiente, nombre=datos['nombres']):
+            # Sin correo enviado no hay forma de confirmar: se retira la
+            # solicitud para que pueda reintentarlo con los mismos datos.
+            db.session.delete(pendiente)
+            db.session.commit()
+            return _error('No pudimos enviar el correo de confirmación en este '
+                          'momento. Inténtalo de nuevo en unos minutos o avisa '
+                          'a un administrador.')
 
-        # Crear registro en tabla aprendiz
-        aprendiz = Aprendiz(
-            id_usuario=nuevo_usuario.id_usuario,
-            ficha=datos['codigo_ficha'],
-            estado_practica='En proceso',
-            horas_requeridas=HORAS_PRACTICA_POR_DEFECTO,
-            horas_cumplidas=0
-        )
-        db.session.add(aprendiz)
-        db.session.flush()
-
-        if curso_asignar:
-            db.session.add(CursoAprendiz(id_curso=curso_asignar.id_curso,
-                                         id_aprendiz=aprendiz.id_aprendiz))
-        else:
-            avisar_admins_ficha_pendiente(datos['codigo_ficha'], nuevo_usuario)
-
-        db.session.commit()
-
-        if curso_asignar:
-            flash('Cuenta creada correctamente. Inicia sesión.', 'success')
-        else:
-            flash(f"Cuenta creada. La ficha {datos['codigo_ficha']} todavía no está "
-                  "registrada: un administrador la creará y quedarás matriculado "
-                  "automáticamente. Ya puedes iniciar sesión.", 'info')
-        return redirect(url_for('auth.login'))
+        session['correo_por_verificar'] = datos['correo']
+        return redirect(url_for('auth.revisa_tu_correo'))
 
     return render_template('auth/registro.html')
+
+
+# ─── Aviso: revisa tu correo ──────────────────
+@bp.route('/registro/revisa-tu-correo')
+def revisa_tu_correo():
+    correo = session.get('correo_por_verificar')
+    if not correo:
+        return redirect(url_for('auth.registro'))
+    return render_template('auth/revisa_correo.html', correo=correo,
+                           horas=verificacion.HORAS_VALIDEZ)
+
+
+# ─── Confirmación del correo ──────────────────
+@bp.route('/verificar/<token>')
+def verificar_correo(token):
+    """El enlace del correo. Aquí es donde la cuenta pasa a existir."""
+    try:
+        pendiente = verificacion.leer_token(token)
+        usuario, ficha_en_espera = verificacion.confirmar(pendiente)
+    except verificacion.ErrorVerificacion as e:
+        flash(str(e), 'warning')
+        return redirect(url_for('auth.login'))
+
+    session.pop('correo_por_verificar', None)
+    flash(f'Correo confirmado. Tu cuenta ya está activa, {usuario.nombres}: '
+          'inicia sesión.', 'success')
+    if ficha_en_espera:
+        flash(f'La ficha {ficha_en_espera} todavía no está registrada. Un '
+              'administrador la creará y quedarás matriculado automáticamente.',
+              'info')
+    return redirect(url_for('auth.login'))
 
 
 # ─── Logout ───────────────────────────────────

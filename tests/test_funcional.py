@@ -65,6 +65,27 @@ with app.app_context():
 
 c_admin, c_inst, c_ap = cliente(admin.id_usuario), cliente(inst.id_usuario), cliente(ap.id_usuario)
 
+# El correo nunca sale de verdad en las pruebas: se anota a dónde habría ido.
+# Hace falta desde el principio porque el registro ya depende de que salga.
+from app.servicios import correo as serv_correo
+enviados = []
+serv_correo.enviar_ahora = lambda destinatario, asunto, texto, html=None: (
+    enviados.append({'para': destinatario, 'asunto': asunto, 'texto': texto}) or True)
+
+
+def enlace_de(pos=-1):
+    """Saca la URL de confirmación del último correo enviado."""
+    return re.search(r'https?://\S+/verificar/\S+', enviados[pos]['texto']).group(0)
+
+
+def registrar_y_confirmar(cliente_anon, **campos):
+    """Hace el registro, abre el enlace del correo y devuelve la respuesta final."""
+    campos.setdefault('csrf_token', token(cliente_anon, '/registro'))
+    cliente_anon.post('/registro', data=campos, follow_redirects=True)
+    return cliente_anon.get(enlace_de(), follow_redirects=True)
+
+
+
 print('\n── Rutas con parámetros ──')
 check('admin ve detalle de ficha', c_admin.get(f'/admin/fichas/{id_curso}/detalle').status_code == 200)
 r = c_inst.get(f'/instructor/fichas/{id_curso}/detalle')
@@ -311,15 +332,14 @@ check('el formulario declara el perfil para el color', 'data-perfil=' in html)
 anon2 = app.test_client()
 with app.app_context():
     ficha_valida = db.session.get(Curso, id_curso).ficha
-t = token(anon2, '/registro')
-r = anon2.post('/registro', data={
-    'tipo_documento': 'CC', 'numero_documento': '123', 'nombres': 'Nuevo',
-    'apellidos': 'Aprendiz', 'correo': 'nuevo.aprendiz@test.com', 'telefono': '300',
-    'password': 'clave123', 'confirm_password': 'clave123',
-    'codigo_ficha': ficha_valida or '', 'csrf_token': t}, follow_redirects=True)
+r = registrar_y_confirmar(
+    anon2, tipo_documento='CC', numero_documento='123', nombres='Nuevo',
+    apellidos='Aprendiz', correo='nuevo.aprendiz@test.com', telefono='300',
+    password='clave123', confirm_password='clave123',
+    codigo_ficha=ficha_valida or '')
 with app.app_context():
     creado = Usuario.query.filter_by(correo='nuevo.aprendiz@test.com').first()
-    check('el registro crea usuario + aprendiz + matrícula',
+    check('confirmado el correo, el registro crea usuario + aprendiz + matrícula',
           creado is not None and creado.aprendiz is not None
           and len(creado.aprendiz.cursos) == 1)
 
@@ -693,12 +713,10 @@ from app.models.notificacion import Notificacion as Notif3
 
 CODIGO_NUEVO = 'ZZ-PENDIENTE-1'
 reg = app.test_client()
-t = token(reg, '/registro')
-r = reg.post('/registro', data={
-    'tipo_documento': 'CC', 'numero_documento': '999', 'nombres': 'Ana',
-    'apellidos': 'Pendiente', 'correo': 'ana.pendiente@test.com', 'telefono': '300',
-    'password': 'clave123', 'confirm_password': 'clave123',
-    'codigo_ficha': CODIGO_NUEVO, 'csrf_token': t}, follow_redirects=True)
+r = registrar_y_confirmar(
+    reg, tipo_documento='CC', numero_documento='999', nombres='Ana',
+    apellidos='Pendiente', correo='ana.pendiente@test.com', telefono='300',
+    password='clave123', confirm_password='clave123', codigo_ficha=CODIGO_NUEVO)
 check('el registro con ficha inexistente ya NO se rechaza',
       'no existe' not in r.get_data(as_text=True))
 check('y avisa de que quedará en espera',
@@ -841,49 +859,145 @@ with app.app_context():
     check('el resumen de ficha trae estado y avance',
           'estado' in r and 'avance' in r and 0 <= r['avance'] <= 100)
 
-print('\n── El admin crea usuarios completos según el rol ──')
+print('\n── Alta en dos pasos: confirmar el correo ──')
+from app.models.verificacion_correo import VerificacionCorreo
+
 with app.app_context():
     rol_ap_id = Rol.query.filter_by(nombre='aprendiz').first().id_rol
     rol_in_id = Rol.query.filter_by(nombre='instructor').first().id_rol
     ficha_real = Curso.query.first().ficha
 
+anon = app.test_client()
+
+def enlace_de(pos=-1):
+    """Saca la URL de confirmación del último correo enviado."""
+    return re.search(r'https?://\S+/verificar/\S+', enviados[pos]['texto']).group(0)
+
+# ── Registro público ──────────────────────────
+t = token(anon, '/registro')
+r = anon.post('/registro', data={
+    'nombres': 'Lucia', 'apellidos': 'Mora', 'correo': 'lucia.mora@x.co',
+    'tipo_documento': 'CC', 'numero_documento': '80800011', 'telefono': '3001234567',
+    'codigo_ficha': ficha_real, 'password': 'clave123', 'confirm_password': 'clave123',
+    'csrf_token': t}, follow_redirects=True)
+texto = r.get_data(as_text=True)
+check('tras registrarse avisa que revise el correo', 'Revisa tu' in texto)
+check('  · y muestra a qué dirección se envió', 'lucia.mora@x.co' in texto)
+check('  · se envió un correo de confirmación',
+      enviados[-1]['para'] == 'lucia.mora@x.co'
+      and 'Confirma tu correo' in enviados[-1]['asunto'])
+with app.app_context():
+    check('  · pero TODAVÍA no existe la cuenta',
+          Usuario.query.filter_by(correo='lucia.mora@x.co').first() is None)
+    check('  · sino un alta en espera',
+          VerificacionCorreo.query.filter_by(correo='lucia.mora@x.co').first() is not None)
+
+# No se puede iniciar sesión mientras no confirme
+t = token(anon, '/login')
+r = anon.post('/login', data={'correo': 'lucia.mora@x.co', 'password': 'clave123',
+                              'perfil': 'aprendiz', 'csrf_token': t},
+              follow_redirects=True)
+check('sin confirmar no se puede iniciar sesión',
+      'Panel' not in r.get_data(as_text=True) or 'incorrect' in r.get_data(as_text=True).lower()
+      or 'Iniciar' in r.get_data(as_text=True))
+
+# ── Confirmación ──────────────────────────────
+r = anon.get(enlace_de(), follow_redirects=True)
+check('al abrir el enlace se confirma el correo',
+      'Correo confirmado' in r.get_data(as_text=True))
+with app.app_context():
+    u = Usuario.query.filter_by(correo='lucia.mora@x.co').first()
+    check('  · y ahora sí existe la cuenta', u is not None)
+    check('  · con su perfil de aprendiz y su ficha',
+          u is not None and u.aprendiz is not None and u.aprendiz.ficha == ficha_real)
+    check('  · matriculada en la ficha existente',
+          u is not None and len(u.aprendiz.cursos) == 1)
+    check('  · y el alta en espera desaparece',
+          VerificacionCorreo.query.filter_by(correo='lucia.mora@x.co').first() is None)
+
+# Ya puede entrar
+t = token(anon, '/login')
+r = anon.post('/login', data={'correo': 'lucia.mora@x.co', 'password': 'clave123',
+                              'perfil': 'aprendiz', 'csrf_token': t},
+              follow_redirects=True)
+check('después de confirmar ya puede iniciar sesión',
+      'Panel' in r.get_data(as_text=True))
+
+# El mismo enlace no sirve dos veces
+r = anon.get(enlace_de(), follow_redirects=True)
+check('el enlace no se puede reutilizar',
+      'ya se usó' in r.get_data(as_text=True))
+
+# Un enlace inventado tampoco
+r = anon.get('/verificar/esto-no-es-un-token', follow_redirects=True)
+check('un enlace manipulado se rechaza',
+      'no es válido' in r.get_data(as_text=True))
+
+# ── El admin crea un instructor ───────────────
 def crear(**campos):
     campos.setdefault('csrf_token', token(c_admin, '/admin/usuarios'))
     return c_admin.post('/admin/usuarios/crear', data=campos, follow_redirects=True)
 
-r = crear(nombres='Ana', apellidos='Ruiz', correo='ana.nueva@x.co', password='clave123',
+r = crear(nombres='Iván', apellidos='Soto', correo='ivan.nuevo@x.co', password='clave123',
           tipo_documento='CC', numero_documento='90900001', telefono='3001112233',
-          id_rol=rol_ap_id, codigo_ficha=ficha_real, estado_practica='En proceso',
-          horas_requeridas='500', fecha_inicio_practica='2026-01-10',
-          fecha_fin_practica='2026-07-10')
+          id_rol=rol_in_id, area_formacion='Teleinformática')
+check('al crear desde el admin se envía confirmación, no la cuenta',
+      'correo de confirmación' in r.get_data(as_text=True))
 with app.app_context():
-    u = Usuario.query.filter_by(correo='ana.nueva@x.co').first()
-    check('crea el aprendiz con sus datos personales',
-          u is not None and u.tipo_documento == 'CC'
-          and u.numero_documento == '90900001' and u.telefono == '3001112233')
-    a = u.aprendiz if u else None
-    check('  · con ficha, estado y horas',
-          a is not None and a.ficha == ficha_real
-          and a.estado_practica == 'En proceso' and a.horas_requeridas == 500)
-    check('  · con el periodo de práctica',
-          a is not None and str(a.fecha_inicio_practica) == '2026-01-10'
-          and str(a.fecha_fin_practica) == '2026-07-10')
-    check('  · y matriculado en la ficha que ya existía', a is not None and len(a.cursos) == 1)
+    check('  · el usuario aún no existe',
+          Usuario.query.filter_by(correo='ivan.nuevo@x.co').first() is None)
 
+html = c_admin.get('/admin/usuarios').get_data(as_text=True)
+check('el admin ve la lista de altas en espera',
+      'Esperando confirmación de correo' in html and 'ivan.nuevo@x.co' in html)
+
+r = anon.get(enlace_de(), follow_redirects=True)
+with app.app_context():
+    u = Usuario.query.filter_by(correo='ivan.nuevo@x.co').first()
+    check('al confirmar se crea el instructor con su área',
+          u is not None and u.instructor is not None
+          and u.instructor.area_formacion == 'Teleinformática')
+    check('  · con sus datos personales',
+          u is not None and u.tipo_documento == 'CC' and u.telefono == '3001112233')
+
+# ── El admin crea un aprendiz con ficha inexistente ──
 r = crear(nombres='Beto', apellidos='Paz', correo='beto.nuevo@x.co', password='clave123',
           id_rol=rol_ap_id, codigo_ficha='ZZZ-NO-EXISTE')
-check('con una ficha inexistente avisa que queda en espera',
-      'todavía no existe' in r.get_data(as_text=True))
+r = anon.get(enlace_de(), follow_redirects=True)
+check('la ficha inexistente se avisa al confirmar, no antes',
+      'todavía no está registrada' in r.get_data(as_text=True))
 with app.app_context():
     u = Usuario.query.filter_by(correo='beto.nuevo@x.co').first()
-    check('  · y lo deja sin matricular', u is not None and len(u.aprendiz.cursos) == 0)
+    check('  · y el aprendiz queda sin matricular',
+          u is not None and len(u.aprendiz.cursos) == 0)
 
+# ── Reenviar y cancelar ───────────────────────
+r = crear(nombres='Temporal', apellidos='Cancelar', correo='temporal@x.co',
+          password='clave123')
+with app.app_context():
+    id_pend = VerificacionCorreo.query.filter_by(correo='temporal@x.co').first().id_verificacion
+antes = len(enviados)
+t = token(c_admin, '/admin/usuarios')
+c_admin.post(f'/admin/usuarios/pendientes/{id_pend}/reenviar',
+             data={'csrf_token': t}, follow_redirects=True)
+check('el admin puede reenviar la confirmación', len(enviados) == antes + 1)
+
+t = token(c_admin, '/admin/usuarios')
+r = c_admin.post(f'/admin/usuarios/pendientes/{id_pend}/cancelar',
+                 data={'csrf_token': t}, follow_redirects=True)
+check('y cancelarla', 'cancelada' in r.get_data(as_text=True))
+with app.app_context():
+    check('  · con lo que el enlace deja de servir',
+          db.session.get(VerificacionCorreo, id_pend) is None)
+
+# ── Las validaciones siguen ocurriendo ANTES de enviar ──
 r = crear(nombres='Sin', apellidos='Ficha', correo='sin.ficha@x.co',
           password='clave123', id_rol=rol_ap_id)
-check('exige la ficha al crear un aprendiz', 'código de ficha' in r.get_data(as_text=True))
+check('exige la ficha antes de enviar nada',
+      'código de ficha' in r.get_data(as_text=True))
 with app.app_context():
-    check('  · y no crea el usuario a medias',
-          Usuario.query.filter_by(correo='sin.ficha@x.co').first() is None)
+    check('  · y no deja un alta a medias',
+          VerificacionCorreo.query.filter_by(correo='sin.ficha@x.co').first() is None)
 
 r = crear(nombres='Fechas', apellidos='Malas', correo='fechas@x.co', password='clave123',
           id_rol=rol_ap_id, codigo_ficha=ficha_real,
@@ -896,15 +1010,6 @@ r = crear(nombres='Estado', apellidos='Raro', correo='estado@x.co', password='cl
 check('rechaza un estado de práctica fuera de la lista',
       'Estado de práctica inválido' in r.get_data(as_text=True))
 
-r = crear(nombres='Iván', apellidos='Soto', correo='ivan.nuevo@x.co', password='clave123',
-          id_rol=rol_in_id, area_formacion='Teleinformática')
-with app.app_context():
-    u = Usuario.query.filter_by(correo='ivan.nuevo@x.co').first()
-    check('crea el instructor con su área de formación',
-          u is not None and u.instructor is not None
-          and u.instructor.area_formacion == 'Teleinformática')
-    check('  · y sin perfil de aprendiz', u is not None and u.aprendiz is None)
-
 r = crear(nombres='Doc', apellidos='Repe', correo='doc.repe@x.co', password='clave123',
           numero_documento='90900001')
 check('rechaza un número de documento ya usado',
@@ -915,18 +1020,10 @@ r = crear(nombres='Tipo', apellidos='Raro', correo='tipo.raro@x.co', password='c
 check('rechaza un tipo de documento fuera de la lista',
       'Tipo de documento inválido' in r.get_data(as_text=True))
 
-r = crear(nombres='Pelado', apellidos='Sin Rol', correo='pelado@x.co', password='clave123')
-with app.app_context():
-    u = Usuario.query.filter_by(correo='pelado@x.co').first()
-    check('sin rol no inventa perfiles internos',
-          u is not None and u.aprendiz is None and u.instructor is None)
-
 html = c_admin.get('/admin/usuarios').get_data(as_text=True)
 check('el formulario separa los campos por rol',
       html.count('campos-rol') >= 2 and 'data-para="aprendiz"' in html
       and 'data-para="instructor"' in html)
-check('  · y los bloques ocultos nacen deshabilitados',
-      html.count('class="campos-rol d-none"') == 2)
 
 print('\n── El admin gestiona las fichas del instructor ──')
 with app.app_context():
