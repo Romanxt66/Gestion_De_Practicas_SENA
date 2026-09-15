@@ -2590,12 +2590,44 @@ input:-webkit-autofill::first-line {
 }
 .portal-nav-cta:hover { color: #fff; border-color: var(--border-muted); background: var(--bg-hover); }
 
-.portal-hero { flex: 1; padding: 3.5rem 1.5rem 2.5rem; text-align: center; }
+/* El portal cabe en una pantalla: dos columnas en escritorio, apiladas en móvil */
+.portal-hero {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3.5vh, 2.75rem) 2rem;
+}
+
+/* El registro usa el mismo armazón pero en una sola columna centrada */
+.portal-hero-simple {
+  display: block;
+  max-width: 900px;
+  text-align: center;
+  padding-top: clamp(1.75rem, 5vh, 3rem);
+}
+.portal-hero-simple .portal-h1 { margin-top: 0.7rem; }
+.portal-hero-simple .portal-lead {
+  margin: 0.6rem auto 0; max-width: 58ch;
+}
+.portal-hero-simple .registro-caja { margin-top: 1.4rem !important; }
+.portal-hero-simple .ui-field { margin-bottom: 0.8rem; }
+
+@media (max-height: 820px) {
+  .portal-hero-simple { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+}
+
+.portal-intro { text-align: left; min-width: 0; }
+
 .portal-etiqueta {
   display: inline-flex; align-items: center; gap: 0.6rem;
-  padding: 0.5rem 1.1rem; border-radius: 99px;
+  padding: 0.4rem 0.9rem; border-radius: 99px;
   border: 1px solid var(--acc-glow); background: var(--acc-soft);
-  color: var(--acc-strong); font-size: 0.75rem; font-weight: 700;
+  color: var(--acc-strong); font-size: 0.68rem; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase;
 }
 .portal-etiqueta .punto {
@@ -2603,104 +2635,151 @@ input:-webkit-autofill::first-line {
   background: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft);
 }
 .portal-h1 {
-  margin: 1.6rem 0 0;
-  font-size: clamp(2.4rem, 6vw, 4.4rem);
+  margin: 1.1rem 0 0;
+  font-size: clamp(2.1rem, 3.6vw, 3.3rem);
   font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; color: #fff;
 }
 .portal-h1 em { font-style: normal; color: var(--acc); }
 .portal-lead {
-  margin: 1.2rem auto 0; max-width: 62ch;
-  font-size: clamp(0.95rem, 1.6vw, 1.15rem); line-height: 1.6; color: var(--text-secondary);
+  margin: 0.9rem 0 0; max-width: 46ch;
+  font-size: clamp(0.9rem, 1.1vw, 1rem); line-height: 1.55; color: var(--text-secondary);
 }
 
 .portal-rotulo {
-  margin: 3rem 0 1.25rem;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em;
+  margin: 0 0 0.75rem;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--text-muted);
 }
 
-.perfiles {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem;
-  max-width: 1120px; margin: 0 auto;
-}
+/* ── Tarjetas de perfil: fila compacta ──────────────────── */
+.perfiles { display: grid; gap: 0.6rem; }
 .perfiles input { position: absolute; opacity: 0; pointer-events: none; }
 .perfil {
-  display: block; height: 100%; cursor: pointer; text-align: left;
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer; text-align: left;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md, 12px);
   border: 1px solid var(--border-default);
   background: rgba(10,10,10,.6);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  transition: all var(--trans-base);
+  transition: border-color var(--trans-base), background var(--trans-base);
 }
-.perfil:hover { border-color: var(--border-muted); transform: translateY(-2px); }
+.perfil:hover { border-color: var(--border-muted); }
 .perfiles input:checked + .perfil {
   border-color: var(--acc);
-  background: linear-gradient(165deg, var(--acc-soft), rgba(10,10,10,.75) 60%);
-  box-shadow: 0 0 0 1px var(--acc-glow), 0 18px 40px -16px var(--acc-glow);
+  background: linear-gradient(110deg, var(--acc-soft), rgba(10,10,10,.75) 65%);
+  box-shadow: 0 0 0 1px var(--acc-glow);
 }
 .perfiles input:focus-visible + .perfil { outline: 2px solid var(--acc); outline-offset: 3px; }
 
-.perfil-cab { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.1rem; }
 .perfil-icono {
-  width: 52px; height: 52px; border-radius: 14px;
-  display: grid; place-items: center; font-size: 1.3rem;
+  width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center; font-size: 1.05rem;
   background: var(--acc-soft); border: 1px solid var(--acc-glow); color: var(--acc);
 }
+.perfil-texto { display: grid; gap: 0.1rem; min-width: 0; }
+.perfil-nombre {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.97rem; font-weight: 700; color: #fff; letter-spacing: -0.01em;
+}
 .perfil-marca {
-  margin-left: auto; padding: 0.25rem 0.6rem; border-radius: 6px;
+  padding: 0.12rem 0.45rem; border-radius: 5px;
   border: 1px solid var(--acc-glow); background: var(--acc-soft);
-  color: var(--acc-strong); font-size: 0.6rem; font-weight: 800;
+  color: var(--acc-strong); font-size: 0.55rem; font-weight: 800; font-style: normal;
   letter-spacing: 0.1em; text-transform: uppercase;
 }
-.perfil h3 { margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
-.perfil p { margin: 0; font-size: 0.88rem; line-height: 1.55; color: var(--text-muted); }
-.perfil-pie {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 1.25rem; padding-top: 1rem;
-  border-top: 1px solid var(--border-subtle);
-  color: var(--text-secondary); font-size: 0.88rem; font-weight: 600;
+.perfil-desc {
+  font-size: 0.78rem; line-height: 1.4; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.perfiles input:checked + .perfil .perfil-pie { color: var(--acc); }
+.perfil-flecha { color: var(--text-disabled); font-size: 0.9rem; }
+.perfiles input:checked + .perfil .perfil-flecha { color: var(--acc); }
 
-.portal-form { max-width: 560px; margin: 2.5rem auto 0; text-align: left; }
-.portal-form .btn-cta { margin-top: 0.6rem; }
-.portal-registro { margin-top: 1.4rem; text-align: center; font-size: 0.9rem; color: var(--text-muted); }
+.portal-acceso { min-width: 0; text-align: left; }
+.portal-form { margin-top: 1.25rem; }
+.portal-form .ui-field { margin-bottom: 0.8rem; }
+.portal-form .btn-cta { margin-top: 0.4rem; }
+.portal-registro { margin-top: 0.9rem; text-align: center; font-size: 0.85rem; color: var(--text-muted); }
 .portal-registro a { color: var(--acc); font-weight: 600; text-decoration: none; }
 .portal-registro a:hover { text-decoration: underline; }
 
+/* ── Lo que ofrece el sistema: lista en la columna izquierda ── */
 .portal-tiras {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
-  max-width: 1120px; margin: 4rem auto 0;
-  padding-top: 2.5rem; border-top: 1px solid var(--border-subtle);
+  list-style: none;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.5rem;
+  margin: 1.6rem 0 0;
+  padding: 1.4rem 0 0;
+  border-top: 1px solid var(--border-subtle);
 }
 .portal-tira b {
-  display: block; font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem;
+  display: block; font-size: 0.87rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem;
 }
-.portal-tira span { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+.portal-tira span { font-size: 0.76rem; color: var(--text-muted); line-height: 1.45; }
 
 .portal-pie {
   display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
-  padding: 1.5rem 2rem;
+  padding: 0.9rem 2rem;
   border-top: 1px solid var(--border-subtle);
-  font-size: 0.8rem; color: var(--text-muted);
+  font-size: 0.76rem; color: var(--text-muted);
 }
 .portal-pie a { color: var(--text-secondary); text-decoration: none; }
 .portal-pie a:hover { color: #fff; }
 .portal-pie .derecha { margin-left: auto; display: flex; gap: 1.5rem; flex-wrap: wrap; }
 
+/* Pantallas bajas: la portada aprieta un poco más */
+@media (max-height: 760px) and (min-width: 992px) {
+  .portal-tiras { display: none; }
+  .portal-h1 { font-size: clamp(1.9rem, 3vw, 2.6rem); }
+}
+/* Ventanas mínimas: se comprime el armazón (barra, pie, tarjetas) */
+@media (max-height: 660px) and (min-width: 992px) {
+  .portal-nav { padding: 0.55rem 2rem; }
+  .portal-nav-mark { width: 34px; height: 34px; border-radius: 10px; font-size: 1rem; }
+  .portal-pie { padding: 0.5rem 2rem; }
+  .perfiles { gap: 0.4rem; }
+  .perfil { padding: 0.45rem 0.85rem; }
+  .perfil-icono { width: 32px; height: 32px; border-radius: 9px; font-size: 0.9rem; }
+  .portal-form .ui-field { margin-bottom: 0.5rem; }
+  .btn-cta { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .portal-rotulo { margin-bottom: 0.5rem; }
+  .portal-form { margin-top: 0.8rem; }
+  .portal-registro { margin-top: 0.6rem; font-size: 0.8rem; }
+  .perfiles { gap: 0.35rem; }
+}
+
+/* Ventanas muy bajas (portátil con la barra del navegador): solo lo esencial */
+@media (max-height: 720px) and (min-width: 992px) {
+  .portal-lead { display: none; }
+  .perfil-desc { display: none; }
+  .perfil { padding: 0.6rem 0.9rem; }
+  .portal-h1 { margin-top: 0.9rem; }
+  .portal-form { margin-top: 1rem; }
+  .portal-form .ui-field { margin-bottom: 0.65rem; }
+}
+
 @media (max-width: 991.98px) {
   .portal-nav-links { display: none; }
-  .perfiles { grid-template-columns: 1fr; }
-  .portal-tiras { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .portal-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 2rem;
+    padding: 2rem 1.5rem 2.5rem;
+  }
+  .portal-tiras { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 575.98px) {
   .portal-nav { padding: 1rem; }
   .portal-nav-cta span { display: none; }
-  .portal-hero { padding: 2.25rem 1rem 2rem; }
-  .portal-rotulo { margin-top: 2rem; }
-  .portal-tiras { grid-template-columns: 1fr; margin-top: 2.5rem; }
-  .portal-pie { padding: 1.25rem 1rem; justify-content: center; text-align: center; }
+  .portal-hero { padding: 1.75rem 1rem 2rem; gap: 1.5rem; }
+  /* En el teléfono lo que importa es entrar: el resumen del sistema estorba */
+  .portal-tiras { display: none; }
+  .portal-h1 { font-size: 2.1rem; }
+  .portal-lead { font-size: 0.9rem; }
+  .perfil-desc { white-space: normal; }
+  .portal-pie { padding: 1.1rem 1rem; justify-content: center; text-align: center; }
   .portal-pie .derecha { margin-left: 0; justify-content: center; }
 }
 

@@ -37,17 +37,41 @@
 
   <!-- ══ Portada ══ -->
   <main class="portal-hero">
-    <span class="portal-etiqueta">
-      <span class="punto"></span> {{ config.CENTRO_FORMACION }}
-    </span>
 
-    <h1 class="portal-h1">Gestión de <em>Prácticas</em></h1>
-    <p class="portal-lead">
-      Conecta aprendices, instructores y empresas durante la etapa productiva:
-      entrega de evidencias, seguimiento por ficha y calificación, en un solo lugar.
-    </p>
+    <!-- Columna izquierda: qué es el sistema -->
+    <section class="portal-intro">
+      <span class="portal-etiqueta">
+        <span class="punto"></span> {{ config.CENTRO_FORMACION }}
+      </span>
 
-    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+      <h1 class="portal-h1">Gestión de <em>Prácticas</em></h1>
+      <p class="portal-lead">
+        Conecta aprendices, instructores y empresas durante la etapa productiva:
+        entrega de evidencias, seguimiento por ficha y calificación, en un solo lugar.
+      </p>
+
+      <ul class="portal-tiras">
+        <li class="portal-tira">
+          <b>Evidencias con trazabilidad</b>
+          <span>Cada entrega queda registrada con su fecha, estado y observaciones.</span>
+        </li>
+        <li class="portal-tira">
+          <b>Seguimiento por ficha</b>
+          <span>El instructor ve el avance de cada aprendiz de sus fichas.</span>
+        </li>
+        <li class="portal-tira">
+          <b>Avisos por correo</b>
+          <span>Al subir una evidencia y al calificarla, las partes reciben aviso.</span>
+        </li>
+        <li class="portal-tira">
+          <b>Acceso por rol</b>
+          <span>Cada perfil ve y modifica únicamente lo que le corresponde.</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Columna derecha: acceso -->
+    <form class="portal-acceso" method="POST" action="{{ url_for('auth.login') }}" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <p class="portal-rotulo">Selecciona tu perfil de ingreso</p>
@@ -57,13 +81,12 @@
           <input type="radio" name="perfil" id="perfil-aprendiz" value="aprendiz"
                  {% if perfil_activo == 'aprendiz' %}checked{% endif %}>
           <label class="perfil" for="perfil-aprendiz">
-            <div class="perfil-cab">
-              <span class="perfil-icono"><i class="bi bi-mortarboard"></i></span>
-            </div>
-            <h3>Aprendiz</h3>
-            <p>Sube las evidencias de tu práctica, consulta tu avance y revisa las
-               observaciones de tu instructor.</p>
-            <div class="perfil-pie">Acceso aprendices <i class="bi bi-chevron-right"></i></div>
+            <span class="perfil-icono"><i class="bi bi-mortarboard"></i></span>
+            <span class="perfil-texto">
+              <span class="perfil-nombre">Aprendiz</span>
+              <span class="perfil-desc">Sube evidencias y consulta tu avance.</span>
+            </span>
+            <i class="bi bi-chevron-right perfil-flecha"></i>
           </label>
         </div>
 
@@ -71,14 +94,12 @@
           <input type="radio" name="perfil" id="perfil-instructor" value="instructor"
                  {% if perfil_activo == 'instructor' %}checked{% endif %}>
           <label class="perfil" for="perfil-instructor">
-            <div class="perfil-cab">
-              <span class="perfil-icono"><i class="bi bi-person-badge"></i></span>
-              <span class="perfil-marca">Docente</span>
-            </div>
-            <h3>Instructor</h3>
-            <p>Supervisa las fichas a tu cargo, califica evidencias y haz seguimiento
-               al progreso de tus aprendices.</p>
-            <div class="perfil-pie">Panel de evaluación <i class="bi bi-chevron-right"></i></div>
+            <span class="perfil-icono"><i class="bi bi-person-badge"></i></span>
+            <span class="perfil-texto">
+              <span class="perfil-nombre">Instructor <em class="perfil-marca">Docente</em></span>
+              <span class="perfil-desc">Califica evidencias y sigue a tus fichas.</span>
+            </span>
+            <i class="bi bi-chevron-right perfil-flecha"></i>
           </label>
         </div>
 
@@ -86,13 +107,12 @@
           <input type="radio" name="perfil" id="perfil-admin" value="admin"
                  {% if perfil_activo == 'admin' %}checked{% endif %}>
           <label class="perfil" for="perfil-admin">
-            <div class="perfil-cab">
-              <span class="perfil-icono"><i class="bi bi-shield-lock"></i></span>
-            </div>
-            <h3>Administrador</h3>
-            <p>Gestiona usuarios, roles, fichas y empresas, y consulta la auditoría
-               completa del sistema.</p>
-            <div class="perfil-pie">Gestión global <i class="bi bi-chevron-right"></i></div>
+            <span class="perfil-icono"><i class="bi bi-shield-lock"></i></span>
+            <span class="perfil-texto">
+              <span class="perfil-nombre">Administrador</span>
+              <span class="perfil-desc">Gestiona usuarios, fichas y auditoría.</span>
+            </span>
+            <i class="bi bi-chevron-right perfil-flecha"></i>
           </label>
         </div>
       </div>
@@ -139,26 +159,6 @@
         </p>
       </div>
     </form>
-
-    <!-- ══ Qué ofrece el sistema ══ -->
-    <div class="portal-tiras">
-      <div class="portal-tira">
-        <b>Evidencias con trazabilidad</b>
-        <span>Cada entrega queda registrada con su fecha, estado y observaciones.</span>
-      </div>
-      <div class="portal-tira">
-        <b>Seguimiento por ficha</b>
-        <span>El instructor ve el avance de cada aprendiz de sus fichas.</span>
-      </div>
-      <div class="portal-tira">
-        <b>Avisos por correo</b>
-        <span>Al subir una evidencia y al calificarla, las partes reciben aviso.</span>
-      </div>
-      <div class="portal-tira">
-        <b>Acceso por rol</b>
-        <span>Cada perfil ve y modifica únicamente lo que le corresponde.</span>
-      </div>
-    </div>
   </main>
 
   <!-- ══ Pie ══ -->

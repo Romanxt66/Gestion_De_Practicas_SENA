@@ -856,6 +856,14 @@ check('el portal muestra el centro de formación', 'Oriente de Vélez' in html)
 check('el portal conserva el formulario de credenciales',
       'name="correo"' in html and 'name="password"' in html and 'csrf_token' in html)
 check('el portal enlaza al registro', '/registro' in html)
+check('el portal se reparte en dos columnas', 'portal-intro' in html and 'portal-acceso' in html)
+check('las tarjetas de perfil son filas compactas',
+      html.count('perfil-desc') == 3 and 'perfil-flecha' in html)
+css_portal = open('app/static/biblioteca.css', encoding='utf-8').read()
+check('  · la portada cabe sin desplazar (rejilla de dos columnas)',
+      '.portal-hero {' in css_portal and 'grid-template-columns' in css_portal)
+check('  · y se comprime en ventanas bajas',
+      'max-height: 760px' in css_portal and 'max-height: 660px' in css_portal)
 
 html = anon.get('/registro').get_data(as_text=True)
 for campo in ('nombres', 'apellidos', 'tipo_documento', 'numero_documento',
