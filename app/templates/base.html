@@ -215,7 +215,7 @@
     {% if messages %}
       {% for cat, msg in messages %}
         <div class="minimal-toast toast align-items-center show w-100" role="alert" aria-live="assertive" aria-atomic="true"
-             style="background: #0f0f0f; border: 1px solid {% if cat == 'success' %}var(--acc){% elif cat == 'danger' %}#ef4444{% elif cat == 'warning' %}#f59e0b{% else %}#38bdf8{% endif %}; border-radius: 12px;">
+             style="background: var(--velo-elevado); backdrop-filter: var(--desenfoque); -webkit-backdrop-filter: var(--desenfoque); border: 1px solid {% if cat == 'success' %}var(--acc){% elif cat == 'danger' %}#ef4444{% elif cat == 'warning' %}#f59e0b{% else %}#38bdf8{% endif %}; border-radius: 12px;">
           <div class="d-flex px-2 py-1">
             <div class="toast-body d-flex align-items-center gap-3 text-white w-100">
               <i class="bi {% if cat == 'success' %}bi-check-circle{% elif cat == 'danger' %}bi-exclamation-triangle{% elif cat == 'warning' %}bi-exclamation-circle{% else %}bi-info-circle{% endif %} fs-5"

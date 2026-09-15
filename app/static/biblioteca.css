@@ -30,9 +30,9 @@
 
   /* Velo: el mismo color de superficie, dejando entrever el fondo.
      Al cambiar estos tres valores cambia la transparencia de todo. */
-  --velo-bloque:   color-mix(in srgb, var(--bg-surface) 74%, transparent);
-  --velo-elevado:  color-mix(in srgb, var(--bg-elevated) 82%, transparent);
-  --velo-barra:    color-mix(in srgb, var(--bg-lateral) 88%, transparent);
+  --velo-bloque:   color-mix(in srgb, var(--bg-surface) 66%, transparent);
+  --velo-elevado:  color-mix(in srgb, var(--bg-elevated) 78%, transparent);
+  --velo-barra:    color-mix(in srgb, var(--bg-lateral) 68%, transparent);
   --desenfoque:    blur(14px) saturate(1.25);
 
   /* Acentos secundarios */
@@ -1185,7 +1185,9 @@ body.biblioteca-body::before {
   padding: 0 0.9rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  background: var(--input-bg);
+  background: color-mix(in srgb, var(--input-bg) 70%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
 }
 
@@ -2322,7 +2324,10 @@ input:-webkit-autofill::first-line {
 }
 
 .buscador { flex: 1; max-width: 620px; }
-.buscador .ui-input-shell { border-radius: 10px; background: var(--input-bg); }
+.buscador .ui-input-shell {
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--input-bg) 62%, transparent);
+}
 .buscador input { padding: 0.62rem 0; font-size: 0.88rem; }
 .tecla {
   display: inline-flex; align-items: center; gap: 0.2rem;
@@ -3027,4 +3032,41 @@ input:-webkit-autofill::first-line {
   .inst-ident { margin-right: 0; width: 100%; }
   .inst-acciones { width: 100%; }
   .inst-vincular .form-select { max-width: none; flex: 1 1 100%; }
+}
+
+/* ── Bootstrap: piezas que traen su propio gris ───────────
+   .bg-dark es #212529, un gris pardo que desentona con el azul
+   pizarra. Se reconduce a los tonos del sistema, con el mismo velo. */
+.bg-dark,
+.page-link.bg-dark,
+.form-select.bg-dark,
+.form-control.bg-dark,
+.shell-header-icon.bg-dark {
+  background-color: var(--velo-elevado) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: var(--border-default) !important;
+}
+.page-link { color: var(--text-secondary) !important; }
+.page-link:hover { background-color: var(--bg-hover) !important; color: #fff !important; }
+.page-item.active .page-link,
+.page-link.bg-primary {
+  background-color: var(--acc) !important;
+  border-color: var(--acc) !important;
+  color: #07090b !important;
+}
+.pagination { --bs-pagination-bg: transparent; }
+
+/* Campos de formulario: el mismo velo que el resto de superficies.
+   --input-bg se mantiene opaco porque es lo que tapa el amarillo del
+   autocompletado del navegador en su box-shadow interior. */
+.form-control,
+.form-select {
+  background-color: color-mix(in srgb, var(--input-bg) 70%, transparent) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.form-control:focus,
+.form-select:focus {
+  background-color: color-mix(in srgb, var(--input-bg) 85%, transparent) !important;
 }

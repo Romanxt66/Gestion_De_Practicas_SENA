@@ -1121,6 +1121,12 @@ check('las superficies son translúcidas y con desenfoque',
       and css.count('var(--desenfoque)') >= 12, css.count('var(--desenfoque)'))
 check('  · sin ninguna regla que lo anule',
       'backdrop-filter: none !important' not in css)
+check('  · la barra lateral deja ver el fondo',
+      '--velo-barra:    color-mix(in srgb, var(--bg-lateral) 68%' in css)
+check('  · y los campos también',
+      '.form-control,\n.form-select {' in css and '--input-bg) 70%, transparent' in css)
+check('el gris pardo de Bootstrap no se cuela',
+      '.bg-dark,' in css and 'background-color: var(--velo-elevado) !important' in css)
 check('el fondo usa la paleta del mockup',
       '--bg-base:       #070a10' in css and '--bg-surface:    #0f1623' in css)
 check('  · con la lateral en su propio tono',
