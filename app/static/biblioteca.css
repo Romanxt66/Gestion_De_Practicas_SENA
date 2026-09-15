@@ -20,11 +20,13 @@
   --acc-glow:   rgba(16, 185, 129, 0.32);
   --acc-soft:   rgba(16, 185, 129, 0.12);
 
-  /* Superficies */
-  --bg-base:       #000000;
-  --bg-surface:    #0a0a0a;
-  --bg-elevated:   #101010;
-  --bg-hover:      rgba(255, 255, 255, 0.04);
+  /* Superficies — carbón frío, no negro plano: los bloques se despegan
+     del fondo sin necesidad de subir el brillo de los bordes. */
+  --bg-base:       #080b0e;   /* la página */
+  --bg-lateral:    #04060a;   /* barra lateral, un punto más profunda */
+  --bg-surface:    #101419;   /* bloques y tarjetas */
+  --bg-elevated:   #161b22;   /* menús y capas por encima */
+  --bg-hover:      rgba(255, 255, 255, 0.045);
 
   /* Acentos secundarios */
   --accent-cyan:   #38bdf8;
@@ -73,7 +75,7 @@
 
   /* Fondo opaco de los campos. Debe coincidir con el relleno que se usa
      para anular el amarillo/blanco del autocompletado del navegador. */
-  --input-bg:   #101010;
+  --input-bg:   #0f1317;
 
   /* Medidas del armazón */
   --appbar-h:   72px;
@@ -237,7 +239,7 @@ body.biblioteca-body {
    GLOBAL BACKGROUND FOR APP (Subtle abstract grid)
    ============================================================ */
 body.biblioteca-body {
-  background: #0a0a0a !important;
+  background: var(--bg-base) !important;
   position: relative;
   z-index: 0;
 }
@@ -1603,7 +1605,7 @@ body.biblioteca-body::before { content: none !important; }
   padding: 0.45rem;
   border-radius: 18px;
   /* Translúcido: deja ver el contenido que pasa por detrás */
-  background: rgba(10, 10, 10, 0.45);
+  background: rgba(8, 11, 14, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(20px) saturate(140%);
@@ -2296,7 +2298,7 @@ input:-webkit-autofill::first-line {
   position: sticky; top: 0; z-index: 1020;
   display: flex; align-items: center; gap: 1rem;
   padding: 1rem 1.6rem;
-  background: rgba(5,5,5,.92);
+  background: rgba(4, 6, 10, 0.92);
   border-bottom: 1px solid var(--border-subtle);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -2515,11 +2517,11 @@ input:-webkit-autofill::first-line {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(900px 480px at 22% -5%, var(--acc-soft), transparent 60%),
-    radial-gradient(700px 420px at 95% 8%, rgba(56, 189, 248, 0.05), transparent 58%),
-    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 46px 46px,
-    #000;
+    radial-gradient(1000px 540px at 18% -8%, var(--acc-soft), transparent 62%),
+    radial-gradient(760px 440px at 96% 4%, rgba(56, 189, 248, 0.055), transparent 60%),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(180deg, #0c1014 0%, var(--bg-base) 55%);
 }
 
 /* Las superficies se vuelven translúcidas para que el fondo se intuya */
@@ -2527,18 +2529,25 @@ input:-webkit-autofill::first-line {
 .layout .lib-card,
 .layout .kpi,
 .layout .page-toolbar {
-  background: rgba(12, 12, 12, 0.72) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 42%),
+    rgba(16, 20, 25, 0.8) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 .layout .ficha-card {
-  background: linear-gradient(160deg,
-              color-mix(in srgb, var(--tono) 8%, rgba(12,12,12,.74)) 0%,
-              rgba(12,12,12,.74) 55%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 40%),
+    linear-gradient(160deg,
+              color-mix(in srgb, var(--tono) 10%, rgba(16,20,25,.82)) 0%,
+              rgba(16,20,25,.82) 58%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-.lateral { background: rgba(7, 7, 7, 0.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.lateral {
+  background: rgba(4, 6, 10, 0.92);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
 
 /* ════════════════════════════════════════════════════════════
    PORTAL PÚBLICO — acceso y registro
@@ -2550,10 +2559,10 @@ input:-webkit-autofill::first-line {
   position: relative;
   background:
     radial-gradient(900px 520px at 50% -10%, var(--acc-soft), transparent 62%),
-    radial-gradient(700px 400px at 88% 15%, rgba(56,189,248,.05), transparent 60%),
-    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px) 0 0 / 46px 46px,
-    #000;
+    radial-gradient(700px 400px at 88% 15%, rgba(56,189,248,.055), transparent 60%),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(180deg, #0c1014 0%, var(--bg-base) 55%);
 }
 
 .portal-nav {
@@ -2663,14 +2672,14 @@ input:-webkit-autofill::first-line {
   padding: 0.75rem 0.9rem;
   border-radius: var(--radius-md, 12px);
   border: 1px solid var(--border-default);
-  background: rgba(10,10,10,.6);
+  background: rgba(13, 16, 19, 0.62);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   transition: border-color var(--trans-base), background var(--trans-base);
 }
 .perfil:hover { border-color: var(--border-muted); }
 .perfiles input:checked + .perfil {
   border-color: var(--acc);
-  background: linear-gradient(110deg, var(--acc-soft), rgba(10,10,10,.75) 65%);
+  background: linear-gradient(110deg, var(--acc-soft), rgba(16, 20, 25, 0.8) 65%);
   box-shadow: 0 0 0 1px var(--acc-glow);
 }
 .perfiles input:focus-visible + .perfil { outline: 2px solid var(--acc); outline-offset: 3px; }
@@ -2785,7 +2794,9 @@ input:-webkit-autofill::first-line {
 
 /* ── Plan de entregas (minimalista, sin morado) ──────────── */
 .plan-entregas {
-  background: rgba(12, 12, 12, .72);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 42%),
+    rgba(16, 20, 25, 0.8);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, .08));
   border-radius: 14px;
@@ -2914,7 +2925,9 @@ input:-webkit-autofill::first-line {
 
 /* ── Tarjetas de instructor (panel del admin) ────────────── */
 .inst-card {
-  background: rgba(12, 12, 12, .72);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 42%),
+    rgba(16, 20, 25, 0.8);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;

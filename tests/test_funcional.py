@@ -1066,6 +1066,12 @@ check('el dock solo aparece en pantallas pequeñas',
       '.dock-wrap{display:none' in css.replace(' ', '') or
       '.dock-wrap {' in css and 'display: none' in css)
 check('el fondo con desenfoque está aplicado', 'backdrop-filter' in css)
+check('el fondo es carbón frío, no negro plano',
+      '--bg-base:       #080b0e' in css and '--bg-surface:    #101419' in css)
+check('  · y la barra lateral va un tono por debajo',
+      'rgba(4, 6, 10, 0.92)' in css)
+check('  · sin superficies del negro anterior',
+      'rgba(12, 12, 12' not in css and 'rgba(10, 10, 10' not in css)
 
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:
