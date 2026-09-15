@@ -1116,6 +1116,11 @@ check('el dock solo aparece en pantallas pequeñas',
       '.dock-wrap{display:none' in css.replace(' ', '') or
       '.dock-wrap {' in css and 'display: none' in css)
 check('el fondo con desenfoque está aplicado', 'backdrop-filter' in css)
+check('las superficies son translúcidas y con desenfoque',
+      '--velo-bloque:' in css and '--desenfoque:    blur(' in css
+      and css.count('var(--desenfoque)') >= 12, css.count('var(--desenfoque)'))
+check('  · sin ninguna regla que lo anule',
+      'backdrop-filter: none !important' not in css)
 check('el fondo usa la paleta del mockup',
       '--bg-base:       #070a10' in css and '--bg-surface:    #0f1623' in css)
 check('  · con la lateral en su propio tono',

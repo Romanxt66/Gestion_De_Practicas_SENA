@@ -28,6 +28,13 @@
   --bg-elevated:   #141e2f;   /* la misma tarjeta al pasar por encima */
   --bg-hover:      rgba(255, 255, 255, 0.045);
 
+  /* Velo: el mismo color de superficie, dejando entrever el fondo.
+     Al cambiar estos tres valores cambia la transparencia de todo. */
+  --velo-bloque:   color-mix(in srgb, var(--bg-surface) 74%, transparent);
+  --velo-elevado:  color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  --velo-barra:    color-mix(in srgb, var(--bg-lateral) 88%, transparent);
+  --desenfoque:    blur(14px) saturate(1.25);
+
   /* Acentos secundarios */
   --accent-cyan:   #38bdf8;
   --accent-cyan-glow: rgba(56, 189, 248, 0.12);
@@ -160,8 +167,9 @@ body.biblioteca-body {
 
 /* Dropdown */
 .biblioteca-nav .dropdown-menu {
-  background: rgba(22, 27, 34, 0.85) !important;
-  backdrop-filter: blur(16px);
+  background: var(--velo-elevado) !important;
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-default) !important;
   border-radius: var(--radius-md) !important;
   box-shadow: var(--shadow-glass) !important;
@@ -205,7 +213,9 @@ body.biblioteca-body {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: var(--bg-surface);
+  background: var(--velo-bloque);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-default);
   border-radius: 99px;
   padding: 4px 16px 4px 4px;
@@ -261,9 +271,9 @@ body.biblioteca-body::before {
 
 /* Formularios y Modales Glassmorphism */
 .modal-content {
-  background: rgba(22, 22, 22, 0.7) !important;
-  backdrop-filter: blur(15px) !important;
-  -webkit-backdrop-filter: blur(15px) !important;
+  background: var(--velo-elevado) !important;
+  backdrop-filter: var(--desenfoque) !important;
+  -webkit-backdrop-filter: var(--desenfoque) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: var(--radius-xl) !important;
   box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
@@ -281,9 +291,9 @@ body.biblioteca-body::before {
    PAGE WRAPPER & CARD SHELL & WATERMARK (Glassmorphism)
    ============================================================ */
 .biblioteca-shell {
-  background: rgba(22, 22, 22, 0.5) !important;
-  backdrop-filter: blur(15px) !important;
-  -webkit-backdrop-filter: blur(15px) !important;
+  background: var(--velo-bloque) !important;
+  backdrop-filter: var(--desenfoque) !important;
+  -webkit-backdrop-filter: var(--desenfoque) !important;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.4);
@@ -582,8 +592,9 @@ body.biblioteca-body::before {
    MODALS — Dark Glass
    ============================================================ */
 .modal-content {
-  background: rgba(22, 27, 34, 0.95) !important;
-  backdrop-filter: blur(20px);
+  background: var(--velo-elevado) !important;
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-default) !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
@@ -793,8 +804,8 @@ body.biblioteca-body::before {
   gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
-  background: var(--bg-surface);
-  backdrop-filter: blur(10px);
+  background: var(--velo-bloque);
+  backdrop-filter: var(--desenfoque);
   padding: 1rem 1.5rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
@@ -814,9 +825,9 @@ body.biblioteca-body::before {
    CARD — Generic Clean Card
    ============================================================ */
 .lib-card {
-  background: rgba(22, 22, 22, 0.6) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--velo-bloque) !important;
+  backdrop-filter: var(--desenfoque) !important;
+  -webkit-backdrop-filter: var(--desenfoque);
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: var(--radius-xl);
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -1440,7 +1451,9 @@ body.biblioteca-body::before { content: none !important; }
   align-items: center;
   gap: 1.25rem;
   padding: 0 1.5rem;
-  background: var(--bg-surface);
+  background: var(--velo-barra);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1668,7 +1681,9 @@ body.biblioteca-body::before { content: none !important; }
   margin-bottom: 1.5rem;
   padding: 1.5rem 1.75rem;
   border-radius: var(--radius-lg);
-  background: var(--bg-surface);
+  background: var(--velo-bloque);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-subtle);
   backdrop-filter: none;
   box-shadow: none;
@@ -1691,9 +1706,9 @@ body.biblioteca-body::before { content: none !important; }
 /* ── Paneles (biblioteca-shell) y tarjetas (lib-card) ───── */
 .biblioteca-shell,
 .lib-card {
-  background: var(--bg-surface) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: var(--velo-bloque) !important;
+  backdrop-filter: var(--desenfoque) !important;
+  -webkit-backdrop-filter: var(--desenfoque) !important;
   border: 1px solid var(--border-subtle) !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: none !important;
@@ -1817,6 +1832,8 @@ body.biblioteca-body::before { content: none !important; }
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .badge-cyan   { background: var(--accent-cyan-glow);   color: var(--accent-cyan);   border: 1px solid rgba(56,189,248,0.28); text-shadow: none; }
 .badge-green  { background: var(--accent-green-glow);  color: var(--acc-strong);    border: 1px solid var(--acc-glow); text-shadow: none; }
@@ -2298,10 +2315,10 @@ input:-webkit-autofill::first-line {
   position: sticky; top: 0; z-index: 1020;
   display: flex; align-items: center; gap: 1rem;
   padding: 1rem 1.6rem;
-  background: color-mix(in srgb, var(--bg-lateral) 95%, transparent);
+  background: var(--velo-barra);
   border-bottom: 1px solid var(--border-default);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
 }
 
 .buscador { flex: 1; max-width: 620px; }
@@ -2351,7 +2368,9 @@ input:-webkit-autofill::first-line {
   padding: 1.25rem 1.35rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  background: var(--velo-bloque);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
 }
 .kpi-cabecera {
   display: flex; align-items: center; justify-content: space-between;
@@ -2527,7 +2546,9 @@ input:-webkit-autofill::first-line {
 .layout .lib-card,
 .layout .kpi,
 .layout .page-toolbar {
-  background: var(--bg-surface) !important;
+  background: var(--velo-bloque) !important;
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
 }
 .layout .biblioteca-shell:hover,
 .layout .lib-card:hover,
@@ -2535,12 +2556,14 @@ input:-webkit-autofill::first-line {
 
 .layout .ficha-card {
   background: linear-gradient(160deg,
-              color-mix(in srgb, var(--tono) 10%, var(--bg-surface)) 0%,
-              var(--bg-surface) 58%);
+              color-mix(in srgb, var(--tono) 12%, var(--velo-bloque)) 0%,
+              var(--velo-bloque) 58%);
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
 }
 .lateral {
-  background: color-mix(in srgb, var(--bg-lateral) 95%, transparent);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  background: var(--velo-barra);
+  backdrop-filter: var(--desenfoque); -webkit-backdrop-filter: var(--desenfoque);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2786,8 +2809,8 @@ input:-webkit-autofill::first-line {
 
 /* ── Plan de entregas (minimalista, sin morado) ──────────── */
 .plan-entregas {
-  background: var(--bg-surface);
-  backdrop-filter: blur(12px);
+  background: var(--velo-bloque);
+  backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, .08));
   border-radius: 14px;
   padding: 1.25rem 1.35rem 1.1rem;
@@ -2915,8 +2938,8 @@ input:-webkit-autofill::first-line {
 
 /* ── Tarjetas de instructor (panel del admin) ────────────── */
 .inst-card {
-  background: var(--bg-surface);
-  backdrop-filter: blur(12px);
+  background: var(--velo-bloque);
+  backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   margin-bottom: 1rem;
@@ -2970,6 +2993,8 @@ input:-webkit-autofill::first-line {
   border: 1px solid var(--border-default);
   border-radius: 10px;
   background: rgba(255, 255, 255, .03);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
 }
 .inst-ficha > a {
