@@ -3,8 +3,15 @@
 
 {% block content %}
 <div class="page-toolbar d-flex flex-wrap justify-content-between align-items-center mb-4">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-people text-primary me-2"></i>Gestión de Usuarios</h2>
-  <button class="btn btn-primary mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario"><i class="bi bi-person-plus"></i> Crear Nuevo Estudiante/Instructor</button>
+  <div class="page-titulo">
+    <h2>Usuarios</h2>
+    <span class="page-sub">
+      {{ usuarios | length }} cuenta{{ 's' if usuarios | length != 1 }} registrada{{ 's' if usuarios | length != 1 }}{% if pendientes %} · {{ pendientes | length }} sin confirmar{% endif %}
+    </span>
+  </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+    <i class="bi bi-plus-lg"></i> Crear usuario
+  </button>
 </div>
 
 <!-- Barra de búsqueda -->

@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="page-toolbar">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">
-    <i class="bi bi-journal-bookmark text-primary me-2"></i>Mi ficha
-  </h2>
+  <div class="page-titulo">
+    <h2>Mi ficha</h2>
+    <span class="page-sub">
+      {{ fichas | length }} ficha{{ 's' if fichas | length != 1 }} · tu estado: {{ aprendiz.estado_practica or 'En proceso' }}
+    </span>
+  </div>
   <div class="toolbar-actions">
     <a href="{{ url_for('aprendiz.progreso') }}" class="btn btn-secondary">
       <i class="bi bi-bar-chart"></i> Ver mi progreso

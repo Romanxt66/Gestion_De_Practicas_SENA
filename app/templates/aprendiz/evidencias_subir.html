@@ -3,7 +3,12 @@
 
 {% block content %}
 <div class="page-toolbar">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-cloud-arrow-up text-primary me-2"></i>Subir Evidencia</h2>
+  <div class="page-titulo">
+    <h2>Subir evidencia</h2>
+    <span class="page-sub">
+      {{ desglose.total_entregado }} de {{ desglose.total_esperado }} documentos entregados
+    </span>
+  </div>
   <div class="toolbar-actions">
     <a href="{{ url_for('aprendiz.mis_evidencias') }}" class="btn btn-secondary">
       <i class="bi bi-arrow-left"></i> Volver a mis evidencias

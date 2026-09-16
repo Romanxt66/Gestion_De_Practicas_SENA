@@ -3364,3 +3364,77 @@ input:-webkit-autofill::first-line {
 }
 .progreso-cab b { font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .progress-fina { height: 4px; background: rgba(255,255,255,.07); }
+
+/* ════════════════════════════════════════════════════════════
+   BARRA DE TÍTULO Y BOTÓN PRINCIPAL
+   El verde sólido pesaba demasiado para una acción que está en
+   todas las pantallas: pasa a una superficie oscura con borde,
+   y el icono va en una chapa redonda que lo mantiene visible.
+   ════════════════════════════════════════════════════════════ */
+.page-toolbar { padding: 1.15rem 1.5rem; }
+.page-toolbar h2 {
+  display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+  font-size: 1.2rem !important;
+}
+.page-toolbar h2 > i { display: none; }   /* el icono grande recargaba la barra */
+
+.page-titulo { display: grid; gap: 0.2rem; min-width: 0; }
+.page-titulo h2 { margin: 0; }
+.page-titulo .page-sub {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+/* ── Botón principal, en versión oscura ─────────────────── */
+.btn-primary,
+.btn-success {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 1.1rem 0.55rem 0.55rem;
+  border-radius: 11px;
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  font-size: 0.87rem;
+  text-shadow: none;
+  box-shadow: none;
+  transition: border-color var(--trans-fast), background var(--trans-fast);
+}
+.btn-primary:hover,
+.btn-success:hover {
+  background: color-mix(in srgb, var(--acc) 12%, var(--bg-elevated)) !important;
+  border-color: var(--acc-glow) !important;
+  color: #fff !important;
+  transform: none;
+  box-shadow: none;
+}
+.btn-primary:focus-visible,
+.btn-success:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* La chapa del icono: círculo con el acento, como en la referencia */
+.btn-primary > i:first-child,
+.btn-success > i:first-child {
+  width: 26px; height: 26px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--acc-soft);
+  border: 1px solid var(--acc-glow);
+  color: var(--acc);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+/* Los botones pequeños de dentro de las tablas y modales no llevan chapa */
+.btn-sm.btn-primary,
+.btn-sm.btn-success {
+  padding: 0.4rem 0.75rem;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+}
+.btn-sm.btn-primary > i:first-child,
+.btn-sm.btn-success > i:first-child {
+  width: auto; height: auto; border: 0; background: none;
+  border-radius: 0; color: inherit; font-size: 0.85rem;
+}

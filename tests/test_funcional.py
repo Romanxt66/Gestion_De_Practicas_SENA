@@ -1386,6 +1386,28 @@ html = c_inst.get('/instructor/aprendices').get_data(as_text=True)
 check('la tabla del instructor también',
       'celda-persona' in html and 'btn-icono' in html and 'tabla-pie' in html)
 
+print('\n── Barra de título y botón principal ──')
+css_barra = open('app/static/biblioteca.css', encoding='utf-8').read()
+check('el botón principal ya no es verde sólido',
+      '.btn-primary,\n.btn-success {' in css_barra
+      and 'background: var(--bg-elevated) !important;' in css_barra)
+check('  · con el icono en una chapa redonda',
+      '.btn-primary > i:first-child' in css_barra and 'border-radius: 50%;' in css_barra)
+check('  · y los botones pequeños sin chapa',
+      '.btn-sm.btn-primary > i:first-child' in css_barra)
+check('la barra de título prescinde del icono grande',
+      '.page-toolbar h2 > i { display: none; }' in css_barra)
+
+html = c_admin.get('/admin/usuarios').get_data(as_text=True)
+check('Usuarios lleva título y subtítulo con el recuento',
+      'page-titulo' in html and '>Usuarios<' in html
+      and 'cuentas registradas' in html)
+html = c_admin.get('/admin/fichas').get_data(as_text=True)
+check('Fichas también',
+      'page-titulo' in html and ('ficha registrada' in html or 'fichas registradas' in html))
+html = c_inst.get('/instructor/aprendices').get_data(as_text=True)
+check('y Mis aprendices', 'page-titulo' in html and 'a tu cargo' in html)
+
 print('\n── Portal de acceso y panel móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)

@@ -78,12 +78,15 @@
 {% endif %}
 
 <div class="page-toolbar">
-  <div class="d-flex justify-content-between align-items-center gap-4 mb-2">
-    <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">Gestión de Fichas / Cursos</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
-      <i class="bi bi-plus-circle me-2"></i> Nueva Ficha
-    </button>
+  <div class="page-titulo">
+    <h2>Fichas</h2>
+    <span class="page-sub">
+      {{ fichas_data | length }} ficha{{ "s" if fichas_data | length != 1 }} registrada{{ "s" if fichas_data | length != 1 }}{% if pendientes %} · {{ pendientes | length }} sin crear{% endif %}
+    </span>
   </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
+    <i class="bi bi-plus-lg"></i> Nueva ficha
+  </button>
 </div>
 
 <!-- Búsqueda y Filtrado -->

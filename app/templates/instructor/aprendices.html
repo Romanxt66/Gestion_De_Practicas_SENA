@@ -3,7 +3,12 @@
 
 {% block content %}
 <div class="page-toolbar">
-  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;"><i class="bi bi-people text-primary me-2"></i>Gestión de Aprendices</h2>
+  <div class="page-titulo">
+    <h2>Mis aprendices</h2>
+    <span class="page-sub">
+      {{ aprendices_data | length }} aprendiz{{ 'es' if aprendices_data | length != 1 }} a tu cargo
+    </span>
+  </div>
 </div>
 
 <div class="biblioteca-shell">
