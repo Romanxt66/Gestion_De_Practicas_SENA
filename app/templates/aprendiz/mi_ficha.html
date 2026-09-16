@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}Mi ficha — SENA Prácticas{% endblock %}
+
+{% block content %}
+<div class="page-toolbar">
+  <h2 class="m-0" style="font-size: 1.25rem; font-weight: 600;">
+    <i class="bi bi-journal-bookmark text-primary me-2"></i>Mi ficha
+  </h2>
+  <div class="toolbar-actions">
+    <a href="{{ url_for('aprendiz.progreso') }}" class="btn btn-secondary">
+      <i class="bi bi-bar-chart"></i> Ver mi progreso
+    </a>
+  </div>
+</div>
+
+{% if not fichas %}
+  <div class="biblioteca-shell">
+    <div class="biblioteca-shell-body text-center py-5">
+      <i class="bi bi-journal-x" style="font-size: 2rem; color: var(--text-disabled);"></i>
+      <h3 style="font-size: 1.05rem; margin: 1rem 0 .4rem;">Todavía no estás en ninguna ficha</h3>
+      {% if aprendiz.ficha %}
+        <p class="text-muted mb-0">
+          Tu código de ficha es <b class="text-primary">{{ aprendiz.ficha }}</b>, pero
+          aún no está registrada en el sistema. Un administrador la creará y quedarás
+          matriculado automáticamente.
+        </p>
+      {% else %}
+        <p class="text-muted mb-0">
+          No tienes un código de ficha registrado. Escribe al administrador del centro
+          para que te lo asigne.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% for f in fichas %}
+<section class="ficha-detalle">
+
+  <header class="ficha-detalle-cab">
+    <span class="ficha-sigla">{{ f.iniciales }}</span>
+    <div class="ficha-detalle-ident">
+      <h3>{{ f.curso.nombre }}</h3>
+      {% if f.curso.ficha %}
+        <span class="ficha-codigo">
+          Ficha: <strong>{{ f.curso.ficha }}</strong>
+          <button type="button" class="ficha-copiar" data-codigo="{{ f.curso.ficha }}"
+                  title="Copiar código"><i class="bi bi-clipboard"></i></button>
+        </span>
+      {% endif %}
+    </div>
+    <span class="ficha-estado">{{ f.etiqueta }}</span>
+  </header>
+
+  <div class="ficha-detalle-datos">
+    <div class="dato">
+      <span class="dato-k">Inicio de la ficha</span>
+      <span class="dato-v">{{ f.inicio.strftime('%d/%m/%Y') if f.inicio else 'Sin definir' }}</span>
+    </div>
+    <div class="dato">
+      <span class="dato-k">Fin de la ficha</span>
+      <span class="dato-v">{{ f.fin.strftime('%d/%m/%Y') if f.fin else 'Sin definir' }}</span>
+    </div>
+    <div class="dato">
+      <span class="dato-k">Compañeros</span>
+      <span class="dato-v">{{ f.companeros }}</span>
+    </div>
+    <div class="dato">
+      <span class="dato-k">Mi estado</span>
+      <span class="dato-v">{{ aprendiz.estado_practica or 'En proceso' }}</span>
+    </div>
+  </div>
+
+  <div class="ficha-detalle-avance">
+    <div class="ficha-avance-cab">
+      <span>Avance de la formación</span>
+      <b>{% if f.estado == 'sin_fechas' %}—{% else %}{{ f.avance }}%{% endif %}</b>
+    </div>
+    <div class="progress progress-fina">
+      <div class="progress-bar" role="progressbar" style="width: {{ f.avance }}%;"></div>
+    </div>
+  </div>
+
+  <div class="ficha-detalle-instructores">
+    <p class="inst-rotulo">Instructores de esta ficha</p>
+    {% if f.instructores %}
+      <ul class="tarjetas-instructor">
+        {% for i in f.instructores %}
+          <li class="tarjeta-instructor">
+            <span class="ti-avatar">{{ i.usuario.nombres[0] | upper }}</span>
+            <div class="ti-datos">
+              <b>{{ i.usuario.nombres }} {{ i.usuario.apellidos }}</b>
+              <span>{{ i.area_formacion or 'Instructor de prácticas' }}</span>
+              <a href="mailto:{{ i.usuario.correo }}">{{ i.usuario.correo }}</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="inst-vacio mb-0">
+        <i class="bi bi-info-circle"></i>
+        Esta ficha todavía no tiene instructores asignados. Cuando el centro
+        asigne uno, aparecerá aquí y recibirá tus evidencias.
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endfor %}
+
+{% if instructores_directos %}
+<section class="ficha-detalle">
+  <div class="ficha-detalle-instructores" style="border-top: 0; padding-top: 0;">
+    <p class="inst-rotulo">Instructores asignados a ti</p>
+    <p class="inst-vacio mb-3">
+      <i class="bi bi-info-circle"></i>
+      Además de los de tu ficha, el centro asignó a estas personas para
+      acompañarte a ti en particular.
+    </p>
+    <ul class="tarjetas-instructor">
+      {% for i in instructores_directos %}
+        <li class="tarjeta-instructor">
+          <span class="ti-avatar">{{ i.usuario.nombres[0] | upper }}</span>
+          <div class="ti-datos">
+            <b>{{ i.usuario.nombres }} {{ i.usuario.apellidos }}</b>
+            <span>{{ i.area_formacion or 'Instructor de prácticas' }}</span>
+            <a href="mailto:{{ i.usuario.correo }}">{{ i.usuario.correo }}</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

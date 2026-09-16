@@ -6,6 +6,7 @@ Blueprint Aprendiz — 6 módulos:
   /aprendiz/informacion
   /aprendiz/notificaciones
   /aprendiz/mis-evidencias
+  /aprendiz/mi-ficha
 """
 import os
 
@@ -18,6 +19,8 @@ from app.models.evidencia import Evidencia
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.servicios import correo
+from app.models.curso_aprendiz import CursoAprendiz
+from app.models.instructor_aprendiz import InstructorAprendiz
 from app.utils import (role_required, calcular_progreso, resumen_curso,
                        extension_permitida, nombre_archivo_seguro,
                        directorio_evidencias, desglose_evidencias,
@@ -74,6 +77,58 @@ def dashboard():
                            notifs_sin_leer=notifs_sin_leer,
                            fichas_data=fichas_data,
                            evidencias_recientes=evidencias_recientes)
+
+
+# ─── Mi ficha ─────────────────────────────────
+@bp.route('/mi-ficha')
+@login_required
+@role_required('aprendiz')
+def mi_ficha():
+    """Los datos de la ficha del aprendiz y quién la acompaña.
+
+    Se listan las dos vías por las que un instructor puede estar a su cargo:
+    por la ficha, o asignado directamente por un administrador.
+    """
+    ap = _get_aprendiz()
+    if not ap:
+        flash('No tienes un perfil de aprendiz registrado.', 'danger')
+        return redirect(url_for('aprendiz.dashboard'))
+
+    # Cuántos compañeros hay en cada ficha, en una sola consulta
+    conteos = dict(
+        db.session.query(CursoAprendiz.id_curso,
+                         db.func.count(CursoAprendiz.id_aprendiz))
+        .group_by(CursoAprendiz.id_curso).all())
+
+    fichas = []
+    ids_por_ficha = set()
+    for ca in ap.cursos:
+        if not ca.curso:
+            continue
+        instructores = [ci.instructor for ci in ca.curso.instructores if ci.instructor]
+        ids_por_ficha.update(i.id_instructor for i in instructores)
+        fila = {
+            'curso': ca.curso,
+            'estado_matricula': ca.estado,
+            'instructores': instructores,
+            'companeros': max(0, int(conteos.get(ca.curso.id_curso, 1)) - 1),
+        }
+        fila.update(resumen_curso(ca.curso))
+        fichas.append(fila)
+
+    # Asignados a esta persona en concreto, al margen de la ficha
+    directos = [ia.instructor for ia in
+                InstructorAprendiz.query.filter_by(id_aprendiz=ap.id_aprendiz).all()
+                if ia.instructor and ia.instructor.id_instructor not in ids_por_ficha]
+
+    p = calcular_progreso(ap)
+    return render_template('aprendiz/mi_ficha.html',
+                           aprendiz=ap,
+                           fichas=fichas,
+                           instructores_directos=directos,
+                           periodo_definido=p['periodo_definido'],
+                           dias_restantes=p['dias_restantes'],
+                           pct_tiempo=p['pct_tiempo'])
 
 
 # ─── Subir evidencias ─────────────────────────

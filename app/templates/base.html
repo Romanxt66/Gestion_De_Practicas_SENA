@@ -69,6 +69,7 @@
     <a class="lateral-item {% if request.endpoint == 'aprendiz.dashboard' %}active{% endif %}" href="{{ url_for('aprendiz.dashboard') }}"><i class="bi bi-grid-1x2"></i> Panel</a>
     <a class="lateral-item {% if 'evidencias_subir' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.evidencias_subir') }}"><i class="bi bi-upload"></i> Subir evidencia</a>
     <a class="lateral-item {% if 'mis_evidencias' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.mis_evidencias') }}"><i class="bi bi-folder2-open"></i> Mis evidencias</a>
+    <a class="lateral-item {% if 'mi_ficha' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.mi_ficha') }}"><i class="bi bi-journal-bookmark"></i> Mi ficha</a>
     <a class="lateral-item {% if 'aprendiz.progreso' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.progreso') }}"><i class="bi bi-bar-chart"></i> Progreso</a>
     <a class="lateral-item {% if 'notificaciones' in (request.endpoint or '') %}active{% endif %}" href="{{ url_for('aprendiz.notificaciones') }}">
       <i class="bi bi-bell"></i> Alertas

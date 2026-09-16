@@ -1287,6 +1287,75 @@ if True:
     check('un instructor no puede asignarse aprendices solo', r.status_code == 403,
           r.status_code)
 
+print('\n── El aprendiz ve su ficha y sus instructores ──')
+from app.models.instructor import Instructor
+html = c_ap.get('/aprendiz/mi-ficha').get_data(as_text=True)
+with app.app_context():
+    curso_ap = db.session.get(Curso, id_curso)
+check('el aprendiz ve el nombre de su ficha', curso_ap.nombre in html)
+check('  · y su código', (curso_ap.ficha or '') in html)
+check('  · con el instructor de la ficha y su correo',
+      f'{inst.nombres} {inst.apellidos}' in html and inst.correo in html)
+check('  · y cuántos compañeros tiene', 'Compañeros' in html)
+check('el menú lateral lleva a Mi ficha', 'Mi ficha' in html)
+
+# Un instructor asignado a él directamente, que NO está en su ficha
+with app.app_context():
+    from werkzeug.security import generate_password_hash as _h
+    otro_u = Usuario(nombres='Otra', apellidos='Instructora',
+                     correo='otra.instructora@test.local',
+                     password_hash=_h('clave123'), estado=True)
+    db.session.add(otro_u); db.session.flush()
+    otro_i = Instructor(id_usuario=otro_u.id_usuario,
+                        area_formacion='Agroindustria', activo=True)
+    db.session.add(otro_i); db.session.commit()
+    id_otro_i = otro_i.id_instructor
+
+t = token(c_admin, '/admin/usuarios')
+c_admin.post(f'/admin/aprendices/{id_ap}/instructor',
+             data={'id_instructor': id_otro_i, 'csrf_token': t},
+             follow_redirects=True)
+
+html = c_ap.get('/aprendiz/mi-ficha').get_data(as_text=True)
+check('ve también a quien le asignaron directamente',
+      'Instructores asignados a ti' in html and 'Otra Instructora' in html)
+check('  · sin repetir a los que ya salen por la ficha',
+      html.count(f'{inst.nombres} {inst.apellidos}') == 1,
+      html.count(f'{inst.nombres} {inst.apellidos}'))
+
+# Al quitarlo, desaparece de su vista
+t = token(c_admin, '/admin/usuarios')
+c_admin.post(f'/admin/aprendices/{id_ap}/instructor/{id_otro_i}/quitar',
+             data={'csrf_token': t}, follow_redirects=True)
+html = c_ap.get('/aprendiz/mi-ficha').get_data(as_text=True)
+check('al quitar la asignación deja de verlo',
+      'Otra Instructora' not in html)
+
+# Un aprendiz sin ficha ve una explicación, no una página vacía
+with app.app_context():
+    from werkzeug.security import generate_password_hash as _h2
+    solo = Usuario(nombres='Sin', apellidos='Ficha',
+                   correo='sin.ficha.vista@test.local',
+                   password_hash=_h2('clave123'), estado=True)
+    db.session.add(solo); db.session.flush()
+    rol_ap_v = Rol.query.filter_by(nombre='aprendiz').first()
+    db.session.add(UsuarioRol(id_usuario=solo.id_usuario, id_rol=rol_ap_v.id_rol))
+    db.session.add(Aprendiz(id_usuario=solo.id_usuario, ficha='NO-EXISTE-123',
+                            estado_practica='En proceso',
+                            horas_requeridas=880, horas_cumplidas=0))
+    db.session.commit()
+    id_solo = solo.id_usuario
+
+c_solo = cliente(id_solo)
+html = c_solo.get('/aprendiz/mi-ficha').get_data(as_text=True)
+check('sin ficha registrada, explica qué pasa',
+      'no está registrada' in html and 'NO-EXISTE-123' in html)
+
+# La vista es propia: no recibe ningún id por la URL
+r = c_inst.get('/aprendiz/mi-ficha')
+check('un instructor no entra a la vista del aprendiz', r.status_code == 403,
+      r.status_code)
+
 print('\n── Portal de acceso y panel móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)
