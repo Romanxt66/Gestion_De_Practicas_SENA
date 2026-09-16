@@ -1419,9 +1419,11 @@ check('  · con la lateral en su propio tono',
       '--bg-lateral:    #091010' in css)
 check('  · y el acento menta del mockup',
       '--acc:        #3ee0a0' in css)
-check('  · con los tres halos: verde, azul y ámbar',
-      'rgba(37, 201, 141, .16)' in css and 'rgba(45, 140, 255, .10)' in css
-      and 'rgba(240, 169, 59, .07)' in css)
+check('  · con dos halos muy abiertos, sin anillos',
+      'rgba(37, 201, 141, .14)' in css and 'rgba(45, 140, 255, .08)' in css
+      and 'rgba(240, 169, 59, .07)' not in css)
+check('  · y la cabecera de sección en una sola línea',
+      '.seccion > div:not(.seccion-acciones) { flex: 1 1 18rem' in css)
 check('  · sin superficies de las paletas anteriores',
       'rgba(12, 12, 12' not in css and 'rgba(10, 10, 10' not in css
       and 'rgba(16, 20, 25' not in css and '#0f1623' not in css)

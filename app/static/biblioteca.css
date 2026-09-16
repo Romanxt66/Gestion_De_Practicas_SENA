@@ -2330,9 +2330,12 @@ input:-webkit-autofill::first-line {
 
 /* ── Cabecera de sección ── */
 .seccion {
-  display: flex; align-items: flex-start; gap: 1rem;
+  display: flex; align-items: center; gap: 1rem 1.25rem;
   flex-wrap: wrap; margin-bottom: 1.4rem;
 }
+/* El bloque de texto cede espacio en vez de empujar los controles a otra
+   línea: en el diseño de referencia título y controles van a la misma altura. */
+.seccion > div:not(.seccion-acciones) { flex: 1 1 18rem; min-width: 0; }
 .seccion-icono {
   width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
   display: grid; place-items: center; font-size: 1.2rem;
@@ -2340,7 +2343,10 @@ input:-webkit-autofill::first-line {
 }
 .seccion h2 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
 .seccion p { margin: 0.3rem 0 0; font-size: 0.88rem; color: var(--text-muted); max-width: 52ch; }
-.seccion-acciones { display: flex; align-items: center; gap: 0.75rem; margin-left: auto; flex-wrap: wrap; }
+.seccion-acciones {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-left: auto; flex-wrap: wrap; flex-shrink: 0;
+}
 
 .filtros {
   display: inline-flex; gap: 0.2rem; padding: 0.3rem;
@@ -2468,10 +2474,13 @@ input:-webkit-autofill::first-line {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* Dos halos, no tres: el ámbar de abajo dibujaba anillos concéntricos.
+     A opacidades tan bajas el degradado no tiene pasos suficientes y el
+     salto entre ellos se ve como bandas. Los que quedan se extienden más
+     allá del borde, así que su parte visible es casi plana. */
   background:
-    radial-gradient(900px 600px at 18% -10%, rgba(37, 201, 141, .16), transparent 60%),
-    radial-gradient(760px 520px at 88% 8%, rgba(45, 140, 255, .10), transparent 62%),
-    radial-gradient(700px 500px at 62% 100%, rgba(240, 169, 59, .07), transparent 60%),
+    radial-gradient(1400px 900px at 10% -25%, rgba(37, 201, 141, .14), transparent 70%),
+    radial-gradient(1200px 800px at 95% -10%, rgba(45, 140, 255, .08), transparent 70%),
     var(--bg-base);
 }
 
@@ -2509,9 +2518,8 @@ input:-webkit-autofill::first-line {
   flex-direction: column;
   position: relative;
   background:
-    radial-gradient(900px 600px at 18% -10%, color-mix(in srgb, var(--acc) 16%, transparent), transparent 60%),
-    radial-gradient(760px 520px at 88% 8%, rgba(45, 140, 255, .10), transparent 62%),
-    radial-gradient(700px 500px at 62% 100%, rgba(240, 169, 59, .07), transparent 60%),
+    radial-gradient(1400px 900px at 10% -25%, color-mix(in srgb, var(--acc) 14%, transparent), transparent 70%),
+    radial-gradient(1200px 800px at 95% -10%, rgba(45, 140, 255, .08), transparent 70%),
     var(--bg-base);
 }
 
