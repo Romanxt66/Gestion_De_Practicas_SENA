@@ -1408,20 +1408,25 @@ check('las superficies son translúcidas y con desenfoque',
 check('  · sin ninguna regla que lo anule',
       'backdrop-filter: none !important' not in css)
 check('  · la barra lateral deja ver el fondo',
-      '--velo-barra:    color-mix(in srgb, var(--bg-lateral) 68%' in css)
+      '--velo-barra:    color-mix(in srgb, var(--bg-lateral) 55%' in css)
 check('  · y los campos también',
       '.form-control,\n.form-select {' in css and '--input-bg) 70%, transparent' in css)
 check('el gris pardo de Bootstrap no se cuela',
       '.bg-dark,' in css and 'background-color: var(--velo-elevado) !important' in css)
-check('el fondo usa la paleta del mockup',
-      '--bg-base:       #070a10' in css and '--bg-surface:    #0f1623' in css)
+check('el fondo usa la paleta del rediseño verde',
+      '--bg-base:       #050a08' in css and '--bg-surface:    #0c1512' in css)
 check('  · con la lateral en su propio tono',
-      '--bg-lateral:    #0a0f18' in css)
-check('  · y los halos verde y azul, sin rejilla',
-      'rgba(16, 185, 129, 0.08)' in css and 'rgba(14, 165, 233, 0.05)' in css)
+      '--bg-lateral:    #091010' in css)
+check('  · y el acento menta del mockup',
+      '--acc:        #3ee0a0' in css)
+check('  · con los tres halos: verde, azul y ámbar',
+      'rgba(37, 201, 141, .16)' in css and 'rgba(45, 140, 255, .10)' in css
+      and 'rgba(240, 169, 59, .07)' in css)
 check('  · sin superficies de las paletas anteriores',
       'rgba(12, 12, 12' not in css and 'rgba(10, 10, 10' not in css
-      and 'rgba(16, 20, 25' not in css)
+      and 'rgba(16, 20, 25' not in css and '#0f1623' not in css)
+check('  · y los menús desplegables dentro del sistema',
+      '.dropdown-menu {' in css and 'var(--velo-elevado) !important' in css)
 
 print(f'\nRESULTADO: {len(ok)} ok, {len(fallos)} fallas')
 if fallos:

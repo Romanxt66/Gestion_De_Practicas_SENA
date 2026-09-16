@@ -9,55 +9,55 @@
 /* ── Design Tokens ── */
 :root {
   /* ── Paleta del rediseño: negro puro + esmeralda ── */
-  --sena-green:       #10b981;
-  --sena-green-dark:  #059669;
-  --sena-orange:      #f59e0b;
+  --sena-green:       #3ee0a0;
+  --sena-green-dark:  #0e7a55;
+  --sena-orange:      #f0a93b;
 
   /* Acento activo. Las vistas de acceso lo reescriben según el rol elegido;
      en el resto del sistema se queda en el verde institucional. */
-  --acc:        #10b981;
-  --acc-strong: #34d399;
-  --acc-glow:   rgba(16, 185, 129, 0.32);
-  --acc-soft:   rgba(16, 185, 129, 0.12);
+  --acc:        #3ee0a0;
+  --acc-strong: #7df0c2;
+  --acc-glow:   rgba(62, 224, 160, 0.32);
+  --acc-soft:   rgba(62, 224, 160, 0.13);
 
   /* Superficies — carbón frío, no negro plano: los bloques se despegan
      del fondo sin necesidad de subir el brillo de los bordes. */
-  --bg-base:       #070a10;   /* la página */
-  --bg-lateral:    #0a0f18;   /* barra lateral y barra superior */
-  --bg-surface:    #0f1623;   /* bloques y tarjetas */
-  --bg-elevated:   #141e2f;   /* la misma tarjeta al pasar por encima */
+  --bg-base:       #050a08;   /* la página */
+  --bg-lateral:    #091010;   /* barra lateral y barra superior */
+  --bg-surface:    #0c1512;   /* bloques y tarjetas */
+  --bg-elevated:   #13241e;   /* menús, modales y capas por encima */
   --bg-hover:      rgba(255, 255, 255, 0.045);
 
   /* Velo: el mismo color de superficie, dejando entrever el fondo.
      Al cambiar estos tres valores cambia la transparencia de todo. */
-  --velo-bloque:   color-mix(in srgb, var(--bg-surface) 66%, transparent);
-  --velo-elevado:  color-mix(in srgb, var(--bg-elevated) 78%, transparent);
-  --velo-barra:    color-mix(in srgb, var(--bg-lateral) 68%, transparent);
-  --desenfoque:    blur(14px) saturate(1.25);
+  --velo-bloque:   color-mix(in srgb, var(--bg-surface) 50%, transparent);
+  --velo-elevado:  color-mix(in srgb, var(--bg-elevated) 72%, transparent);
+  --velo-barra:    color-mix(in srgb, var(--bg-lateral) 55%, transparent);
+  --desenfoque:    blur(18px) saturate(1.4);
 
   /* Acentos secundarios */
   --accent-cyan:   #38bdf8;
   --accent-cyan-glow: rgba(56, 189, 248, 0.12);
-  --accent-green:  #10b981;
-  --accent-green-glow: rgba(16, 185, 129, 0.12);
-  --accent-amber:  #f59e0b;
-  --accent-amber-glow: rgba(245, 158, 11, 0.12);
+  --accent-green:  #3ee0a0;
+  --accent-green-glow: rgba(62, 224, 160, 0.13);
+  --accent-amber:  #f0a93b;
+  --accent-amber-glow: rgba(240, 169, 59, 0.13);
   --accent-red:    #ef4444;
   --accent-red-glow:  rgba(239, 68, 68, 0.12);
   --accent-purple: #a855f7;
   --accent-purple-glow: rgba(168, 85, 247, 0.12);
 
   /* Texto */
-  --text-primary:  #ffffff;
-  --text-secondary:#cbd5e1;
-  --text-muted:    #94a3b8;
-  --text-disabled: #64748b;
+  --text-primary:  #e8f2ed;
+  --text-secondary:#cfe7dd;
+  --text-muted:    #93afa3;
+  --text-disabled: #6c877c;
 
   /* Bordes */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-muted:  rgba(255, 255, 255, 0.14);
-  --border-glow:   rgba(16, 185, 129, 0.45);
+  --border-subtle: rgba(255, 255, 255, 0.055);
+  --border-default: rgba(255, 255, 255, 0.07);
+  --border-muted:  rgba(255, 255, 255, 0.13);
+  --border-glow:   rgba(62, 224, 160, 0.45);
 
   /* Sombras */
   --shadow-sm:  0 1px 2px 0 rgba(0,0,0,0.4);
@@ -82,7 +82,7 @@
 
   /* Fondo opaco de los campos. Debe coincidir con el relleno que se usa
      para anular el amarillo/blanco del autocompletado del navegador. */
-  --input-bg:   #0b1120;
+  --input-bg:   #0e1a16;
 
   /* Medidas del armazón */
   --appbar-h:   72px;
@@ -117,8 +117,8 @@ body.biblioteca-body {
    ============================================================ */
 .biblioteca-nav {
   z-index: 1050;
-  background: rgba(20, 20, 20, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
+  background: var(--velo-barra) !important;
+  backdrop-filter: var(--desenfoque) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
   padding: 1rem 1.5rem;
@@ -365,28 +365,28 @@ body.biblioteca-body::before {
   background: linear-gradient(135deg, var(--sena-green) 0%, #0D9488 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 4px 10px var(--acc-glow), inset 0 1px 0 rgba(255,255,255,0.18);
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .btn-primary:hover {
   background: linear-gradient(135deg, #34D399 0%, var(--sena-green-dark) 100%) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 6px 15px var(--acc-glow), inset 0 1px 0 rgba(255,255,255,0.25);
 }
 
 .btn-success {
   background: linear-gradient(135deg, var(--sena-green) 0%, #0D9488 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 4px 10px var(--acc-glow), inset 0 1px 0 rgba(255,255,255,0.18);
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .btn-success:hover {
   background: linear-gradient(135deg, #34D399 0%, var(--sena-green-dark) 100%) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 6px 15px var(--acc-glow), inset 0 1px 0 rgba(255,255,255,0.25);
 }
 
 .btn-danger {
@@ -465,9 +465,8 @@ body.biblioteca-body::before {
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: var(--sena-green) !important;
-  box-shadow: 0 0 0 3px rgba(57,169,0,0.2) !important;
-  background: rgba(0, 0, 0, 0.5) !important;
+  border-color: var(--acc) !important;
+  box-shadow: 0 0 0 3px var(--acc-soft) !important;
   outline: none !important;
 }
 
@@ -1410,10 +1409,10 @@ body.biblioteca-body::before {
 
 /* ── Acento según el perfil elegido en el acceso ──────────── */
 [data-perfil="aprendiz"] {
-  --acc:        #10b981;
-  --acc-strong: #34d399;
-  --acc-glow:   rgba(16, 185, 129, 0.32);
-  --acc-soft:   rgba(16, 185, 129, 0.12);
+  --acc:        #3ee0a0;
+  --acc-strong: #7df0c2;
+  --acc-glow:   rgba(62, 224, 160, 0.32);
+  --acc-soft:   rgba(62, 224, 160, 0.13);
 }
 [data-perfil="instructor"] {
   --acc:        #38bdf8;
@@ -1585,7 +1584,9 @@ body.biblioteca-body::before { content: none !important; }
 }
 
 .dark-dropdown {
-  background: var(--bg-elevated) !important;
+  background: var(--velo-elevado) !important;
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
   border: 1px solid var(--border-default) !important;
   border-radius: var(--radius-md) !important;
   padding: 0.4rem !important;
@@ -2468,8 +2469,9 @@ input:-webkit-autofill::first-line {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(at 15% 10%, rgba(16, 185, 129, 0.08) 0, transparent 40%),
-    radial-gradient(at 85% 20%, rgba(14, 165, 233, 0.05) 0, transparent 35%),
+    radial-gradient(900px 600px at 18% -10%, rgba(37, 201, 141, .16), transparent 60%),
+    radial-gradient(760px 520px at 88% 8%, rgba(45, 140, 255, .10), transparent 62%),
+    radial-gradient(700px 500px at 62% 100%, rgba(240, 169, 59, .07), transparent 60%),
     var(--bg-base);
 }
 
@@ -2507,8 +2509,9 @@ input:-webkit-autofill::first-line {
   flex-direction: column;
   position: relative;
   background:
-    radial-gradient(at 15% 10%, var(--acc-soft) 0, transparent 40%),
-    radial-gradient(at 85% 20%, rgba(14, 165, 233, 0.05) 0, transparent 35%),
+    radial-gradient(900px 600px at 18% -10%, color-mix(in srgb, var(--acc) 16%, transparent), transparent 60%),
+    radial-gradient(760px 520px at 88% 8%, rgba(45, 140, 255, .10), transparent 62%),
+    radial-gradient(700px 500px at 62% 100%, rgba(240, 169, 59, .07), transparent 60%),
     var(--bg-base);
 }
 
@@ -3182,3 +3185,47 @@ input:-webkit-autofill::first-line {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ti-datos a:hover { text-decoration: underline; }
+
+/* ── Detalles del rediseño verde ─────────────────────────────
+   Selección de texto y barras de desplazamiento a juego con el
+   fondo: eran lo único que seguía saliendo con el gris del
+   navegador sobre el carbón verdoso. */
+::selection { background: #1f7a55; color: #fff; }
+
+* { scrollbar-width: thin; scrollbar-color: #16261f transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #16261f;
+  border-radius: 8px;
+  border: 3px solid var(--bg-base);
+}
+*::-webkit-scrollbar-thumb:hover { background: #1e332b; }
+
+/* ── Menús desplegables ──────────────────────────────────────
+   La única regla que había estaba colgada de la navegación
+   antigua (.biblioteca-nav), que ya no existe en el armazón: los
+   menús salían opacos y sin desenfoque, fuera del sistema. */
+.dropdown-menu {
+  background: var(--velo-elevado) !important;
+  backdrop-filter: var(--desenfoque);
+  -webkit-backdrop-filter: var(--desenfoque);
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.4rem !important;
+  box-shadow: var(--shadow-lg);
+}
+.dropdown-item {
+  border-radius: 8px;
+  color: var(--text-secondary) !important;
+  font-size: 0.86rem;
+  padding: 0.5rem 0.7rem !important;
+}
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+.dropdown-item.text-danger:hover { color: #f87171 !important; }
+.dropdown-divider { border-color: var(--border-subtle) !important; opacity: 1; }
+.dropdown-item-text { color: var(--text-muted) !important; }
