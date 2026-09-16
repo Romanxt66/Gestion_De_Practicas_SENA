@@ -48,7 +48,7 @@
 
         <h5 class="fs-6 fw-bold mb-4"><i class="bi bi-x-circle text-danger me-2"></i> Revocación Rápida de Roles</h5>
         <div class="table-responsive">
-          <table class="biblioteca-table">
+          <table class="biblioteca-table tabla-compacta">
             <thead>
               <tr>
                 <th>Usuario</th>
@@ -68,9 +68,9 @@
                       <input type="hidden" name="id_usuario" value="{{ u.id_usuario }}">
                       <input type="hidden" name="id_rol" value="{{ ur.rol.id_rol }}">
                       {% if current_user.id_usuario != u.id_usuario or ur.rol.nombre != 'superusuario' %}
-                        <button type="submit" class="btn btn-sm btn-ghost text-danger border-danger" title="Revocar Permiso"><i class="bi bi-trash"></i> Revocar</button>
+                        <button type="submit" class="btn-icono es-peligro" title="Revocar este rol" aria-label="Revocar el rol"><i class="bi bi-trash3"></i></button>
                       {% else %}
-                        <button type="button" class="btn btn-sm btn-secondary" disabled title="No puedes quitarte el rol de superusuario a ti mismo">Tú</button>
+                        <button type="button" class="btn-icono" disabled title="No puedes quitarte el rol de superusuario a ti mismo"><i class="bi bi-person-check"></i></button>
                       {% endif %}
                     </form>
                   </td>

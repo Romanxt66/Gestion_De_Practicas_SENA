@@ -1356,6 +1356,36 @@ r = c_inst.get('/aprendiz/mi-ficha')
 check('un instructor no entra a la vista del aprendiz', r.status_code == 403,
       r.status_code)
 
+print('\n── Tablas sin desplazamiento lateral ──')
+css_tablas = open('app/static/biblioteca.css', encoding='utf-8').read()
+check('existe el sistema de tabla compacta',
+      '.tabla-compacta' in css_tablas and '.btn-icono' in css_tablas)
+check('  · sin forzar nowrap, que era lo que obligaba a desplazarse',
+      'white-space: nowrap;\n}' not in css_tablas.split('.tabla-compacta')[1][:400])
+check('  · con columnas que se retiran antes de desbordar',
+      '.oculta-estrecho' in css_tablas and 'max-width: 1199.98px' in css_tablas)
+
+for plantilla in ('admin/usuarios', 'admin/historial', 'admin/roles',
+                  'instructor/aprendices', 'instructor/revisar_evidencias',
+                  'instructor/reportes', 'aprendiz/mis_evidencias'):
+    html_t = open(f'app/templates/{plantilla}.html', encoding='utf-8').read()
+    check(f'  · {plantilla} usa la tabla compacta', 'tabla-compacta' in html_t)
+
+html = c_admin.get('/admin/usuarios').get_data(as_text=True)
+check('la tabla de usuarios agrupa los datos en cinco columnas',
+      html.count('<th') - html.count('</th') == 0 and 'celda-persona' in html
+      and 'persona-avatar' in html)
+# Solo el cuerpo de la tabla: fuera hay modales cuyos títulos sí llevan texto
+cuerpo = html[html.index('<tbody>'):html.index('</tbody>')]
+check('  · con las acciones en iconos, no en botones con texto',
+      'btn-icono' in cuerpo and '> Editar' not in cuerpo
+      and '> Bloquear' not in cuerpo and 'btn btn-sm' not in cuerpo)
+check('  · y un pie con el recuento', 'tabla-pie' in html)
+
+html = c_inst.get('/instructor/aprendices').get_data(as_text=True)
+check('la tabla del instructor también',
+      'celda-persona' in html and 'btn-icono' in html and 'tabla-pie' in html)
+
 print('\n── Portal de acceso y panel móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)

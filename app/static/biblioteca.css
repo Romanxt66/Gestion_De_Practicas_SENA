@@ -1892,7 +1892,7 @@ body.biblioteca-body::before { content: none !important; }
 
   /* Tablas: se desplazan en horizontal en vez de romper la página */
   .table-responsive { -webkit-overflow-scrolling: touch; }
-  .table thead th, .table tbody td { padding: 0.75rem 0.7rem !important; white-space: nowrap; }
+  .table thead th, .table tbody td { padding: 0.7rem 0.6rem !important; }
 }
 
 @media (max-width: 575.98px) {
@@ -3237,3 +3237,130 @@ input:-webkit-autofill::first-line {
 .dropdown-item.text-danger:hover { color: #f87171 !important; }
 .dropdown-divider { border-color: var(--border-subtle) !important; opacity: 1; }
 .dropdown-item-text { color: var(--text-muted) !important; }
+
+/* ════════════════════════════════════════════════════════════
+   TABLAS COMPACTAS
+   El problema no era el ancho de la pantalla sino el de las
+   columnas: siete columnas y botones con texto ("Editar",
+   "Bloquear") no caben en ningún monitor. Se agrupan los datos
+   relacionados en una sola celda y las acciones pasan a iconos.
+   ════════════════════════════════════════════════════════════ */
+.tabla-compacta { width: 100%; table-layout: auto; }
+.tabla-compacta thead th { padding: 0.75rem 0.85rem !important; font-size: 0.7rem; }
+.tabla-compacta tbody td { padding: 0.7rem 0.85rem !important; font-size: 0.85rem; }
+.tabla-compacta td, .tabla-compacta th { white-space: normal; }
+
+/* ── Persona: avatar, nombre, identificador y correo ─────── */
+.celda-persona { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.persona-avatar {
+  width: 34px; height: 34px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
+  background: var(--acc-soft); border: 1px solid var(--acc-glow);
+  color: var(--acc); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.persona-datos { display: grid; gap: 0.1rem; min-width: 0; }
+.persona-nombre {
+  display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap;
+  font-size: 0.88rem; font-weight: 600; color: var(--text-primary);
+}
+.persona-id {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem; font-weight: 400; color: var(--text-disabled);
+}
+.persona-correo {
+  font-size: 0.76rem; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 22ch;
+}
+
+/* ── Documento y teléfono en la misma celda ──────────────── */
+.celda-doc { display: grid; gap: 0.12rem; }
+.doc-linea {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem; color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.doc-linea .tipo { color: var(--text-disabled); margin-right: 0.35rem; }
+.doc-vacio { font-size: 0.78rem; color: var(--text-disabled); font-style: italic; }
+.doc-tel { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── Estado con punto, no con pastilla ───────────────────── */
+.estado-punto {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.82rem; font-weight: 500; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.estado-punto::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft);
+}
+.estado-punto.es-bloqueado { color: #f87171; }
+.estado-punto.es-bloqueado::before {
+  background: #f87171; box-shadow: 0 0 0 3px rgba(248, 113, 113, .15);
+}
+
+/* ── Acciones en iconos ──────────────────────────────────── */
+.acciones-fila {
+  display: flex; align-items: center; gap: 0.3rem;
+  justify-content: flex-end; flex-wrap: nowrap;
+}
+.acciones-fila form { margin: 0; }
+.btn-icono {
+  width: 32px; height: 32px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--trans-fast), background var(--trans-fast),
+              border-color var(--trans-fast);
+}
+.btn-icono:hover {
+  color: var(--acc); border-color: var(--acc-glow); background: var(--acc-soft);
+}
+.btn-icono.es-peligro:hover {
+  color: #f87171; border-color: rgba(248, 113, 113, .35);
+  background: rgba(248, 113, 113, .1);
+}
+.btn-icono:disabled { opacity: .35; cursor: not-allowed; }
+.btn-icono:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* ── Roles apilados sin ensanchar la columna ─────────────── */
+.celda-roles { display: flex; gap: 0.3rem; flex-wrap: wrap; max-width: 12rem; }
+
+/* ── Pie de la tabla ─────────────────────────────────────── */
+.tabla-pie {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 0.85rem 1.1rem;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.8rem; color: var(--text-muted);
+}
+
+/* Con la barra lateral fija, un portátil de 1024 deja unos 680 px para la
+   tabla. Las columnas secundarias se retiran antes de que aparezca el
+   desplazamiento lateral; el dato sigue estando en la ficha de la persona. */
+@media (max-width: 1199.98px) {
+  .oculta-estrecho { display: none !important; }
+  .persona-correo { max-width: 18ch; }
+}
+
+@media (max-width: 767.98px) {
+  .persona-correo { max-width: 16ch; }
+  .celda-roles { max-width: 7rem; }
+  .tabla-compacta thead th, .tabla-compacta tbody td { padding: 0.6rem 0.5rem !important; }
+  .oculta-movil { display: none !important; }
+}
+
+/* ── Celda con barra de progreso dentro de la tabla ──────── */
+.celda-progreso { display: grid; gap: 0.3rem; min-width: 8.5rem; }
+.progreso-cab {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; font-size: 0.8rem;
+}
+.progreso-cab b { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.progress-fina { height: 4px; background: rgba(255,255,255,.07); }

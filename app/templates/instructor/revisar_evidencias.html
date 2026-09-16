@@ -36,12 +36,12 @@
   <div class="biblioteca-shell-body p-0">
     {% if evidencias %}
     <div class="table-responsive">
-      <table class="biblioteca-table mb-0">
+      <table class="biblioteca-table tabla-compacta mb-0">
         <thead>
           <tr>
-            <th>ID</th>
+            <th class="oculta-estrecho">ID</th>
             <th>Aprendiz / Ficha</th>
-            <th>Tipo / Fecha</th>
+            <th class="oculta-estrecho">Tipo / Fecha</th>
             <th>Contenido Evidencia</th>
             <th>Estado</th>
             {% if estado_filtro == 'Entregada' %}
@@ -52,12 +52,12 @@
         <tbody>
           {% for ev in evidencias %}
           <tr>
-            <td>#{{ ev.id_evidencia }}</td>
+            <td class="oculta-estrecho">#{{ ev.id_evidencia }}</td>
             <td>
               <div class="fw-medium text-primary">{{ ev.aprendiz.usuario.nombres }} {{ ev.aprendiz.usuario.apellidos }}</div>
               <div class="small text-muted">Ficha: {{ ev.aprendiz.ficha or 'N/A' }}</div>
             </td>
-            <td>
+            <td class="oculta-estrecho">
               <div>
                 {% if ev.tipo == 'archivo' %}<span class="badge-lib badge-gray mb-1"><i class="bi bi-file-earmark-arrow-down me-1"></i> Archivo</span>
                 {% elif ev.tipo == 'enlace' %}<span class="badge-lib badge-gray mb-1"><i class="bi bi-link-45deg me-1"></i> Enlace</span>
@@ -65,7 +65,7 @@
               </div>
               <span class="ts-label">{{ ev.fecha_entrega.strftime('%Y-%m-%d %H:%M') if ev.fecha_entrega else 'N/A' }}</span>
             </td>
-            <td style="max-width: 250px;">
+            <td style="max-width: 240px;">
               {% if ev.tipo == 'enlace' %}
                 <a href="{{ ev.contenido }}" target="_blank" class="text-info text-decoration-none text-truncate d-block" title="{{ ev.contenido }}">Abrir enlace <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i></a>
               {% elif ev.tipo == 'archivo' %}
@@ -83,9 +83,9 @@
             </td>
             {% if estado_filtro == 'Entregada' %}
             <td>
-              <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalEvaluar{{ ev.id_evidencia }}" title="Calificar Evidencia">
-                  <i class="bi bi-ui-checks"></i> Evaluar
+              <div class="acciones-fila">
+                <button type="button" class="btn-icono" data-bs-toggle="modal" data-bs-target="#modalEvaluar{{ ev.id_evidencia }}" title="Calificar la evidencia" aria-label="Calificar la evidencia">
+                  <i class="bi bi-ui-checks"></i>
                 </button>
               </div>
             </td>

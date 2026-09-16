@@ -97,33 +97,53 @@
 <div class="biblioteca-shell">
   <div class="biblioteca-shell-body p-0">
     <div class="table-responsive">
-      <table class="biblioteca-table mb-0">
+      <table class="biblioteca-table tabla-compacta mb-0">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nombres y Apellidos</th>
-            <th>Documento</th>
-            <th>Correo / Teléfono</th>
-            <th>Rol(es) Actuales</th>
+            <th>Usuario</th>
+            <th class="oculta-estrecho">Documento</th>
+            <th>Rol(es)</th>
             <th>Estado</th>
-            <th class="text-end">Bloquear/Desbloquear</th>
+            <th class="text-end">Acciones</th>
           </tr>
         </thead>
         <tbody>
            {% for u in usuarios %}
             <tr class="user-row" data-roles="{% for ur in u.roles %}{{ ur.rol.nombre }} {% endfor %}">
-              <td>#{{ u.id_usuario }}</td>
-              <td class="fw-bold text-primary">{{ u.nombres }} {{ u.apellidos }}</td>
-              <td class="text-muted"><span class="small border px-1 rounded border-secondary text-uppercase">{{ u.tipo_documento }}</span> {{ u.numero_documento }}</td>
+
               <td>
-                <div class="text-truncate">{{ u.correo }}</div>
-                <div class="small text-muted"><i class="bi bi-telephone"></i> {{ u.telefono or '--' }}</div>
+                <div class="celda-persona">
+                  <span class="persona-avatar">
+                    {{ (u.nombres[0] ~ (u.apellidos[0] if u.apellidos else '')) | upper }}
+                  </span>
+                  <span class="persona-datos">
+                    <span class="persona-nombre">
+                      {{ u.nombres }} {{ u.apellidos }}
+                      <span class="persona-id">#{{ u.id_usuario }}</span>
+                    </span>
+                    <span class="persona-correo" title="{{ u.correo }}">{{ u.correo }}</span>
+                  </span>
+                </div>
               </td>
+
+              <td class="oculta-estrecho">
+                <div class="celda-doc">
+                  {% if u.numero_documento %}
+                    <span class="doc-linea">
+                      <span class="tipo">{{ u.tipo_documento or '—' }}</span>{{ u.numero_documento }}
+                    </span>
+                  {% else %}
+                    <span class="doc-vacio">Sin documento</span>
+                  {% endif %}
+                  <span class="doc-tel">{{ u.telefono or 'Sin teléfono' }}</span>
+                </div>
+              </td>
+
               <td>
-                <div class="d-flex flex-wrap gap-1">
+                <div class="celda-roles">
                   {% for ur in u.roles %}
                     {% if ur.rol.nombre == 'superusuario' %}
-                      <span class="badge-lib" style="background: rgba(188,140,255,0.15); color: var(--accent-purple); border: 1px solid rgba(188,140,255,0.3);">Superusuario</span>
+                      <span class="badge-lib badge-purple">Superusuario</span>
                     {% elif ur.rol.nombre == 'instructor' %}
                       <span class="badge-lib badge-green">Instructor</span>
                     {% elif ur.rol.nombre == 'aprendiz' %}
@@ -132,65 +152,82 @@
                       <span class="badge-lib badge-gray">{{ ur.rol.nombre }}</span>
                     {% endif %}
                   {% else %}
-                    <span class="text-muted small fst-italic">Sin rol</span>
+                    <span class="doc-vacio">Sin rol</span>
                   {% endfor %}
                 </div>
               </td>
+
               <td>
                 {% if u.estado %}
-                  <span class="badge-lib badge-green"><i class="bi bi-check me-1"></i> Activo</span>
+                  <span class="estado-punto">Activo</span>
                 {% else %}
-                  <span class="badge-lib badge-red"><i class="bi bi-x me-1"></i> Inactivo</span>
+                  <span class="estado-punto es-bloqueado">Bloqueado</span>
                 {% endif %}
               </td>
+
               <td>
-                 <div class="d-flex justify-content-end gap-2">
-                   <button type="button" class="btn btn-sm btn-ghost text-primary border-primary" data-bs-toggle="modal" data-bs-target="#modalEditarUsuario{{ u.id_usuario }}" title="Editar usuario">
-                     <i class="bi bi-pencil-square"></i> Editar
-                   </button>
-                   <form method="POST" action="{{ url_for('admin.toggle_usuario', id_usuario=u.id_usuario) }}" class="m-0">
-                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                     {% if current_user.id_usuario != u.id_usuario %}
-                       {% if u.estado %}
-                        <button type="submit" class="btn btn-sm btn-ghost text-danger border-danger" title="Desactivar acceso" onclick="return confirm('¿Desactivar al usuario {{ u.correo }}?');">
-                           <i class="bi bi-lock-fill"></i> Bloquear
+                <div class="acciones-fila">
+                  <button type="button" class="btn-icono"
+                          data-bs-toggle="modal" data-bs-target="#modalEditarUsuario{{ u.id_usuario }}"
+                          title="Editar datos" aria-label="Editar datos de {{ u.nombres }}">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+
+                  {% if u.aprendiz %}
+                    <button type="button" class="btn-icono"
+                            data-bs-toggle="modal" data-bs-target="#modalFicha{{ u.id_usuario }}"
+                            title="Ficha del aprendiz" aria-label="Ficha de {{ u.nombres }}">
+                      <i class="bi bi-mortarboard"></i>
+                    </button>
+                    <button type="button" class="btn-icono"
+                            data-bs-toggle="modal" data-bs-target="#modalInstructores{{ u.id_usuario }}"
+                            title="Instructores a cargo" aria-label="Instructores de {{ u.nombres }}">
+                      <i class="bi bi-person-badge"></i>
+                    </button>
+                  {% endif %}
+
+                  {% if current_user.id_usuario != u.id_usuario %}
+                    <form method="POST" action="{{ url_for('admin.toggle_usuario', id_usuario=u.id_usuario) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      {% if u.estado %}
+                        <button type="submit" class="btn-icono es-peligro"
+                                title="Bloquear el acceso" aria-label="Bloquear a {{ u.nombres }}"
+                                onclick="return confirm('¿Desactivar al usuario {{ u.correo }}?');">
+                          <i class="bi bi-lock"></i>
                         </button>
-                       {% else %}
-                        <button type="submit" class="btn btn-sm btn-ghost text-success border-success" title="Reactivar acceso">
-                           <i class="bi bi-unlock-fill"></i> Desbloquear
+                      {% else %}
+                        <button type="submit" class="btn-icono"
+                                title="Devolver el acceso" aria-label="Desbloquear a {{ u.nombres }}">
+                          <i class="bi bi-unlock"></i>
                         </button>
-                       {% endif %}
-                     {% else %}
-                        <button type="button" class="btn btn-sm btn-secondary" disabled title="No puedes bloquearte a ti mismo">Tú</button>
-                     {% endif %}
-                   </form>
-                   {% if u.aprendiz %}
-                   <button type="button" class="btn btn-sm btn-ghost"
-                           data-bs-toggle="modal" data-bs-target="#modalFicha{{ u.id_usuario }}"
-                           title="Gestionar ficha del aprendiz">
-                     <i class="bi bi-mortarboard"></i>
-                   </button>
-                   <button type="button" class="btn btn-sm btn-ghost"
-                           data-bs-toggle="modal" data-bs-target="#modalInstructores{{ u.id_usuario }}"
-                           title="Instructores a cargo de este aprendiz">
-                     <i class="bi bi-person-badge"></i>
-                   </button>
-                   {% endif %}
-                   {% if current_user.id_usuario != u.id_usuario %}
-                   <button type="button" class="btn btn-sm btn-ghost text-danger border-danger"
-                           data-bs-toggle="modal" data-bs-target="#modalEliminarUsuario{{ u.id_usuario }}"
-                           title="Eliminar definitivamente">
-                     <i class="bi bi-trash3"></i>
-                   </button>
-                   {% endif %}
-                 </div>
+                      {% endif %}
+                    </form>
+                    <button type="button" class="btn-icono es-peligro"
+                            data-bs-toggle="modal" data-bs-target="#modalEliminarUsuario{{ u.id_usuario }}"
+                            title="Eliminar definitivamente" aria-label="Eliminar a {{ u.nombres }}">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  {% else %}
+                    <button type="button" class="btn-icono" disabled
+                            title="No puedes bloquearte ni eliminarte a ti mismo">
+                      <i class="bi bi-person-check"></i>
+                    </button>
+                  {% endif %}
+                </div>
               </td>
             </tr>
            {% else %}
-            <tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-search fs-1 opacity-50 d-block mb-3"></i>No se encontraron usuarios.</td></tr>
+            <tr><td colspan="5" class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-1 opacity-50 d-block mb-3"></i>No se encontraron usuarios.
+            </td></tr>
            {% endfor %}
         </tbody>
       </table>
+    </div>
+
+    <div class="tabla-pie">
+      <span>Mostrando {{ usuarios | length }} usuario{{ 's' if usuarios | length != 1 }}</span>
+      <span>{{ usuarios | selectattr('estado') | list | length }} activo{{ 's' if usuarios | selectattr('estado') | list | length != 1 }}</span>
     </div>
   </div>
 </div>

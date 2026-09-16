@@ -16,17 +16,14 @@
   <div class="biblioteca-shell-body p-0">
     {% if aprendices_data %}
     <div class="table-responsive">
-      <table class="biblioteca-table mb-0">
+      <table class="biblioteca-table tabla-compacta mb-0">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Aprendiz</th>
             <th>Ficha</th>
-            <th>Cómo lo tienes</th>
-            <th>Estado Práctica</th>
-            <th>Progreso de Tiempo</th>
-            <th>Evidencias</th>
-            <th>Empresa</th>
+            <th class="oculta-movil">Práctica</th>
+            <th class="oculta-estrecho">Evidencias</th>
+            <th class="oculta-estrecho">Empresa</th>
             <th class="text-end">Acciones</th>
           </tr>
         </thead>
@@ -34,90 +31,117 @@
           {% for item in aprendices_data %}
           {% set ap = item.aprendiz %}
           <tr>
-            <td>#{{ ap.id_aprendiz }}</td>
+
             <td>
-              <div class="fw-medium text-primary">{{ ap.usuario.nombres }} {{ ap.usuario.apellidos }}</div>
-              <div class="small text-muted">{{ ap.usuario.correo }}</div>
-            </td>
-            <td><span class="badge-lib badge-gray">{{ ap.ficha if ap.ficha else 'No asignada' }}</span></td>
-            <td>
-              {% set via = origen.get(ap.id_aprendiz, 'ficha') %}
-              {% if via == 'directo' %}
-                <span class="badge-lib badge-cyan" title="Te lo asignó un administrador, al margen de la ficha">
-                  <i class="bi bi-person-badge me-1"></i> Asignado a ti
+              <div class="celda-persona">
+                <span class="persona-avatar">
+                  {{ (ap.usuario.nombres[0] ~ (ap.usuario.apellidos[0] if ap.usuario.apellidos else '')) | upper }}
                 </span>
-              {% elif via == 'ambos' %}
-                <span class="badge-lib badge-green" title="Está en tu ficha y además te lo asignaron directamente">
-                  <i class="bi bi-check2-all me-1"></i> Ficha + asignado
+                <span class="persona-datos">
+                  <span class="persona-nombre">
+                    {{ ap.usuario.nombres }} {{ ap.usuario.apellidos }}
+                    <span class="persona-id">#{{ ap.id_aprendiz }}</span>
+                  </span>
+                  <span class="persona-correo" title="{{ ap.usuario.correo }}">{{ ap.usuario.correo }}</span>
                 </span>
-              {% else %}
-                <span class="badge-lib badge-gray" title="Lo tienes porque está matriculado en una de tus fichas">
-                  <i class="bi bi-journal-bookmark me-1"></i> Por ficha
-                </span>
-              {% endif %}
+              </div>
             </td>
+
             <td>
-               {% if ap.estado_practica == 'Aprobado' %}
-                <span class="badge-lib badge-green">Aprobado</span>
-               {% elif ap.estado_practica == 'Reprobado' %}
-                <span class="badge-lib badge-red">Reprobado</span>
-               {% elif ap.estado_practica == 'En proceso' %}
-                <span class="badge-lib badge-cyan">En proceso</span>
-               {% else %}
-                <span class="badge-lib badge-gray">{{ ap.estado_practica }}</span>
-               {% endif %}
-            </td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold {% if item.pct_tiempo >= 100 %}text-success{% else %}text-primary{% endif %}">{{ item.pct_tiempo }}%</span>
-                {% if item.periodo_definido %}
-                  <span class="text-muted small" title="{{ item.fecha_inicio.strftime('%d/%m/%Y') }} → {{ item.fecha_fin.strftime('%d/%m/%Y') }}">
-                    {{ item.dias_restantes }} días restantes
+              <div class="celda-doc">
+                <span class="doc-linea">{{ ap.ficha or 'Sin ficha' }}</span>
+                {% set via = origen.get(ap.id_aprendiz, 'ficha') %}
+                {% if via == 'directo' %}
+                  <span class="doc-tel" title="Te lo asignó un administrador, al margen de la ficha">
+                    <i class="bi bi-person-badge"></i> Asignado a ti
+                  </span>
+                {% elif via == 'ambos' %}
+                  <span class="doc-tel" title="Está en tu ficha y además te lo asignaron directamente">
+                    <i class="bi bi-check2-all"></i> Ficha + asignado
                   </span>
                 {% else %}
-                  <span class="text-muted small fst-italic" title="Sin fechas de práctica cargadas">6 meses (estimado)</span>
+                  <span class="doc-tel" title="Está matriculado en una de tus fichas">
+                    <i class="bi bi-journal-bookmark"></i> Por ficha
+                  </span>
                 {% endif %}
               </div>
-              <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
-                <div class="progress-bar {% if item.pct_tiempo >= 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ item.pct_tiempo }}%;"></div>
-              </div>
-              {% if item.periodo_definido %}
-                <div class="text-muted mt-1" style="font-size: 0.7rem;">
-                  {{ item.fecha_inicio.strftime('%d/%m/%Y') }} – {{ item.fecha_fin.strftime('%d/%m/%Y') }}
+            </td>
+
+            <td class="oculta-movil">
+              <div class="celda-progreso">
+                <div class="progreso-cab">
+                  {% if ap.estado_practica == 'Aprobado' %}
+                    <span class="badge-lib badge-green">Aprobado</span>
+                  {% elif ap.estado_practica == 'Reprobado' %}
+                    <span class="badge-lib badge-red">Reprobado</span>
+                  {% elif ap.estado_practica == 'En proceso' %}
+                    <span class="badge-lib badge-cyan">En proceso</span>
+                  {% else %}
+                    <span class="badge-lib badge-gray">{{ ap.estado_practica }}</span>
+                  {% endif %}
+                  <b>{{ item.pct_tiempo }}%</b>
                 </div>
-              {% endif %}
-            </td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold {% if item.evidencias_count >= evidencias_esperadas %}text-success{% endif %}">{{ item.evidencias_count }} / {{ evidencias_esperadas }}</span>
+                <div class="progress progress-fina">
+                  <div class="progress-bar" role="progressbar" style="width: {{ item.pct_tiempo }}%;"></div>
+                </div>
+                <span class="doc-tel">
+                  {% if item.periodo_definido %}
+                    {{ item.dias_restantes }} días restantes
+                  {% else %}
+                    6 meses (estimado)
+                  {% endif %}
+                </span>
               </div>
-              <div class="progress mt-1" style="height: 4px; background: var(--bg-hover);">
-                <div class="progress-bar" role="progressbar" style="width: {{ item.pct_evidencias }}%;"></div>
+            </td>
+
+            <td class="oculta-estrecho">
+              <div class="celda-progreso">
+                <div class="progreso-cab">
+                  <b class="{% if item.evidencias_count >= evidencias_esperadas %}text-success{% endif %}">
+                    {{ item.evidencias_count }} / {{ evidencias_esperadas }}
+                  </b>
+                </div>
+                <div class="progress progress-fina">
+                  <div class="progress-bar" role="progressbar" style="width: {{ item.pct_evidencias }}%;"></div>
+                </div>
               </div>
             </td>
-            <td>
+
+            <td class="oculta-estrecho">
               {% if ap.empresa %}
-                <div class="fw-medium text-truncate" style="max-width: 150px;" title="{{ ap.empresa.nombre }}">{{ ap.empresa.nombre }}</div>
-                <div class="small text-muted" title="{{ ap.empresa.nit }}">{{ ap.empresa.nit }}</div>
+                <div class="celda-doc">
+                  <span class="persona-correo" title="{{ ap.empresa.nombre }}">{{ ap.empresa.nombre }}</span>
+                  <span class="doc-tel">{{ ap.empresa.nit or '' }}</span>
+                </div>
               {% else %}
-                <span class="text-muted small fst-italic">No asignada</span>
+                <span class="doc-vacio">Sin empresa</span>
               {% endif %}
             </td>
+
             <td>
-              <div class="d-flex gap-2 justify-content-end">
-                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalHoras{{ ap.id_aprendiz }}" title="Estado y fechas de práctica">
+              <div class="acciones-fila">
+                <button class="btn-icono" data-bs-toggle="modal"
+                        data-bs-target="#modalHoras{{ ap.id_aprendiz }}"
+                        title="Estado y fechas de práctica"
+                        aria-label="Práctica de {{ ap.usuario.nombres }}">
                   <i class="bi bi-calendar-range"></i>
                 </button>
-                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modalEmpresa{{ ap.id_aprendiz }}" title="Asignar Empresa">
+                <button class="btn-icono" data-bs-toggle="modal"
+                        data-bs-target="#modalEmpresa{{ ap.id_aprendiz }}"
+                        title="Asignar empresa"
+                        aria-label="Empresa de {{ ap.usuario.nombres }}">
                   <i class="bi bi-building"></i>
                 </button>
               </div>
             </td>
           </tr>
-
           {% endfor %}
         </tbody>
       </table>
+    </div>
+
+    <div class="tabla-pie">
+      <span>{{ aprendices_data | length }} aprendiz{{ 'es' if aprendices_data | length != 1 }} a tu cargo</span>
     </div>
 
     {% else %}
