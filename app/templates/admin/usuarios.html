@@ -170,6 +170,11 @@
                            title="Gestionar ficha del aprendiz">
                      <i class="bi bi-mortarboard"></i>
                    </button>
+                   <button type="button" class="btn btn-sm btn-ghost"
+                           data-bs-toggle="modal" data-bs-target="#modalInstructores{{ u.id_usuario }}"
+                           title="Instructores a cargo de este aprendiz">
+                     <i class="bi bi-person-badge"></i>
+                   </button>
                    {% endif %}
                    {% if current_user.id_usuario != u.id_usuario %}
                    <button type="button" class="btn btn-sm btn-ghost text-danger border-danger"
@@ -459,6 +464,117 @@ document.addEventListener('DOMContentLoaded', function() {
 {% for u in usuarios %}
 {% if u.aprendiz %}
 {% set matriculado = u.aprendiz.cursos[0].curso if u.aprendiz.cursos else None %}
+{% if u.aprendiz %}
+<!-- Modal: instructores a cargo de este aprendiz -->
+<div class="modal fade" id="modalInstructores{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-person-badge me-2"></i>Instructores de {{ u.nombres }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+
+        {% set por_ficha = [] %}
+        {% for ca in u.aprendiz.cursos %}
+          {% if ca.curso %}
+            {% for ci in ca.curso.instructores %}
+              {% if ci.instructor %}{% set _ = por_ficha.append((ci.instructor, ca.curso)) %}{% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+
+        <p class="inst-rotulo">Por su ficha</p>
+        {% if por_ficha %}
+          <ul class="inst-fichas mb-3">
+            {% for instructor, curso in por_ficha %}
+              <li class="inst-ficha">
+                <span class="d-grid px-3 py-2">
+                  <b style="font-size:.82rem;color:var(--acc);font-weight:700;">
+                    {{ instructor.usuario.nombres }} {{ instructor.usuario.apellidos }}
+                  </b>
+                  <span style="font-size:.72rem;color:var(--text-muted);">
+                    Ficha {{ curso.ficha or curso.nombre }}
+                  </span>
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+          <p class="inst-vacio mb-4">
+            <i class="bi bi-info-circle"></i>
+            Estos vienen de la ficha. Para cambiarlos, hazlo desde la ficha o desde Instructores.
+          </p>
+        {% else %}
+          <p class="inst-vacio mb-4">
+            <i class="bi bi-info-circle"></i>
+            Su ficha no tiene instructores asignados todavía.
+          </p>
+        {% endif %}
+
+        <div class="lib-divider"></div>
+
+        <p class="inst-rotulo">Asignados directamente</p>
+        {% set directos = instructores_directos.get(u.aprendiz.id_aprendiz, []) %}
+        {% if directos %}
+          <ul class="inst-fichas mb-3">
+            {% for instructor in directos %}
+              <li class="inst-ficha">
+                <span class="d-grid px-3 py-2">
+                  <b style="font-size:.82rem;color:var(--acc);font-weight:700;">
+                    {{ instructor.usuario.nombres }} {{ instructor.usuario.apellidos }}
+                  </b>
+                  <span style="font-size:.72rem;color:var(--text-muted);">
+                    {{ instructor.area_formacion or instructor.usuario.correo }}
+                  </span>
+                </span>
+                <form action="{{ url_for('admin.quitar_instructor_aprendiz', id_aprendiz=u.aprendiz.id_aprendiz, id_instructor=instructor.id_instructor) }}"
+                      method="POST" class="m-0"
+                      onsubmit="return confirm('Quitar a {{ instructor.usuario.nombres }} de este aprendiz. Si comparten ficha lo seguirá viendo por ahí. ¿Continuar?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="inst-quitar" title="Quitar la asignación">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="inst-vacio mb-3">
+            <i class="bi bi-info-circle"></i> Ninguno todavía.
+          </p>
+        {% endif %}
+
+        {% set ids_directos = directos | map(attribute='id_instructor') | list %}
+        {% set disponibles = instructores_activos | rejectattr('id_instructor', 'in', ids_directos) | list %}
+        {% if disponibles %}
+          <form action="{{ url_for('admin.asignar_instructor_aprendiz', id_aprendiz=u.aprendiz.id_aprendiz) }}"
+                method="POST" class="inst-vincular">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select class="form-select form-select-sm" name="id_instructor" required>
+              <option value="" selected disabled>Asignar un instructor…</option>
+              {% for i in disponibles %}
+                <option value="{{ i.id_instructor }}">
+                  {{ i.usuario.nombres }} {{ i.usuario.apellidos }}{% if i.area_formacion %} — {{ i.area_formacion }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">
+              <i class="bi bi-link-45deg"></i> Asignar
+            </button>
+          </form>
+        {% else %}
+          <p class="inst-vacio mb-0">
+            <i class="bi bi-check2-all"></i> Todos los instructores activos ya están asignados.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="modal fade" id="modalFicha{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

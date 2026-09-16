@@ -33,6 +33,7 @@ from app.models.usuario_rol import UsuarioRol
 from app.models.notificacion import Notificacion
 from app.models.progreso_aprendiz import ProgresoAprendiz
 from app.models.aprendiz_backup import AprendizBackup
+from app.models.instructor_aprendiz import InstructorAprendiz
 from app.models.verificacion_correo import VerificacionCorreo
 from app.servicios import verificacion
 from app.utils import (role_required, log_historial, calcular_progreso,
@@ -214,8 +215,20 @@ def usuarios():
             'ficha': d.get('codigo_ficha'),
         })
 
+    # Instructores asignados a mano a cada aprendiz (los de la ficha no se
+    # listan aquí: esos se gestionan desde la ficha, no desde la persona).
+    directos = {}
+    for ia in InstructorAprendiz.query.all():
+        directos.setdefault(ia.id_aprendiz, []).append(ia.instructor)
+
+    instructores_activos = (Instructor.query.join(Usuario)
+                            .filter(Instructor.activo.is_(True))
+                            .order_by(Usuario.nombres).all())
+
     return render_template('admin/usuarios.html', usuarios=lista, roles=roles, q=q,
                            pendientes=pendientes,
+                           instructores_directos=directos,
+                           instructores_activos=instructores_activos,
                            resumen=_resumen_borrado(lista),
                            tipos_documento=TIPOS_DOCUMENTO,
                            estados_practica=ESTADOS_PRACTICA,
@@ -348,6 +361,59 @@ def crear_usuario():
 
     flash(f'Le enviamos un correo de confirmación a {correo}. La cuenta se crea '
           'cuando abra el enlace.', 'success')
+    return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/aprendices/<int:id_aprendiz>/instructor', methods=['POST'])
+@login_required
+@role_required('superusuario')
+def asignar_instructor_aprendiz(id_aprendiz):
+    """Poner a un instructor a cargo de un aprendiz concreto, sin pasar por la ficha."""
+    aprendiz = Aprendiz.query.get_or_404(id_aprendiz)
+    id_instructor = request.form.get('id_instructor', type=int)
+
+    if not id_instructor:
+        flash('Selecciona el instructor que quieres asignar.', 'danger')
+        return redirect(url_for('admin.usuarios'))
+
+    instructor = Instructor.query.get_or_404(id_instructor)
+
+    if InstructorAprendiz.query.filter_by(id_instructor=id_instructor,
+                                          id_aprendiz=id_aprendiz).first():
+        flash('Ese instructor ya tenía asignado a este aprendiz.', 'warning')
+        return redirect(url_for('admin.usuarios'))
+
+    db.session.add(InstructorAprendiz(id_instructor=id_instructor,
+                                      id_aprendiz=id_aprendiz))
+    nombre_ap = (f'{aprendiz.usuario.nombres} {aprendiz.usuario.apellidos}'
+                 if aprendiz.usuario else f'aprendiz {id_aprendiz}')
+    log_historial(current_user, 'Aprendiz', 'MODIFICAR',
+                  f'Instructor {id_instructor} asignado a {nombre_ap}')
+    db.session.commit()
+    flash(f'{instructor.usuario.nombres} quedó a cargo de {nombre_ap}.', 'success')
+    return redirect(url_for('admin.usuarios'))
+
+
+@bp.route('/aprendices/<int:id_aprendiz>/instructor/<int:id_instructor>/quitar',
+          methods=['POST'])
+@login_required
+@role_required('superusuario')
+def quitar_instructor_aprendiz(id_aprendiz, id_instructor):
+    """Deshacer la asignación directa. No toca las fichas ni las evidencias."""
+    ia = InstructorAprendiz.query.filter_by(id_instructor=id_instructor,
+                                            id_aprendiz=id_aprendiz).first()
+    if not ia:
+        flash('Ese instructor ya no estaba asignado a este aprendiz.', 'info')
+        return redirect(url_for('admin.usuarios'))
+
+    nombre = (ia.instructor.usuario.nombres
+              if ia.instructor and ia.instructor.usuario else id_instructor)
+    db.session.delete(ia)
+    log_historial(current_user, 'Aprendiz', 'MODIFICAR',
+                  f'Instructor {id_instructor} desasignado del aprendiz {id_aprendiz}')
+    db.session.commit()
+    flash(f'{nombre} ya no está asignado a este aprendiz. Si comparten ficha, '
+          'lo seguirá viendo por ahí.', 'success')
     return redirect(url_for('admin.usuarios'))
 
 

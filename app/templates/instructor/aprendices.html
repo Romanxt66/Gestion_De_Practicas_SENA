@@ -22,6 +22,7 @@
             <th>ID</th>
             <th>Aprendiz</th>
             <th>Ficha</th>
+            <th>Cómo lo tienes</th>
             <th>Estado Práctica</th>
             <th>Progreso de Tiempo</th>
             <th>Evidencias</th>
@@ -39,6 +40,22 @@
               <div class="small text-muted">{{ ap.usuario.correo }}</div>
             </td>
             <td><span class="badge-lib badge-gray">{{ ap.ficha if ap.ficha else 'No asignada' }}</span></td>
+            <td>
+              {% set via = origen.get(ap.id_aprendiz, 'ficha') %}
+              {% if via == 'directo' %}
+                <span class="badge-lib badge-cyan" title="Te lo asignó un administrador, al margen de la ficha">
+                  <i class="bi bi-person-badge me-1"></i> Asignado a ti
+                </span>
+              {% elif via == 'ambos' %}
+                <span class="badge-lib badge-green" title="Está en tu ficha y además te lo asignaron directamente">
+                  <i class="bi bi-check2-all me-1"></i> Ficha + asignado
+                </span>
+              {% else %}
+                <span class="badge-lib badge-gray" title="Lo tienes porque está matriculado en una de tus fichas">
+                  <i class="bi bi-journal-bookmark me-1"></i> Por ficha
+                </span>
+              {% endif %}
+            </td>
             <td>
                {% if ap.estado_practica == 'Aprobado' %}
                 <span class="badge-lib badge-green">Aprobado</span>

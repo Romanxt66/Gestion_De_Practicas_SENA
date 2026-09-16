@@ -1177,6 +1177,116 @@ t = token(c_admin, '/admin/fichas')
 c_admin.post(f'/admin/fichas/{id_curso}/asignar-instructor',
              data={'id_instructor': id_inst, 'csrf_token': t}, follow_redirects=True)
 
+print('\n── Instructor y aprendiz: las dos vías ──')
+from app.models.instructor_aprendiz import InstructorAprendiz
+from app.utils import (ids_aprendices_de_instructor, ids_aprendices_por_ficha,
+                       ids_aprendices_directos, origen_de_aprendices)
+
+# Se crea uno a propósito, sin ninguna ficha: a estas alturas de la suite el
+# instructor ya tiene varias fichas asignadas y "ajeno" podría no serlo.
+with app.app_context():
+    from werkzeug.security import generate_password_hash as _hash
+    suelto = Usuario(nombres='Suelto', apellidos='SinFicha',
+                     correo='suelto.sinficha@test.local',
+                     password_hash=_hash('clave123'), estado=True)
+    db.session.add(suelto); db.session.flush()
+    ap_suelto = Aprendiz(id_usuario=suelto.id_usuario, ficha=None,
+                         estado_practica='En proceso',
+                         horas_requeridas=880, horas_cumplidas=0)
+    db.session.add(ap_suelto); db.session.commit()
+    ajeno = ap_suelto.id_aprendiz
+
+if True:
+    with app.app_context():
+        inst_obj = db.session.get(Usuario, inst.id_usuario).instructor
+        id_inst2 = inst_obj.id_instructor
+        check('de partida, el aprendiz suelto no está a su cargo',
+              ajeno not in ids_aprendices_de_instructor(inst_obj))
+
+    t = token(c_inst, '/instructor/aprendices')
+    r = c_inst.post(f'/instructor/aprendices/{ajeno}/horas',
+                    data={'estado_practica': 'Aprobado', 'csrf_token': t})
+    check('  · y no puede modificarlo', r.status_code == 403, r.status_code)
+
+    # El admin se lo asigna directamente
+    t = token(c_admin, '/admin/usuarios')
+    r = c_admin.post(f'/admin/aprendices/{ajeno}/instructor',
+                     data={'id_instructor': id_inst2, 'csrf_token': t},
+                     follow_redirects=True)
+    check('el admin asigna un instructor a un aprendiz suelto',
+          'quedó a cargo de' in r.get_data(as_text=True))
+
+    with app.app_context():
+        inst_obj = db.session.get(Usuario, inst.id_usuario).instructor
+        check('  · el aprendiz pasa a estar a su cargo',
+              ajeno in ids_aprendices_de_instructor(inst_obj))
+        check('  · sin haberlo metido en ninguna ficha',
+              ajeno not in ids_aprendices_por_ficha(inst_obj))
+        check('  · y consta como asignación directa',
+              ajeno in ids_aprendices_directos(inst_obj))
+        check('  · el origen se etiqueta como "directo"',
+              origen_de_aprendices(inst_obj).get(ajeno) == 'directo')
+
+    # Ahora sí puede gestionarlo
+    t = token(c_inst, '/instructor/aprendices')
+    r = c_inst.post(f'/instructor/aprendices/{ajeno}/horas',
+                    data={'estado_practica': 'Aprobado', 'csrf_token': t},
+                    follow_redirects=True)
+    check('ahora el instructor sí puede gestionarlo', r.status_code == 200)
+    with app.app_context():
+        check('  · y el cambio se guardó',
+              db.session.get(Aprendiz, ajeno).estado_practica == 'Aprobado')
+
+    html = c_inst.get('/instructor/aprendices').get_data(as_text=True)
+    check('aparece en "Mis aprendices" marcado como asignado',
+          'Asignado a ti' in html)
+    check('  · y los de ficha siguen marcados como tales', 'Por ficha' in html)
+
+    # Asignar dos veces no duplica
+    t = token(c_admin, '/admin/usuarios')
+    r = c_admin.post(f'/admin/aprendices/{ajeno}/instructor',
+                     data={'id_instructor': id_inst2, 'csrf_token': t},
+                     follow_redirects=True)
+    check('asignar dos veces no duplica', 'ya tenía asignado' in r.get_data(as_text=True))
+    with app.app_context():
+        check('  · sigue habiendo una sola asignación',
+              InstructorAprendiz.query.filter_by(id_instructor=id_inst2,
+                                                 id_aprendiz=ajeno).count() == 1)
+
+    # Un instructor puede llevar varias fichas a la vez
+    with app.app_context():
+        from app.models.curso_instructor import CursoInstructor as CI2
+        otra = Curso(nombre='Ficha Segunda', ficha='SEG-001')
+        db.session.add(otra); db.session.flush()
+        db.session.add(CI2(id_curso=otra.id_curso, id_instructor=id_inst2))
+        db.session.commit()
+        inst_obj = db.session.get(Usuario, inst.id_usuario).instructor
+        check('un instructor puede llevar varias fichas',
+              len(inst_obj.cursos) >= 2, len(inst_obj.cursos))
+
+    # Quitar la asignación directa
+    t = token(c_admin, '/admin/usuarios')
+    r = c_admin.post(f'/admin/aprendices/{ajeno}/instructor/{id_inst2}/quitar',
+                     data={'csrf_token': t}, follow_redirects=True)
+    check('el admin puede quitar la asignación',
+          'ya no está asignado' in r.get_data(as_text=True))
+    with app.app_context():
+        inst_obj = db.session.get(Usuario, inst.id_usuario).instructor
+        check('  · y el aprendiz vuelve a quedar fuera de su alcance',
+              ajeno not in ids_aprendices_de_instructor(inst_obj))
+
+    t = token(c_admin, '/admin/usuarios')
+    r = c_admin.post(f'/admin/aprendices/{ajeno}/instructor/{id_inst2}/quitar',
+                     data={'csrf_token': t}, follow_redirects=True)
+    check('quitarla dos veces no da error',
+          r.status_code == 200 and 'ya no estaba asignado' in r.get_data(as_text=True))
+
+    t = token(c_inst, '/instructor/dashboard')
+    r = c_inst.post(f'/admin/aprendices/{ajeno}/instructor',
+                    data={'id_instructor': id_inst2, 'csrf_token': t})
+    check('un instructor no puede asignarse aprendices solo', r.status_code == 403,
+          r.status_code)
+
 print('\n── Portal de acceso y panel móvil ──')
 anon = app.test_client()
 r = anon.get('/', follow_redirects=False)

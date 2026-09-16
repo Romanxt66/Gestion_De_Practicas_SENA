@@ -30,7 +30,7 @@ from app.utils import (role_required, log_historial, calcular_progreso,
                        ids_cursos_de_instructor, ids_aprendices_de_instructor,
                        matricular_pendientes, resumen_curso,
                        indice_aprobacion, evidencias_entregadas_hoy,
-                       ESTADOS_PRACTICA)
+                       origen_de_aprendices, ESTADOS_PRACTICA)
 
 bp = Blueprint('instructor', __name__, url_prefix='/instructor')
 
@@ -266,6 +266,7 @@ def aprendices():
     empresas = Empresa.query.filter_by(activa=True).order_by(Empresa.nombre).all()
     return render_template('instructor/aprendices.html',
                            aprendices_data=progreso_de_aprendices(lista),
+                           origen=origen_de_aprendices(_get_instructor()),
                            empresas=empresas)
 
 

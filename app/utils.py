@@ -142,16 +142,55 @@ def ids_cursos_de_instructor(instructor):
     return [ci.id_curso for ci in instructor.cursos]
 
 
-def ids_aprendices_de_instructor(instructor):
-    """IDs de los aprendices matriculados en algún curso del instructor."""
+def ids_aprendices_por_ficha(instructor):
+    """Aprendices que le llegan al instructor por estar en una de sus fichas."""
     from app.models.curso_aprendiz import CursoAprendiz
     ids_cursos = ids_cursos_de_instructor(instructor)
     if not ids_cursos:
-        return []
+        return set()
     filas = (db.session.query(CursoAprendiz.id_aprendiz)
              .filter(CursoAprendiz.id_curso.in_(ids_cursos))
              .distinct().all())
-    return [f[0] for f in filas]
+    return {f[0] for f in filas}
+
+
+def ids_aprendices_directos(instructor):
+    """Aprendices asignados a mano a este instructor, al margen de la ficha."""
+    from app.models.instructor_aprendiz import InstructorAprendiz
+    if not instructor:
+        return set()
+    filas = (db.session.query(InstructorAprendiz.id_aprendiz)
+             .filter(InstructorAprendiz.id_instructor == instructor.id_instructor)
+             .all())
+    return {f[0] for f in filas}
+
+
+def ids_aprendices_de_instructor(instructor):
+    """Todos los aprendices a cargo del instructor, por cualquiera de las dos vías.
+
+    Un aprendiz cuenta si está matriculado en alguna de sus fichas O si se le
+    asignó directamente. Es la función que usan los permisos, así que ampliarla
+    aquí ampliá el acceso en todas las vistas a la vez.
+    """
+    if not instructor:
+        return []
+    return sorted(ids_aprendices_por_ficha(instructor)
+                  | ids_aprendices_directos(instructor))
+
+
+def origen_de_aprendices(instructor):
+    """Para cada aprendiz, cómo llegó: 'ficha', 'directo' o 'ambos'."""
+    por_ficha = ids_aprendices_por_ficha(instructor)
+    directos = ids_aprendices_directos(instructor)
+    origen = {}
+    for id_ap in por_ficha | directos:
+        if id_ap in por_ficha and id_ap in directos:
+            origen[id_ap] = 'ambos'
+        elif id_ap in por_ficha:
+            origen[id_ap] = 'ficha'
+        else:
+            origen[id_ap] = 'directo'
+    return origen
 
 
 def instructor_puede_gestionar_aprendiz(usuario, id_aprendiz):
