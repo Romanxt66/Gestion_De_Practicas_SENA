@@ -32,3 +32,6 @@ app/static/uploads/
 
 # Configuración local del entorno de desarrollo
 .claude/
+
+# Caché de pytest
+.pytest_cache/
